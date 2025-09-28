@@ -1,0 +1,36 @@
+:root {
+  --background-color: #1a1a1a;
+  --text-color: #ffffff;
+  --accent-color: #9c27b0;
+  --accent-color-hover: #7b1fa2;
+}
+
+body {
+  background-color: var(--background-color);
+  color: var(--text-color);
+  font-family: sans-serif;
+  margin: 0;
+}
+
+nav {
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+}
+
+nav a {
+  color: var(--text-color);
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  margin: 0 0.5rem;
+  border-radius: 0.25rem;
+  transition: background-color 0.3s;
+}
+
+nav a:hover {
+  background-color: var(--accent-color-hover);
+}
+
+nav a.active {
+  background-color: var(--accent-color);
+}
