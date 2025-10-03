@@ -7,7 +7,7 @@ import { CommonModule } from '@angular/common';
 export interface Player {
   id: number;
   name: string;
-  rst: number; // Rally Start Time
+  rst: number;
   mt: number;  // March Time
   rallies: Rally[];
   color: string; // Color for the player's rallies
@@ -15,8 +15,7 @@ export interface Player {
 }
 
 export interface Rally {
-  start: number; // Rally Hit Time at the Bear
-  end: number;   // Rally End Time (10 seconds after hit)
+  start: number;
 }
 
 @Component({
@@ -33,21 +32,12 @@ export class BearSimulatorComponent {
   readonly ATTACK_TIME = 10;      // 10 seconds
 
   // Signals for managing component state
-  numberOfPlayers = signal(1);
+  numberOfPlayers = signal(9);
   players = signal<Player[]>([]);
 
   // Canvas element reference
   canvas = viewChild<ElementRef<HTMLCanvasElement>>('timelineCanvas');
   private readonly playerColors = ['#FF6347', '#4682B4', '#32CD32', '#FFD700', '#6A5ACD', '#40E0D0', '#FF69B4', '#DAA520', '#8A2BE2', '#7FFF00'];
-
-
-  // Computed signal to derive the visualization data
-  timeline = computed(() => {
-    return this.players().map(player => {
-      const rallies = this.calculatePlayerRallies(player.rst, player.mt);
-      return { ...player, rallies };
-    });
-  });
 
   constructor() {
     // Effect to automatically update players when the number of players changes
@@ -70,46 +60,43 @@ export class BearSimulatorComponent {
     });
 
     effect(() => {
-        this.drawTimeline();
+      this.drawTimeline();
     });
 
-    // Initialize with one player
-    this.players.set([this.createNewPlayer(1)]);
+    // Initialize with few players
+    this.players.set([
+      this.createNewPlayer(1, 0, 15),
+      this.createNewPlayer(2, 0, 15),
+      this.createNewPlayer(3, 0, 15),
+      this.createNewPlayer(4, 73, 15),
+      this.createNewPlayer(5, 73, 15),
+      this.createNewPlayer(6, 73, 15),
+      this.createNewPlayer(7, 146, 15),
+      this.createNewPlayer(8, 146, 15),
+      this.createNewPlayer(9, 146, 15),
+    ]);
   }
 
-  private createNewPlayer(id: number): Player {
-    return {
-      id,
-      name: `Player ${id}`,
-      rst: 0,
-      mt: 15,
-      rallies: [],
-      color: this.playerColors[id - 1]
-    };
-  }
-
-  // --- Rally Calculation Logic ---
-  private calculatePlayerRallies(rst: number, mt: number): Rally[] {
-    const rallies: Rally[] = [];
-    if (this.validatePlayerData(rst, mt)) {
-      let currentRallyStartTime = rst;
-
-      while (true) {
-        const rallyHitTime = currentRallyStartTime + this.WAIT_TIME + mt;
-        const rallyEndTime = rallyHitTime + this.ATTACK_TIME;
-
-        if (rallyHitTime > this.EVENT_DURATION) {
-            break; // Stop if the rally hits after the event ends
-        }
-
-        rallies.push({ start: rallyHitTime, end: rallyEndTime });
-
-        // Calculate the start time for the next rally
-        const rallyDuration = this.WAIT_TIME + (2 * mt);
-        currentRallyStartTime += rallyDuration;
+  private createNewPlayer(id: number, start: number = 0, mt: number = 15): Player {
+    let t = start;
+    let rallies = [];
+    for (let i = 0; i < 5; i++) {
+      if (t + 300 + mt < this.EVENT_DURATION) {
+        rallies.push({ start: t });
+        // adding 5 as delay to actually start the rally
+        t += 300 + 2 * mt + 5;
+      } else {
+        break;
       }
     }
-    return rallies;
+    return {
+      id,
+      name: `P${id}`,
+      rst: start,
+      mt: mt,
+      rallies: rallies,
+      color: this.playerColors[id - 1]
+    };
   }
 
   // --- Input Validation ---
@@ -137,81 +124,92 @@ export class BearSimulatorComponent {
     const input = event.target as HTMLInputElement;
     const value = parseInt(input.value, 10);
     if (!isNaN(value)) {
-        this.players.update(players => 
-            players.map(p => p.id === playerId ? { ...p, rst: value } : p)
-        );
+      this.players.update(players =>
+        players.map(p => p.id === playerId ? { ...p, rst: value } : p)
+      );
     }
   }
 
-    onMtChange(playerId: number, event: Event): void {
+  onMtChange(playerId: number, event: Event): void {
     const input = event.target as HTMLInputElement;
     const value = parseInt(input.value, 10);
     if (!isNaN(value)) {
-        this.players.update(players => 
-            players.map(p => p.id === playerId ? { ...p, mt: value } : p)
-        );
+      this.players.update(players =>
+        players.map(p => p.id === playerId ? { ...p, mt: value } : p)
+      );
     }
   }
 
-    // --- Template Helper Methods ---
-    getValidationMessage(player: Player): string | null {
-        if (player.mt < 1 || player.mt > 300) {
-            return "March Time must be between 1 and 300 seconds.";
-        }
-        if (player.rst < 0) {
-            return "Rally Start Time cannot be negative.";
-        }
-        if (this.isInitialRallyTooLate(player.rst, player.mt)) {
-            return "Rally 1 arrives after event end.";
-        }
-        return null;
+  // --- Template Helper Methods ---
+  getValidationMessage(player: Player): string | null {
+    if (player.mt < 1 || player.mt > 300) {
+      return "March Time must be between 1 and 300 seconds.";
     }
+    return null;
+  }
 
-    private drawTimeline(): void {
-      const canvasEl = this.canvas()?.nativeElement;
-      if (!canvasEl) return;
+  private drawTimeline(): void {
+    const canvasEl = this.canvas()?.nativeElement;
+    if (!canvasEl) return;
 
-      const ctx = canvasEl.getContext('2d');
-      if (!ctx) return;
-  
-      const dpr = window.devicePixelRatio || 1;
-      const rect = canvasEl.getBoundingClientRect();
-      canvasEl.width = rect.width * dpr;
-      canvasEl.height = (this.players().length * 40 + 40) * dpr; // 40px per player + 40px for timeline
-      ctx.scale(dpr, dpr);
-  
-      const width = canvasEl.width / dpr;
-      const height = canvasEl.height / dpr;
-  
-      ctx.clearRect(0, 0, width, height);
-  
-      // Draw timeline axis
-      ctx.fillStyle = '#ccc';
-      ctx.font = '10px sans-serif';
-      ctx.textAlign = 'center';
-      for (let i = 0; i <= this.EVENT_DURATION; i += 300) {
-          const x = (i / this.EVENT_DURATION) * width;
-          ctx.fillText(`${i / 60}min`, x, 15);
-          ctx.fillRect(x, 20, 1, 5);
-      }
-  
-      // Draw player timelines
-      this.timeline().forEach((player, index) => {
-          const y = 40 + index * 40;
-          
-          // Draw player name
-          ctx.fillStyle = player.color;
-          ctx.font = 'bold 12px sans-serif';
-          ctx.textAlign = 'left';
-          ctx.fillText(player.name, 5, y + 15);
+    const ctx = canvasEl.getContext('2d');
+    if (!ctx) return;
 
-          // Draw rallies
-          player.rallies.forEach(rally => {
-              const startX = (rally.start / this.EVENT_DURATION) * width;
-              const rallyWidth = ((rally.end - rally.start) / this.EVENT_DURATION) * width;
-              ctx.fillStyle = player.color;
-              ctx.fillRect(startX, y, rallyWidth, 20);
-          });
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvasEl.getBoundingClientRect();
+    canvasEl.width = rect.width * dpr;
+    canvasEl.height = (this.players().length * 40 + 60) * dpr; // Increased height for padding
+    ctx.scale(dpr, dpr);
+
+    const width = canvasEl.width / dpr;
+    const height = canvasEl.height / dpr;
+
+    ctx.clearRect(0, 0, width, height);
+
+    const padding = { top: 30, right: 20, bottom: 20, left: 20 };
+    const labelWidth = 60; // Space for player labels
+    const timelineWidth = width - labelWidth - padding.left - padding.right;
+    const timelineStartX = labelWidth + padding.left;
+
+    // Draw timeline axis
+    ctx.fillStyle = '#ccc';
+    ctx.font = '10px sans-serif';
+    ctx.textAlign = 'center';
+
+    for (let i = 0; i <= this.EVENT_DURATION; i += 300) {
+      const x = timelineStartX + (i / this.EVENT_DURATION) * timelineWidth;
+      ctx.fillText(`${i / 60}min`, x, padding.top - 15); // Adjust y position
+      ctx.fillRect(x, padding.top - 10, 1, 5);
+    }
+    // Draw a line for the timeline axis
+    ctx.beginPath();
+    ctx.moveTo(timelineStartX, padding.top);
+    ctx.lineTo(timelineStartX + timelineWidth, padding.top);
+    ctx.strokeStyle = '#ccc';
+    ctx.stroke();
+
+
+    // Draw player timelines
+    this.players().forEach((player, index) => {
+      const y = padding.top + 20 + index * 40;
+
+      // Draw player name
+      ctx.fillStyle = player.color;
+      ctx.font = 'bold 12px sans-serif';
+      ctx.textAlign = 'right'; // Align to the right of the label area
+      ctx.fillText(player.name, labelWidth, y + 15);
+
+      // Draw rallies
+      player.rallies.forEach(rally => {
+        const startX = timelineStartX + (rally.start / this.EVENT_DURATION) * timelineWidth;
+        const rallyWidth = ((300 + 2 * player.mt) / this.EVENT_DURATION) * timelineWidth;
+
+        // Ensure rallyWidth is at least 1 pixel to be visible
+        const effectiveRallyWidth = Math.max(1, rallyWidth);
+
+        ctx.fillStyle = player.color;
+        ctx.fillRect(startX, y, effectiveRallyWidth, 20);
       });
+    });
   }
 }
