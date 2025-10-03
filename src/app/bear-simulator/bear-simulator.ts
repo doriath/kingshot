@@ -1,5 +1,5 @@
 
-import { ChangeDetectionStrategy, Component, signal, computed, effect } from '@angular/core';
+import { ChangeDetectionStrategy, Component, signal, computed, effect, viewChild, ElementRef, afterNextRender } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 
@@ -10,6 +10,7 @@ export interface Player {
   rst: number; // Rally Start Time
   mt: number;  // March Time
   rallies: Rally[];
+  color: string; // Color for the player's rallies
   error?: string;
 }
 
@@ -35,6 +36,11 @@ export class BearSimulatorComponent {
   numberOfPlayers = signal(1);
   players = signal<Player[]>([]);
 
+  // Canvas element reference
+  canvas = viewChild<ElementRef<HTMLCanvasElement>>('timelineCanvas');
+  private readonly playerColors = ['#FF6347', '#4682B4', '#32CD32', '#FFD700', '#6A5ACD', '#40E0D0', '#FF69B4', '#DAA520', '#8A2BE2', '#7FFF00'];
+
+
   // Computed signal to derive the visualization data
   timeline = computed(() => {
     return this.players().map(player => {
@@ -48,6 +54,9 @@ export class BearSimulatorComponent {
     effect(() => {
       const num = this.numberOfPlayers();
       const currentPlayers = this.players();
+      if (currentPlayers.length == num) {
+        return;
+      }
       const newPlayers: Player[] = [];
 
       for (let i = 0; i < num; i++) {
@@ -60,6 +69,10 @@ export class BearSimulatorComponent {
       this.players.set(newPlayers);
     });
 
+    effect(() => {
+        this.drawTimeline();
+    });
+
     // Initialize with one player
     this.players.set([this.createNewPlayer(1)]);
   }
@@ -69,8 +82,9 @@ export class BearSimulatorComponent {
       id,
       name: `Player ${id}`,
       rst: 0,
-      mt: 60,
+      mt: 15,
       rallies: [],
+      color: this.playerColors[id - 1]
     };
   }
 
@@ -119,21 +133,23 @@ export class BearSimulatorComponent {
     this.numberOfPlayers.set(value);
   }
 
-  onRstChange(player: Player, event: Event): void {
+  onRstChange(playerId: number, event: Event): void {
     const input = event.target as HTMLInputElement;
     const value = parseInt(input.value, 10);
     if (!isNaN(value)) {
-        player.rst = value;
-        this.players.set([...this.players()]); // Trigger re-computation
+        this.players.update(players => 
+            players.map(p => p.id === playerId ? { ...p, rst: value } : p)
+        );
     }
   }
 
-    onMtChange(player: Player, event: Event): void {
+    onMtChange(playerId: number, event: Event): void {
     const input = event.target as HTMLInputElement;
     const value = parseInt(input.value, 10);
     if (!isNaN(value)) {
-        player.mt = value;
-        this.players.set([...this.players()]); // Trigger re-computation
+        this.players.update(players => 
+            players.map(p => p.id === playerId ? { ...p, mt: value } : p)
+        );
     }
   }
 
@@ -151,7 +167,51 @@ export class BearSimulatorComponent {
         return null;
     }
 
-    getTimelineScale(): number {
-        return 100 / this.EVENT_DURATION;
-    }
+    private drawTimeline(): void {
+      const canvasEl = this.canvas()?.nativeElement;
+      if (!canvasEl) return;
+
+      const ctx = canvasEl.getContext('2d');
+      if (!ctx) return;
+  
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvasEl.getBoundingClientRect();
+      canvasEl.width = rect.width * dpr;
+      canvasEl.height = (this.players().length * 40 + 40) * dpr; // 40px per player + 40px for timeline
+      ctx.scale(dpr, dpr);
+  
+      const width = canvasEl.width / dpr;
+      const height = canvasEl.height / dpr;
+  
+      ctx.clearRect(0, 0, width, height);
+  
+      // Draw timeline axis
+      ctx.fillStyle = '#ccc';
+      ctx.font = '10px sans-serif';
+      ctx.textAlign = 'center';
+      for (let i = 0; i <= this.EVENT_DURATION; i += 300) {
+          const x = (i / this.EVENT_DURATION) * width;
+          ctx.fillText(`${i / 60}min`, x, 15);
+          ctx.fillRect(x, 20, 1, 5);
+      }
+  
+      // Draw player timelines
+      this.timeline().forEach((player, index) => {
+          const y = 40 + index * 40;
+          
+          // Draw player name
+          ctx.fillStyle = player.color;
+          ctx.font = 'bold 12px sans-serif';
+          ctx.textAlign = 'left';
+          ctx.fillText(player.name, 5, y + 15);
+
+          // Draw rallies
+          player.rallies.forEach(rally => {
+              const startX = (rally.start / this.EVENT_DURATION) * width;
+              const rallyWidth = ((rally.end - rally.start) / this.EVENT_DURATION) * width;
+              ctx.fillStyle = player.color;
+              ctx.fillRect(startX, y, rallyWidth, 20);
+          });
+      });
+  }
 }

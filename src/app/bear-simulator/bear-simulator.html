@@ -19,7 +19,7 @@
     <div class="players-grid">
         @for (player of players(); track player.id) {
             <div class="player-row">
-                <div class="player-name">{{ player.name }}</div>
+                <div class="player-name" [style.color]="player.color">{{ player.name }}</div>
                 <div class="form-group">
                     <label [for]="'rst-' + player.id">Rally Start (sec):</label>
                     <input 
@@ -27,7 +27,7 @@
                         type="number" 
                         min="0"
                         [value]="player.rst" 
-                        (input)="onRstChange(player, $event)">
+                        (input)="onRstChange(player.id, $event)">
                 </div>
                 <div class="form-group">
                     <label [for]="'mt-' + player.id">March Time (sec):</label>
@@ -37,7 +37,7 @@
                         min="1" 
                         max="300" 
                         [value]="player.mt" 
-                        (input)="onMtChange(player, $event)">
+                        (input)="onMtChange(player.id, $event)">
                 </div>
                  <div class="validation-message">
                     {{ getValidationMessage(player) }}
@@ -47,28 +47,10 @@
     </div>
 
     <!-- Visualization Display -->
-    <div class="gantt-chart-container">
-        <h3>Rally Timeline (30 Minutes)</h3>
-        <div class="timeline-axis">
-            <!-- Time markers every 5 minutes (300 seconds) -->
-            @for (i of [0, 300, 600, 900, 1200, 1500, 1800]; track i) {
-                <div class="time-marker" [style.left.%]="(i / EVENT_DURATION) * 100">{{ i / 60 }}min</div>
-            }
-        </div>
-
-        @for (player of timeline(); track player.id) {
-            <div class="player-timeline-row">
-                <div class="player-label">{{ player.name }}</div>
-                <div class="timeline-track">
-                    @for (rally of player.rallies; track $index) {
-                        <div 
-                            class="rally-box"
-                            [style.left.%]="(rally.start / EVENT_DURATION) * 100"
-                            [style.width.%]="((rally.end - rally.start) / EVENT_DURATION) * 100">
-                        </div>
-                    }
-                </div>
-            </div>
-        }
+    <div classs="gantt-chart-container">
+      <h3>Rally Timeline (30 Minutes)</h3>
+      <div class="canvas-wrapper">
+          <canvas #timelineCanvas></canvas>
+      </div>
     </div>
 </div>
