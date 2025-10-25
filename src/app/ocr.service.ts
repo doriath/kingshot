@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { createWorker, Worker } from 'tesseract.js';
+import { createWorker, Worker, RecognizeResult } from 'tesseract.js';
 
 @Injectable({
   providedIn: 'root',
@@ -7,12 +7,12 @@ import { createWorker, Worker } from 'tesseract.js';
 export class OcrService {
   private worker: Worker | null = null;
 
-  async recognize(image: File): Promise<string> {
+  async recognize(image: File): Promise<RecognizeResult['data']> {
     if (!this.worker) {
       this.worker = await createWorker('eng');
     }
     const ret = await this.worker.recognize(image);
-    return ret.data.text;
+    return ret.data;
   }
 
   async terminate(): Promise<void> {

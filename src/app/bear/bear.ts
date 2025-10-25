@@ -1,6 +1,9 @@
 
 import { ChangeDetectionStrategy, Component, OnDestroy, signal, inject } from '@angular/core';
 import { OcrService } from '../ocr.service';
+import { RecognizeResult } from 'tesseract.js';
+import { ToUrlPipe } from '../to-url.pipe';
+import { CommonModule } from '@angular/common';
 
 interface Troop {
   name: string;
@@ -13,6 +16,7 @@ interface Troop {
   templateUrl: './bear.html',
   styleUrls: ['./bear.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [ToUrlPipe, CommonModule]
 })
 export class BearComponent implements OnDestroy {
   private ocrService = inject(OcrService);
@@ -39,9 +43,9 @@ export class BearComponent implements OnDestroy {
     this.analysisResult.set(null);
 
     try {
-      const rawText = await this.ocrService.recognize(file);
-      console.log(rawText);
-      const parsedResult = this.parseOcrResult(rawText);
+      const ocrData = await this.ocrService.recognize(file);
+      console.log(ocrData);
+      const parsedResult = this.parseOcrResult(ocrData);
       this.analysisResult.set(parsedResult);
     } catch (error) {
       console.error('Error during OCR analysis:', error);
@@ -51,41 +55,51 @@ export class BearComponent implements OnDestroy {
     }
   }
 
-  private parseOcrResult(text: string): { troops: Troop[] } {
+  private parseOcrResult(data: RecognizeResult['data']): { troops: Troop[] } {
     const troops: Troop[] = [];
-    const lines = text.split('\n');
+    const troopKeywords = ['Infantry', 'Cavalry', 'Archer'];
 
-    // Regex to identify troop names and tiers
-    const troopNameRegex = /^(Apex|Supreme|Elite|Heroic|Hardy|Veteran|Senior|Trained|Rookie) (Infantry|Cavalry|Archer)/;
-    // Roman numeral regex for tiers, although they are part of the name regex
-    const tierRegex = /\b(I|V|X|L|C|D|M)+\b/;
+    for (const line of data.text.split('\n')) {
+        const lineText = line.trim();
+        
+        if (troopKeywords.some(keyword => lineText.includes(keyword))) {
+            let troopNameParts: string[] = [];
+            let quantity = '';
 
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim();
-        const match = line.match(troopNameRegex);
-
-        if (match) {
-            const name = match[0];
-            let tier = 'Unknown';
-
-            // Attempt to find tier from the name or nearby lines if not in name directly
-            const tierMatch = line.match(tierRegex);
-            if (tierMatch) {
-                tier = tierMatch[0];
-            }
-
-            // The quantity is expected on the next line
-            if (i + 1 < lines.length) {
-                const quantity = lines[i + 1].trim().replace(/,/g, '');
-                if (/^\d+$/.test(quantity)) {
-                    troops.push({ name, tier, quantity });
-                    i++; // Skip the next line since it's the quantity
+            for (const word of line.split(' ')) {
+                const cleanWord = word.replace(/,/g, '');
+                if (/^\d+$/.test(cleanWord)) {
+                    quantity = cleanWord;
+                } else {
+                    troopNameParts.push(word);
                 }
+            }
+            
+            const troopName = troopNameParts.join(' ').trim();
+
+            if (troopName && quantity) {
+                 const tier = this.extractTierFromName(troopName);
+                 troops.push({ name: troopName, tier, quantity });
             }
         }
     }
 
     return { troops };
+  }
+
+  private extractTierFromName(name: string): string {
+    const tiers = ['Apex', 'Supreme', 'Elite', 'Heroic', 'Hardy', 'Veteran', 'Senior', 'Trained', 'Rookie'];
+    for(const tier of tiers) {
+        if (name.includes(tier)) {
+            return tier;
+        }
+    }
+    
+    const tierRegex = /\b(I|V|X|L|C|D|M)+\b/;
+    const tierMatch = name.match(tierRegex);
+    if(tierMatch) return tierMatch[0];
+
+    return 'Unknown';
   }
 
   ngOnDestroy(): void {

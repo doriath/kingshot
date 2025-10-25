@@ -1,20 +1,23 @@
 
-# Kingshot Events App
+# Project Overview
 
-## Overview
+This project is an Angular application that helps players of a strategy game to analyze their troop composition. The main feature is the ability to upload a screenshot of the troop overview screen and get a structured breakdown of troop types and quantities. The analysis is performed entirely on the client-side for privacy and speed.
 
-A web application for the game "kingshot" that displays information about different in-game events.
+# Implemented Features
 
-## Implemented Features
+*   **Bear Component:** A page that will host the troop analysis feature.
+*   **Client-Side OCR:** Using `tesseract.js` to extract text from images in the browser.
 
-*   Initial project setup.
+# Current Plan: Implement a more robust parsing logic
 
-## Current Task: Implement Navigation
+## Phase 1: Update the `OcrService`
 
-1.  **Generate Components**: Create `HomeComponent`, `BearComponent`, `VikingsComponent`, and `SwordlandComponent`.
-2.  **Adhere to Standards**: Modify the generated components to use `OnPush` change detection and remove the explicit `standalone: true` property.
-3.  **Organize Components**: Create a `components` directory and move the new components into it.
-4.  **Define Routes**: Update `app.routes.ts` to define the routes for each new component. The `Home` page should be the default route.
-5.  **Create Navigation Menu**: Update `app.html` to include a navigation bar that links to the different event pages.
-6.  **Style Navigation**: Add CSS to `app.css` to style the navigation menu for a better user experience.
-7.  **Verify**: Run `ng build` to ensure the application compiles without errors.
+1.  **Modify the `OcrService`** to return the detailed recognition result, including word and line information with their coordinates.
+
+## Phase 2: Refactor the parsing logic in `BearComponent`
+
+1.  **Refactor the parsing logic in `BearComponent`** to use this detailed information. I will iterate through lines of text, and for each line, I'll look for a quantity (a number). I'll then associate that quantity with the text on the same line that describes the troop.
+
+## Phase 3: Refine the UI
+
+1.  **Refine the UI** to present this more accurately parsed information.

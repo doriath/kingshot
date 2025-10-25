@@ -4,11 +4,20 @@
   <p>Upload a screenshot of your troops to get a breakdown of your army composition.</p>
 
   <div class="upload-section">
-    <input type="file" (change)="onFileSelected($event)" accept="image/*" />
+    <label for="file-upload" class="custom-file-upload">
+      {{ selectedFile() ? selectedFile()!.name : 'Select Image' }}
+    </label>
+    <input id="file-upload" type="file" (change)="onFileSelected($event)" accept="image/*" />
     <button (click)="analyzeImage()" [disabled]="!selectedFile() || isLoading()">
       {{ isLoading() ? 'Analyzing...' : 'Analyze' }}
     </button>
   </div>
+
+  @if (selectedFile(); as file) {
+    <div class="image-preview">
+      <img [src]="file | toUrl" alt="Selected image preview" />
+    </div>
+  }
 
   @if (isLoading()) {
     <div class="loading-indicator">
@@ -19,24 +28,29 @@
   @if (analysisResult(); as result) {
     <div class="result-section">
       <h2>Analysis Results</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Troop Name</th>
-            <th>Tier</th>
-            <th>Quantity</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (troop of result.troops; track troop.name) {
+      @if (result.troops.length > 0) {
+        <table>
+          <thead>
             <tr>
-              <td>{{ troop.name }}</td>
-              <td>{{ troop.tier }}</td>
-              <td>{{ troop.quantity }}</td>
+              <th>Troop Name</th>
+              <th>Tier</th>
+              <th>Quantity</th>
             </tr>
-          }
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            @for (troop of result.troops; track troop.name) {
+              <tr>
+                <td>{{ troop.name }}</td>
+                <td>{{ troop.tier }}</td>
+                <td>{{ troop.quantity | number }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      } @else {
+        <p>No troops were found in the image. Please try another image.</p>
+      }
     </div>
   }
 </div>
+
