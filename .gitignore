@@ -3,3 +3,4 @@ node_modules
 .angular
 dist/
 firebase-debug.log
+src/app/firebase.config.ts

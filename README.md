@@ -12,6 +12,20 @@ ng serve
 
 Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
 
+## Firebase Configuration
+
+This project uses Firebase for its backend services. To run the application locally, you'll need to connect it to your own Firebase project.
+
+1.  **Create a Firebase Project:** If you don't have one already, create a new project at the [Firebase Console](https://console.firebase.google.com/).
+2.  **Set up a Web App:** Within your Firebase project, create a new Web App.
+3.  **Get Your Config:** After creating the web app, Firebase will provide you with a configuration object.
+4.  **Create `firebase.config.ts`:** In the `src/app/` directory, create a new file named `firebase.config.ts`.
+5.  **Copy and Paste:** Copy the contents from `src/app/firebase.config.example.ts` and paste them into your new `firebase.config.ts` file.
+6.  **Add Your Credentials:** Replace the placeholder values in `firebase.config.ts` with the actual configuration values from your Firebase project.
+
+Your `firebase.config.ts` file is ignored by Git (see `.gitignore`) and will not be committed to the repository. This keeps your project credentials secure.
+
+
 ## Code scaffolding
 
 Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
