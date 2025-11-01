@@ -1,14 +1,13 @@
-
-import { ChangeDetectionStrategy, Component, OnDestroy, signal, inject } from '@angular/core';
-import { OcrService } from '../ocr.service';
-import { RecognizeResult } from 'tesseract.js';
-import { ToUrlPipe } from '../to-url.pipe';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Scs, ScsData, ScsCone } from '../optimization/scs';
 
-interface Troop {
+interface Formation {
   name: string;
-  tier: string;
-  quantity: string;
+  infantry: number;
+  cavalry: number;
+  archers: number;
+  ratio: string;
 }
 
 @Component({
@@ -16,93 +15,52 @@ interface Troop {
   templateUrl: './bear.html',
   styleUrls: ['./bear.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ToUrlPipe, CommonModule]
+  imports: [CommonModule],
 })
-export class BearComponent implements OnDestroy {
-  private ocrService = inject(OcrService);
+export class BearComponent {
+  private scs = inject(Scs);
 
-  selectedFile = signal<File | null>(null);
-  isLoading = signal(false);
-  analysisResult = signal<{ troops: Troop[] } | null>(null);
+  troopLevel = signal(10);
+  tgLevel = signal(2);
+  infantry = signal(100000);
+  cavalry = signal(173000);
+  archers = signal(140000);
+  damageRatio = signal(500);
 
-  onFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      this.selectedFile.set(input.files[0]);
-      this.analysisResult.set(null); // Reset previous results
-    }
-  }
+  computedResult = signal<Formation[] | null>(null);
 
-  async analyzeImage(): Promise<void> {
-    const file = this.selectedFile();
-    if (!file) {
-      return;
-    }
+  async compute(): Promise<void> {
+    const data: ScsData = {
+      A: [[1, 1, 1]],
+      b: [1],
+      c: [-1, -1, -1],
+    };
 
-    this.isLoading.set(true);
-    this.analysisResult.set(null);
+    const cone: ScsCone = {
+      q: [3],
+    };
 
     try {
-      const ocrData = await this.ocrService.recognize(file);
-      console.log(ocrData);
-      const parsedResult = this.parseOcrResult(ocrData);
-      this.analysisResult.set(parsedResult);
+      const result = await this.scs.solve(data, cone);
+      console.log('Solver result:', result);
+
+      const [infantryRatio, cavalryRatio, archerRatio] = [0,0,0];
+
+      const totalTroops = this.infantry() + this.cavalry() + this.archers();
+
+      const formations: Formation[] = [
+        {
+          name: 'Optimal Formation',
+          infantry: Math.round(infantryRatio * totalTroops),
+          cavalry: Math.round(cavalryRatio * totalTroops),
+          archers: Math.round(archerRatio * totalTroops),
+          ratio: `${(infantryRatio * 100).toFixed(1)}% / ${(cavalryRatio * 100).toFixed(1)}% / ${(archerRatio * 100).toFixed(1)}%`,
+        },
+      ];
+
+      this.computedResult.set(formations);
     } catch (error) {
-      console.error('Error during OCR analysis:', error);
-      // Optionally, display an error message to the user
-    } finally {
-      this.isLoading.set(false);
+      console.error('Solver failed:', error);
     }
-  }
-
-  private parseOcrResult(data: RecognizeResult['data']): { troops: Troop[] } {
-    const troops: Troop[] = [];
-    const troopKeywords = ['Infantry', 'Cavalry', 'Archer'];
-
-    for (const line of data.text.split('\n')) {
-        const lineText = line.trim();
-        
-        if (troopKeywords.some(keyword => lineText.includes(keyword))) {
-            let troopNameParts: string[] = [];
-            let quantity = '';
-
-            for (const word of line.split(' ')) {
-                const cleanWord = word.replace(/,/g, '');
-                if (/^\d+$/.test(cleanWord)) {
-                    quantity = cleanWord;
-                } else {
-                    troopNameParts.push(word);
-                }
-            }
-            
-            const troopName = troopNameParts.join(' ').trim();
-
-            if (troopName && quantity) {
-                 const tier = this.extractTierFromName(troopName);
-                 troops.push({ name: troopName, tier, quantity });
-            }
-        }
-    }
-
-    return { troops };
-  }
-
-  private extractTierFromName(name: string): string {
-    const tiers = ['Apex', 'Supreme', 'Elite', 'Heroic', 'Hardy', 'Veteran', 'Senior', 'Trained', 'Rookie'];
-    for(const tier of tiers) {
-        if (name.includes(tier)) {
-            return tier;
-        }
-    }
-    
-    const tierRegex = /\b(I|V|X|L|C|D|M)+\b/;
-    const tierMatch = name.match(tierRegex);
-    if(tierMatch) return tierMatch[0];
-
-    return 'Unknown';
-  }
-
-  ngOnDestroy(): void {
-    this.ocrService.terminate();
   }
 }

@@ -1,56 +1,63 @@
-
 <div class="container">
-  <h1>Troop Screenshot Analyzer</h1>
-  <p>Upload a screenshot of your troops to get a breakdown of your army composition.</p>
+  <h1>Bear Damage Calculator</h1>
 
-  <div class="upload-section">
-    <label for="file-upload" class="custom-file-upload">
-      {{ selectedFile() ? selectedFile()!.name : 'Select Image' }}
-    </label>
-    <input id="file-upload" type="file" (change)="onFileSelected($event)" accept="image/*" />
-    <button (click)="analyzeImage()" [disabled]="!selectedFile() || isLoading()">
-      {{ isLoading() ? 'Analyzing...' : 'Analyze' }}
-    </button>
+  <div class="form-grid">
+    <div class="form-group">
+      <label for="troop-level">Troop Level (1-10)</label>
+      <input id="troop-level" type="number" [value]="troopLevel()" (input)="troopLevel.set($event.target.valueAsNumber)" min="1" max="10">
+    </div>
+
+    <div class="form-group">
+      <label for="tg-level">TG Level (0-5)</label>
+      <input id="tg-level" type="number" [value]="tgLevel()" (input)="tgLevel.set($event.target.valueAsNumber)" min="0" max="5">
+    </div>
+
+    <div class="form-group">
+      <label for="infantry">Infantry</label>
+      <input id="infantry" type="number" [value]="infantry()" (input)="infantry.set($event.target.valueAsNumber)">
+    </div>
+
+    <div class="form-group">
+      <label for="cavalry">Cavalry</label>
+      <input id="cavalry" type="number" [value]="cavalry()" (input)="cavalry.set($event.target.valueAsNumber)">
+    </div>
+
+    <div class="form-group">
+      <label for="archers">Archers</label>
+      <input id="archers" type="number" [value]="archers()" (input)="archers.set($event.target.valueAsNumber)">
+    </div>
+
+    <div class="form-group">
+      <label for="damage-ratio">Damage Ratio (%)</label>
+      <input id="damage-ratio" type="number" [value]="damageRatio()" (input)="damageRatio.set($event.target.valueAsNumber)">
+    </div>
   </div>
 
-  @if (selectedFile(); as file) {
-    <div class="image-preview">
-      <img [src]="file | toUrl" alt="Selected image preview" />
-    </div>
-  }
+  <button (click)="compute()" class="compute-button">Compute</button>
 
-  @if (isLoading()) {
-    <div class="loading-indicator">
-      <p>Analyzing image... this may take a moment.</p>
-    </div>
-  }
-
-  @if (analysisResult(); as result) {
-    <div class="result-section">
-      <h2>Analysis Results</h2>
-      @if (result.troops.length > 0) {
-        <table>
-          <thead>
-            <tr>
-              <th>Troop Name</th>
-              <th>Tier</th>
-              <th>Quantity</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (troop of result.troops; track troop.name) {
-              <tr>
-                <td>{{ troop.name }}</td>
-                <td>{{ troop.tier }}</td>
-                <td>{{ troop.quantity | number }}</td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      } @else {
-        <p>No troops were found in the image. Please try another image.</p>
-      }
-    </div>
+  @if (computedResult(); as formations) {
+    @if (formations.length > 0) {
+      <div class="results-grid">
+        <div class="formation-card">
+          <h2>{{ formations[0].name }}</h2>
+          <div class="troop-info">
+            <span>Infantry:</span>
+            <span>{{ formations[0].infantry }}</span>
+          </div>
+          <div class="troop-info">
+            <span>Cavalry:</span>
+            <span>{{ formations[0].cavalry }}</span>
+          </div>
+          <div class="troop-info">
+            <span>Archers:</span>
+            <span>{{ formations[0].archers }}</span>
+          </div>
+          <div class="ratio-info">
+            <span>Ratio:</span>
+            <span>{{ formations[0].ratio }}</span>
+          </div>
+        </div>
+      </div>
+    }
   }
 </div>
-
