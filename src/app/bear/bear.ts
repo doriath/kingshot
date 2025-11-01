@@ -1,6 +1,10 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Scs, ScsData, ScsCone } from '../optimization/scs';
+import { Scs, MarchConfig, ScsConfig } from '../optimization/scs';
+import { create, all } from 'mathjs';
+import { concatMap } from 'rxjs';
+
+const math = create(all);
 
 interface Formation {
   name: string;
@@ -30,33 +34,38 @@ export class BearComponent {
   computedResult = signal<Formation[] | null>(null);
 
   async compute(): Promise<void> {
-    const data: ScsData = {
-      A: [[1, 1, 1]],
-      b: [1],
-      c: [-1, -1, -1],
-    };
-
-    const cone: ScsCone = {
-      q: [3],
-    };
-
     try {
-      const result = await this.scs.solve(data, cone);
+      let marchesConfig: MarchConfig[] = [{
+        max_troops: 130000,
+        parallel: 1,
+        used: 1,
+        dmg: 1.0,
+      }, {
+        max_troops: 90000,
+        parallel: 1,
+        used: 1,
+        dmg: 1.0,
+      }];
+      let config: ScsConfig = {
+        infCount: this.infantry(),
+        cavCount: this.cavalry(),
+        arcCount: this.archers(),
+        infDmg: 43.7,
+        cavDmg: 131.18300,
+        arcDmg: 211.71040,
+      };
+      const result = await this.scs.solve(config, marchesConfig);
       console.log('Solver result:', result);
 
-      const [infantryRatio, cavalryRatio, archerRatio] = [0,0,0];
-
-      const totalTroops = this.infantry() + this.cavalry() + this.archers();
-
-      const formations: Formation[] = [
-        {
+      const formations: Formation[] = result.map((m) => {
+        return {
           name: 'Optimal Formation',
-          infantry: Math.round(infantryRatio * totalTroops),
-          cavalry: Math.round(cavalryRatio * totalTroops),
-          archers: Math.round(archerRatio * totalTroops),
-          ratio: `${(infantryRatio * 100).toFixed(1)}% / ${(cavalryRatio * 100).toFixed(1)}% / ${(archerRatio * 100).toFixed(1)}%`,
-        },
-      ];
+          infantry: m.troops[0],
+          cavalry: m.troops[1],
+          archers: m.troops[2],
+          ratio: `${(m.troops[0] / m.max_troops * 100).toFixed(1)}% / ${(m.troops[1] / m.max_troops * 100).toFixed(1)}% / ${(m.troops[2] / m.max_troops * 100).toFixed(1)}%`,
+        };
+      });
 
       this.computedResult.set(formations);
     } catch (error) {
