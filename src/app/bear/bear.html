@@ -1,62 +1,112 @@
 <div class="container">
   <h1>Bear Damage Calculator</h1>
 
-  <div class="form-grid">
-    <div class="form-group">
-      <label for="troop-level">Troop Level (1-10)</label>
-      <input id="troop-level" type="number" [value]="troopLevel()" (input)="troopLevel.set($event.target.valueAsNumber)" min="1" max="10">
+  <div class="form-container">
+    <div class="form-grid main-grid">
+      <div class="form-group">
+        <label for="troop-level">Troop Level (1-10)</label>
+        <input id="troop-level" type="number" [value]="troopLevel()" (input)="troopLevel.set($event.target.valueAsNumber)" min="1" max="10">
+      </div>
+
+      <div class="form-group">
+        <label for="tg-level">TG Level (0-5)</label>
+        <input id="tg-level" type="number" [value]="tgLevel()" (input)="tgLevel.set($event.target.valueAsNumber)" min="0" max="5">
+      </div>
     </div>
 
-    <div class="form-group">
-      <label for="tg-level">TG Level (0-5)</label>
-      <input id="tg-level" type="number" [value]="tgLevel()" (input)="tgLevel.set($event.target.valueAsNumber)" min="0" max="5">
-    </div>
+    <div class="form-grid troop-grid">
+      <div class="form-group">
+        <label for="infantry">Infantry</label>
+        <input id="infantry" type="number" [value]="infantry()" (input)="infantry.set($event.target.valueAsNumber)">
+      </div>
 
-    <div class="form-group">
-      <label for="infantry">Infantry</label>
-      <input id="infantry" type="number" [value]="infantry()" (input)="infantry.set($event.target.valueAsNumber)">
-    </div>
+      <div class="form-group">
+        <label for="cavalry">Cavalry</label>
+        <input id="cavalry" type="number" [value]="cavalry()" (input)="cavalry.set($event.target.valueAsNumber)">
+      </div>
 
-    <div class="form-group">
-      <label for="cavalry">Cavalry</label>
-      <input id="cavalry" type="number" [value]="cavalry()" (input)="cavalry.set($event.target.valueAsNumber)">
-    </div>
-
-    <div class="form-group">
-      <label for="archers">Archers</label>
-      <input id="archers" type="number" [value]="archers()" (input)="archers.set($event.target.valueAsNumber)">
-    </div>
-
-    <div class="form-group">
-      <label for="damage-ratio">Damage Ratio (%)</label>
-      <input id="damage-ratio" type="number" [value]="damageRatio()" (input)="damageRatio.set($event.target.valueAsNumber)">
+      <div class="form-group">
+        <label for="archers">Archers</label>
+        <input id="archers" type="number" [value]="archers()" (input)="archers.set($event.target.valueAsNumber)">
+      </div>
     </div>
   </div>
+
+  <h2>March Configuration</h2>
+  <div class="marches-grid">
+    @for (march of marches(); track march; let i = $index) {
+      <div class="march-card">
+        <div class="march-header">
+          <h3>{{ march.name }}</h3>
+          <button class="remove-march-button" (click)="removeMarch(i)">&times;</button>
+        </div>
+        <div class="march-form">
+          <div class="form-group">
+            <label for="march-name-{{i}}">Name</label>
+            <input id="march-name-{{i}}" type="text" [value]="march.name" (input)="updateMarch(i, 'name', $event.target.value)">
+          </div>
+          <div class="form-group">
+            <label for="max-troops-{{i}}">Max Troops</label>
+            <input id="max-troops-{{i}}" type="number" [value]="march.max_troops" (input)="updateMarch(i, 'max_troops', $event.target.value)">
+          </div>
+          <div class="form-group">
+            <label for="parallel-{{i}}">Parallel</label>
+            <input id="parallel-{{i}}" type="number" [value]="march.parallel" (input)="updateMarch(i, 'parallel', $event.target.value)">
+          </div>
+          <div class="form-group">
+            <label for="used-{{i}}">Used</label>
+            <input id="used-{{i}}" type="number" [value]="march.used" (input)="updateMarch(i, 'used', $event.target.value)">
+          </div>
+          <div class="form-group">
+            <label for="dmg-{{i}}">Damage</label>
+            <input id="dmg-{{i}}" type="number" [value]="march.dmg" (input)="updateMarch(i, 'dmg', $event.target.value)" step="0.01">
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+
+  <button class="add-march-button" (click)="addMarch()">+ Add March</button>
 
   <button (click)="compute()" class="compute-button">Compute</button>
 
   @if (computedResult(); as formations) {
     @if (formations.length > 0) {
       <div class="results-grid">
-        <div class="formation-card">
-          <h2>{{ formations[0].name }}</h2>
-          <div class="troop-info">
-            <span>Infantry:</span>
-            <span>{{ formations[0].infantry }}</span>
+        @for (formation of formations; track formation.name) {
+          <div class="formation-card">
+            <h2>{{ formation.name }}</h2>
+            <div class="troop-info">
+              <span>Troops (I/C/A):</span>
+              <span class="troop-values">
+                <span class="copyable" (click)="copyNumber(formation.infantry, formation.name, 'infantry')" [class.copied]="copiedIdentifier() === formation.name + '-infantry'">
+                  {{ formation.infantry }}
+                  @if (copiedIdentifier() === formation.name + '-infantry') {
+                    <span class="copied-message">Copied!</span>
+                  }
+                </span>
+                <span>&nbsp;/&nbsp;</span>
+                <span class="copyable" (click)="copyNumber(formation.cavalry, formation.name, 'cavalry')" [class.copied]="copiedIdentifier() === formation.name + '-cavalry'">
+                  {{ formation.cavalry }}
+                  @if (copiedIdentifier() === formation.name + '-cavalry') {
+                    <span class="copied-message">Copied!</span>
+                  }
+                </span>
+                <span>&nbsp;/&nbsp;</span>
+                <span class="copyable" (click)="copyNumber(formation.archers, formation.name, 'archers')" [class.copied]="copiedIdentifier() === formation.name + '-archers'">
+                  {{ formation.archers }}
+                  @if (copiedIdentifier() === formation.name + '-archers') {
+                    <span class="copied-message">Copied!</span>
+                  }
+                </span>
+              </span>
+            </div>
+            <div class="ratio-info">
+              <span>Ratio:</span>
+              <span>{{ formation.ratio }}</span>
+            </div>
           </div>
-          <div class="troop-info">
-            <span>Cavalry:</span>
-            <span>{{ formations[0].cavalry }}</span>
-          </div>
-          <div class="troop-info">
-            <span>Archers:</span>
-            <span>{{ formations[0].archers }}</span>
-          </div>
-          <div class="ratio-info">
-            <span>Ratio:</span>
-            <span>{{ formations[0].ratio }}</span>
-          </div>
-        </div>
+        }
       </div>
     }
   }

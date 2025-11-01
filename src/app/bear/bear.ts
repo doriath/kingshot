@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { CommonModule } from '@angular/common';
 import { Scs, MarchConfig, ScsConfig } from '../optimization/scs';
 import { create, all } from 'mathjs';
-import { concatMap } from 'rxjs';
 
 const math = create(all);
 
@@ -26,50 +25,125 @@ export class BearComponent {
 
   troopLevel = signal(10);
   tgLevel = signal(2);
-  infantry = signal(100000);
-  cavalry = signal(173000);
-  archers = signal(140000);
-  damageRatio = signal(500);
+  infantry = signal(310000);
+  cavalry = signal(290000);
+  archers = signal(210000);
+
+  marches = signal<MarchConfig[]>([
+    {
+      name: 'Rally Lead',
+      max_troops: 130000,
+      parallel: 1,
+      used: 5,
+      dmg: 1.0,
+    },
+    {
+      name: 'Join with hero',
+      max_troops: 130000,
+      parallel: 3,
+      used: 30,
+      dmg: 1.0,
+    },
+    {
+      name: 'Join without hero',
+      max_troops: 90000,
+      parallel: 1,
+      used: 5,
+      dmg: 1.0,
+    },
+  ]);
 
   computedResult = signal<Formation[] | null>(null);
+  copiedIdentifier = signal<string | null>(null);
+
+  addMarch() {
+    if (this.marches().length < 7) {
+      this.marches.update((marches) => [
+        ...marches,
+        {
+          name: `March ${marches.length + 1}`,
+          max_troops: 100000,
+          parallel: 1,
+          used: 1,
+          dmg: 1.0,
+        },
+      ]);
+    }
+  }
+
+  removeMarch(index: number) {
+    this.marches.update((marches) => {
+      const newMarches = [...marches];
+      newMarches.splice(index, 1);
+      return newMarches;
+    });
+  }
+
+  updateMarch(index: number, field: keyof MarchConfig, value: any) {
+    this.marches.update((marches) => {
+      const newMarches = [...marches];
+      const marchToUpdate = { ...newMarches[index] };
+      const currentValue = marchToUpdate[field];
+
+      if (typeof currentValue === 'number') {
+        (marchToUpdate as any)[field] = value.includes('.')
+          ? parseFloat(value)
+          : parseInt(value, 10);
+      } else {
+        (marchToUpdate as any)[field] = value;
+      }
+
+      newMarches[index] = marchToUpdate;
+      return newMarches;
+    });
+  }
 
   async compute(): Promise<void> {
     try {
-      let marchesConfig: MarchConfig[] = [{
-        max_troops: 130000,
-        parallel: 1,
-        used: 1,
-        dmg: 1.0,
-      }, {
-        max_troops: 90000,
-        parallel: 1,
-        used: 1,
-        dmg: 1.0,
-      }];
+      const marchesConfig = this.marches();
       let config: ScsConfig = {
         infCount: this.infantry(),
         cavCount: this.cavalry(),
         arcCount: this.archers(),
         infDmg: 43.7,
-        cavDmg: 131.18300,
-        arcDmg: 211.71040,
+        cavDmg: 131.183,
+        arcDmg: 211.7104,
       };
       const result = await this.scs.solve(config, marchesConfig);
-      console.log('Solver result:', result);
+      //console.log('Solver result:', result);
 
-      const formations: Formation[] = result.map((m) => {
+      const formations: Formation[] = result.map((m, i) => {
         return {
-          name: 'Optimal Formation',
-          infantry: m.troops[0],
-          cavalry: m.troops[1],
-          archers: m.troops[2],
-          ratio: `${(m.troops[0] / m.max_troops * 100).toFixed(1)}% / ${(m.troops[1] / m.max_troops * 100).toFixed(1)}% / ${(m.troops[2] / m.max_troops * 100).toFixed(1)}%`,
+          name: marchesConfig[i].name,
+          infantry: Math.floor(m.troops[0]),
+          cavalry: Math.floor(m.troops[1]),
+          archers: Math.floor(m.troops[2]),
+          ratio: `${((m.troops[0] / m.max_troops) * 100).toFixed(1)}% / ${(
+            (m.troops[1] / m.max_troops) *
+            100
+          ).toFixed(1)}% / ${((m.troops[2] / m.max_troops) * 100).toFixed(1)}%`,
         };
       });
 
       this.computedResult.set(formations);
     } catch (error) {
-      console.error('Solver failed:', error);
+      //console.error('Solver failed:', error);
+      window.alert("Solver failed");
     }
+  }
+
+  copyNumber(value: number, formationName: string, troopType: string): void {
+    const identifier = `${formationName}-${troopType}`;
+    navigator.clipboard
+      .writeText(value.toString())
+      .then(() => {
+        this.copiedIdentifier.set(identifier);
+        setTimeout(() => {
+          this.copiedIdentifier.set(null);
+        }, 2000);
+      })
+      .catch((err) => {
+        console.error('Failed to copy text: ', err);
+      });
   }
 }

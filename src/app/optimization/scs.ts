@@ -9,6 +9,7 @@ export * from './scs.model';
 const math = create(all);
 
 export interface MarchConfig {
+  name: string,
   max_troops: number,
   // How many of those marches we want to use in parallel
   parallel: number,
@@ -45,16 +46,16 @@ export class Scs {
    * @returns A promise that resolves with the solution of the problem.
    */
   async solve(config: ScsConfig, marches: MarchConfig[]): Promise<MarchResult[]> {
-    
+    //console.log(config);
+    //console.log(marches);
+    const scs = await createSCS();
+
     let inf_dmg = config.infDmg;
     let cav_dmg = config.cavDmg;
     let arc_dmg = config.arcDmg;
 
-
-    const scs = await createSCS();
-
     let troop_types = 3;
-    let linear = marches.length;
+    let linear = 3 + 2 * marches.length;
     let quadratic = 3 * marches.length * troop_types;
     let num_rows = linear + quadratic;
     let num_cols = 2 * marches.length * troop_types;
@@ -66,9 +67,20 @@ export class Scs {
     let b = new Array(num_rows).fill(0);
     let c = new Array(num_cols).fill(0);
 
-    
+
     // linear
     let row = 0;
+
+    // sum of inf <= total inf
+    let total = [config.infCount, config.cavCount, config.arcCount];
+    for (let j = 0; j < troop_types; j += 1) {
+      for (let i = 0; i < marches.length; i += 1) {
+        a.set([row, i * troop_types + j], marches[i].parallel);
+      }
+      b[row] = total[j];
+      row += 1;
+    }
+
     for (let i = 0; i < marches.length; i += 1) {
       // inf+cav+arc <= max_troops
       a.set([row, i * troop_types], 1);
@@ -76,44 +88,41 @@ export class Scs {
       a.set([row, i * troop_types + 2], 1);
       b[row] = marches[i].max_troops;
       row += 1;
+      // inf < 3% (inf + cav + arc)
+      // 97 inf - 3 cav - 3 arc <= 0
+      a.set([row, i * troop_types], 97);
+      a.set([row, i * troop_types + 1], -3);
+      a.set([row, i * troop_types + 2], -3);
+      row += 1;
 
-      c[marches.length*troop_types + i*troop_types] = -1;
-      c[marches.length*troop_types + i*troop_types + 1] = -1;
-      c[marches.length*troop_types + i*troop_types + 2] = -1;
+      c[marches.length * troop_types + i * troop_types] = -1;
+      c[marches.length * troop_types + i * troop_types + 1] = -1;
+      c[marches.length * troop_types + i * troop_types + 2] = -1;
     }
 
     // quadratic
     for (let i = 0; i < marches.length; i += 1) {
-      let dmg = [inf_dmg, cav_dmg, arc_dmg];
+      let mul = marches[i].used * marches[i].dmg;
+      let dmg = [inf_dmg * mul, cav_dmg * mul, arc_dmg * mul];
+      //console.log(dmg);
       for (let j = 0; j < troop_types; j += 1) {
         a.set([row, i * troop_types + j], -1);
         b[row] = dmg[j] * dmg[j] / 2;
         row += 1;
-  
+
         a.set([row, marches.length * troop_types + i * troop_types + j], -2);
         b[row] = 0;
         row += 1;
-  
+
         a.set([row, i * troop_types + j], -1);
         b[row] = -dmg[j] * dmg[j] / 2;
         row += 1;
       }
     }
 
-    console.table(format(matrix(a, 'dense'), 1));
-    console.log(b);
-    console.log(c);
-
-    // a.set([0, 0], 1);
-    // a.set([0, 1], 1);
-
-    // a.set([1, 0], -1);
-    // a.set([2, 2], -2);
-    // a.set([3, 0], -1);
-
-    // a.set([4, 1], -1);
-    // a.set([5, 3], -2);
-    // a.set([6, 1], -1);
+    //console.table(format(matrix(a, 'dense'), 1));
+    //console.log(b);
+    //console.log(c);
 
     // Convert math.js matrices to plain arrays for the SCS solver
     const plainData = {
@@ -125,22 +134,29 @@ export class Scs {
       b: b,
       c: c,
     };
-    console.log(plainData);
+    //console.log(plainData);
     let cone = {
       l: linear,
       q: new Array(marches.length * troop_types).fill(3),
       qsize: marches.length * troop_types,
     };
-    console.log(cone);
+    //console.log(cone);
     let settings = new scs.ScsSettings();
     scs.setDefaultSettings(settings);
+    settings.maxIters = 1000000;
     settings.verbose = false;
+    //console.log(settings);
+
     let result = scs.solve(plainData, cone, settings);
+    //console.log(result);
+    if (result.status == "INFEASIBLE") {
+      throw "failed to find best formations"
+    }
 
     let results = [];
     for (let i = 0; i < marches.length; i += 1) {
       results.push({
-        troops: [result.x[i*troop_types], result.x[i*troop_types+1],result.x[i*troop_types+2]],
+        troops: [result.x[i * troop_types], result.x[i * troop_types + 1], result.x[i * troop_types + 2]],
         max_troops: marches[i].max_troops,
       })
     }
