@@ -83,6 +83,29 @@
               }
             </tbody>
           </table>
+
+          <h5 class="stats-title">Stat Comparison</h5>
+          <table class="stats-table">
+            <thead>
+              <tr>
+                <th>Stat</th>
+                <th>Before</th>
+                <th>After</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Lethality</td>
+                <td>{{ (result.beforeStats.lethality * 100) | number:'1.2-2' }}%</td>
+                <td>{{ (result.afterStats.lethality * 100) | number:'1.2-2' }}%</td>
+              </tr>
+              <tr>
+                <td>Health</td>
+                <td>{{ (result.beforeStats.health * 100) | number:'1.2-2' }}%</td>
+                <td>{{ (result.afterStats.health * 100) | number:'1.2-2' }}%</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       }
     </div>

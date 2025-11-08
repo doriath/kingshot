@@ -25,6 +25,11 @@ export interface HeroWeights extends Hero {
   weights: StatWeights;
 }
 
+export interface Stats {
+  lethality: number;
+  health: number;
+}
+
 export interface OptimizationResult {
   heroName: string;
   gear: {
@@ -34,6 +39,8 @@ export interface OptimizationResult {
     currentEnhancement: number;
     recommendedEnhancement: number;
   }[];
+  beforeStats: Stats;
+  afterStats: Stats;
 }
 
 @Component({
@@ -76,7 +83,7 @@ export class HeroGearComponent {
       weights: { lethality: 1, health: 1 },
     },
   ]);
-  
+
   exp = signal(0);
   hammers = signal(0);
   optimizationResult = signal<OptimizationResult[] | null>(null);
@@ -85,7 +92,7 @@ export class HeroGearComponent {
   toggleAdvanced() {
     this.isAdvancedCollapsed.set(!this.isAdvancedCollapsed());
   }
-  
+
   updateExp(event: Event) {
     const value = (event.target as HTMLInputElement).value;
     this.exp.set(+value);
@@ -129,6 +136,16 @@ export class HeroGearComponent {
     );
   }
 
+  stat(enh: number, mastery: number): number {
+    return (0.15 + Math.min(enh, 100) * 0.0035 + Math.max(enh - 100, 0) * 0.005) * (1 + mastery * 0.1);
+  }
+
+  calculateStats(gear: Hero['gear']): Stats {
+    const lethality = this.stat(gear.helmet.enhancement, gear.helmet.mastery) + this.stat(gear.boots.enhancement, gear.boots.mastery);
+    const health = this.stat(gear.breastplate.enhancement, gear.breastplate.mastery) + this.stat(gear.gloves.enhancement, gear.gloves.mastery);
+    return { lethality, health };
+  }
+
   optimize() {
     const heroes = this.heroes();
     const totalExp = this.exp();
@@ -139,6 +156,8 @@ export class HeroGearComponent {
     const totalEnhancementWeight = heroes.reduce((sum, hero) => sum + hero.weights.health, 0);
 
     for (const hero of heroes) {
+      const beforeStats = this.calculateStats(hero.gear);
+
       const heroExpAllocation = totalMasteryWeight > 0 ? totalExp * (hero.weights.lethality / totalMasteryWeight) : 0;
       const heroHammersAllocation = totalEnhancementWeight > 0 ? totalHammers * (hero.weights.health / totalEnhancementWeight) : 0;
 
@@ -146,16 +165,21 @@ export class HeroGearComponent {
       const expPerGear = heroExpAllocation / numGearPieces;
       const hammersPerGear = heroHammersAllocation / numGearPieces;
 
+      const recommendedGear: Hero['gear'] = { ...hero.gear };
+
       const heroResult: OptimizationResult = {
         heroName: hero.name,
         gear: [],
+        beforeStats: beforeStats,
+        afterStats: { lethality: 0, health: 0 }, // Will be calculated below
       };
 
       for (const gearType of this.objectKeys(hero.gear)) {
         const currentGear = hero.gear[gearType];
-        
         const recommendedMastery = currentGear.mastery + Math.floor(expPerGear);
         const recommendedEnhancement = currentGear.enhancement + Math.floor(hammersPerGear);
+
+        recommendedGear[gearType] = { mastery: recommendedMastery, enhancement: recommendedEnhancement };
 
         heroResult.gear.push({
           type: gearType,
@@ -165,6 +189,9 @@ export class HeroGearComponent {
           recommendedEnhancement: recommendedEnhancement,
         });
       }
+
+      const afterStats = this.calculateStats(recommendedGear);
+      heroResult.afterStats = afterStats;
       result.push(heroResult);
     }
 
