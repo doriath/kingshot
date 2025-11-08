@@ -22,11 +22,35 @@
 
   <button (click)="optimize()">Optimize</button>
 
-  @if (recommendations().length > 0) {
-    <div class="recommendations-section">
-      <h3>Recommendations</h3>
-      @for (rec of recommendations(); track rec) {
-        <div class="recommendation-item">{{ rec }}</div>
+  @if (optimizationResult(); as results) {
+    <div class="results-section">
+      <h3>Optimization Results</h3>
+      @for (result of results; track result.heroName) {
+        <div class="hero-results">
+          <h4>{{ result.heroName }}</h4>
+          <table class="results-table">
+            <thead>
+              <tr>
+                <th>Gear</th>
+                <th>Current Mastery</th>
+                <th>Recommended Mastery</th>
+                <th>Current Enhancement</th>
+                <th>Recommended Enhancement</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (gear of result.gear; track gear.type) {
+                <tr>
+                  <td>{{ gear.type }}</td>
+                  <td>{{ gear.currentMastery }}</td>
+                  <td>{{ gear.recommendedMastery }}</td>
+                  <td>{{ gear.currentEnhancement }}</td>
+                  <td>{{ gear.recommendedEnhancement }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
       }
     </div>
   }

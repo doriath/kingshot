@@ -16,6 +16,17 @@ export interface Hero {
   };
 }
 
+export interface OptimizationResult {
+  heroName: string;
+  gear: {
+    type: keyof Hero['gear'];
+    currentMastery: number;
+    recommendedMastery: number;
+    currentEnhancement: number;
+    recommendedEnhancement: number;
+  }[];
+}
+
 @Component({
   selector: 'app-hero-gear',
   templateUrl: './hero-gear.html',
@@ -53,7 +64,7 @@ export class HeroGearComponent {
       },
     },
   ]);
-  recommendations = signal<string[]>([]);
+  optimizationResult = signal<OptimizationResult[] | null>(null);
 
   updateMastery(heroName: string, gearType: keyof Hero['gear'], event: Event) {
     const value = (event.target as HTMLInputElement).value;
@@ -78,37 +89,35 @@ export class HeroGearComponent {
   }
 
   optimize() {
-    const recommendations: string[] = [];
     const heroes = this.heroes();
+    const result: OptimizationResult[] = [];
 
     for (const hero of heroes) {
       const gearValues = this.objectKeys(hero.gear).map(key => hero.gear[key]);
       const totalMastery = gearValues.reduce((sum, gear) => sum + gear.mastery, 0);
       const totalEnhancement = gearValues.reduce((sum, gear) => sum + gear.enhancement, 0);
-      const avgMastery = totalMastery / gearValues.length;
-      const avgEnhancement = totalEnhancement / gearValues.length;
+      const avgMastery = Math.round(totalMastery / gearValues.length);
+      const avgEnhancement = Math.round(totalEnhancement / gearValues.length);
+
+      const heroResult: OptimizationResult = {
+        heroName: hero.name,
+        gear: [],
+      };
 
       for (const gearType of this.objectKeys(hero.gear)) {
-        const gear = hero.gear[gearType];
-        if (gear.enhancement > gear.mastery) {
-          recommendations.push(`${hero.name} ${gearType}: Increase mastery level. It's lower than the enhancement level.`);
-        }
-
-        if (gear.mastery < avgMastery * 0.8) {
-          recommendations.push(`${hero.name} ${gearType}: Mastery level is significantly lower than the average for this hero. Consider upgrading.`);
-        }
-
-        if (gear.enhancement < avgEnhancement * 0.8) {
-          recommendations.push(`${hero.name} ${gearType}: Enhancement level is significantly lower than the average for this hero. Consider upgrading.`);
-        }
+        const currentGear = hero.gear[gearType];
+        heroResult.gear.push({
+          type: gearType,
+          currentMastery: currentGear.mastery,
+          recommendedMastery: Math.max(currentGear.enhancement, avgMastery),
+          currentEnhancement: currentGear.enhancement,
+          recommendedEnhancement: avgEnhancement,
+        });
       }
+      result.push(heroResult);
     }
 
-    if (recommendations.length === 0) {
-      recommendations.push('All gear levels look balanced. Great job!');
-    }
-
-    this.recommendations.set(recommendations);
+    this.optimizationResult.set(result);
   }
 
   objectKeys<T extends object>(obj: T) {
