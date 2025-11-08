@@ -1,6 +1,17 @@
 <div class="container">
   <h1>Hero Gear Optimizer</h1>
 
+  <div class="resource-inputs">
+    <div class="resource-item">
+      <label for="exp-input">Available EXP:</label>
+      <input id="exp-input" type="number" [value]="exp()" (input)="updateExp($event)">
+    </div>
+    <div class="resource-item">
+      <label for="hammers-input">Number of Hammers:</label>
+      <input id="hammers-input" type="number" [value]="hammers()" (input)="updateHammers($event)">
+    </div>
+  </div>
+
   @for (hero of heroes(); track hero.name) {
     <div class="hero-section">
       <h2>{{ hero.name }}</h2>
@@ -19,6 +30,28 @@
       </div>
     </div>
   }
+
+  <div class="advanced-section">
+    <button class="advanced-toggle" (click)="toggleAdvanced()">
+      Advanced Settings
+      <span class="toggle-icon">{{ isAdvancedCollapsed() ? '&#9660;' : '&#9650;' }}</span>
+    </button>
+    @if (!isAdvancedCollapsed()) {
+      <div class="advanced-content">
+        @for (hero of heroes(); track hero.name) {
+          <div class="hero-weights">
+            <h4>{{ hero.name }} Weights</h4>
+            <div class="weight-inputs">
+              <label>Lethality:</label>
+              <input type="number" [value]="hero.weights.lethality" (input)="updateWeight(hero.name, 'lethality', $event)">
+              <label>Health:</label>
+              <input type="number" [value]="hero.weights.health" (input)="updateWeight(hero.name, 'health', $event)">
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
 
   <button (click)="optimize()">Optimize</button>
 
