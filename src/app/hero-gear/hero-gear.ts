@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, signal, effect, Inject, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 
 export interface Gear {
   mastery: number;
@@ -51,7 +51,11 @@ export interface OptimizationResult {
   imports: [CommonModule],
 })
 export class HeroGearComponent {
-  heroes = signal<HeroWeights[]>([
+  private readonly HEROES_STORAGE_KEY = 'heroGearOptimizer.heroes';
+  private readonly EXP_STORAGE_KEY = 'heroGearOptimizer.exp';
+  private readonly HAMMERS_STORAGE_KEY = 'heroGearOptimizer.hammers';
+
+  private readonly defaultHeroes: HeroWeights[] = [
     {
       name: 'Infantry',
       gear: {
@@ -60,7 +64,7 @@ export class HeroGearComponent {
         breastplate: { mastery: 0, enhancement: 0 },
         boots: { mastery: 0, enhancement: 0 },
       },
-      weights: { lethality: 1, health: 1 },
+      weights: { lethality: 0.5, health: 2.5 },
     },
     {
       name: 'Cavalry',
@@ -70,7 +74,7 @@ export class HeroGearComponent {
         breastplate: { mastery: 0, enhancement: 0 },
         boots: { mastery: 0, enhancement: 0 },
       },
-      weights: { lethality: 1, health: 1 },
+      weights: { lethality: 1.75, health: 0.5 },
     },
     {
       name: 'Archers',
@@ -80,14 +84,40 @@ export class HeroGearComponent {
         breastplate: { mastery: 0, enhancement: 0 },
         boots: { mastery: 0, enhancement: 0 },
       },
-      weights: { lethality: 1, health: 1 },
+      weights: { lethality: 1, health: 2.5 },
     },
-  ]);
+  ];
 
+  heroes = signal<HeroWeights[]>(this.defaultHeroes);
   exp = signal(0);
   hammers = signal(0);
   optimizationResult = signal<OptimizationResult[] | null>(null);
   isAdvancedCollapsed = signal(true);
+
+  constructor(@Inject(PLATFORM_ID) private platformId: object) {
+    if (isPlatformBrowser(this.platformId)) {
+      const savedHeroes = localStorage.getItem(this.HEROES_STORAGE_KEY);
+      if (savedHeroes) {
+        this.heroes.set(JSON.parse(savedHeroes));
+      }
+      const savedExp = localStorage.getItem(this.EXP_STORAGE_KEY);
+      if (savedExp) {
+        this.exp.set(JSON.parse(savedExp));
+      }
+      const savedHammers = localStorage.getItem(this.HAMMERS_STORAGE_KEY);
+      if (savedHammers) {
+        this.hammers.set(JSON.parse(savedHammers));
+      }
+    }
+
+    effect(() => {
+      if (isPlatformBrowser(this.platformId)) {
+        localStorage.setItem(this.HEROES_STORAGE_KEY, JSON.stringify(this.heroes()));
+        localStorage.setItem(this.EXP_STORAGE_KEY, JSON.stringify(this.exp()));
+        localStorage.setItem(this.HAMMERS_STORAGE_KEY, JSON.stringify(this.hammers()));
+      }
+    });
+  }
 
   toggleAdvanced() {
     this.isAdvancedCollapsed.set(!this.isAdvancedCollapsed());
