@@ -1,0 +1,33 @@
+<div class="container">
+  <h1>Hero Gear Optimizer</h1>
+
+  @for (hero of heroes(); track hero.name) {
+    <div class="hero-section">
+      <h2>{{ hero.name }}</h2>
+      <div class="gear-grid">
+        @for (gearType of objectKeys(hero.gear); track gearType) {
+          <div class="gear-item">
+            <label class="gear-label">{{ gearType }}</label>
+            <div class="gear-inputs">
+              <label>Mastery:</label>
+              <input type="number" [value]="hero.gear[gearType].mastery" (input)="updateMastery(hero.name, gearType, $event)">
+              <label>Enhancement:</label>
+              <input type="number" [value]="hero.gear[gearType].enhancement" (input)="updateEnhancement(hero.name, gearType, $event)">
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <button (click)="optimize()">Optimize</button>
+
+  @if (recommendations().length > 0) {
+    <div class="recommendations-section">
+      <h3>Recommendations</h3>
+      @for (rec of recommendations(); track rec) {
+        <div class="recommendation-item">{{ rec }}</div>
+      }
+    </div>
+  }
+</div>

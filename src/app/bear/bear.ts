@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Scs, MarchConfig, ScsConfig } from '../optimization/scs';
 import { create, all } from 'mathjs';
@@ -28,6 +28,28 @@ export class BearComponent {
   infantry = signal(310000);
   cavalry = signal(290000);
   archers = signal(210000);
+
+  infDmg = computed(() => {
+    // for now we will ignore troop level, and assume 10
+    const dmg = [40.0506,	41.6628,	43.7000,	45.9054,	48.1965,	50.6572];
+    return dmg[this.tgLevel()];
+  });
+
+  cavDmg = computed(() => {
+    const dmg = [40.0506,	41.6628,	43.7000,	45.9054,	48.1965,	50.6572];
+    return dmg[this.tgLevel()];
+  });
+
+  arcDmg = computed(() => {
+    const baseDamage = 95;
+    const troopLevelFactor = 0.1;
+    const tgLevelFactor = 0.05;
+    return (
+      baseDamage *
+      (1 + troopLevelFactor * this.troopLevel()) *
+      (1 + tgLevelFactor * this.tgLevel())
+    );
+  });
 
   marches = signal<MarchConfig[]>([
     {
@@ -105,9 +127,9 @@ export class BearComponent {
         infCount: this.infantry(),
         cavCount: this.cavalry(),
         arcCount: this.archers(),
-        infDmg: 43.7,
-        cavDmg: 131.183,
-        arcDmg: 211.7104,
+        infDmg: this.infDmg(),
+        cavDmg: this.cavDmg(),
+        arcDmg: this.arcDmg(),
       };
       const result = await this.scs.solve(config, marchesConfig);
       //console.log('Solver result:', result);
@@ -118,8 +140,8 @@ export class BearComponent {
           infantry: Math.floor(m.troops[0]),
           cavalry: Math.floor(m.troops[1]),
           archers: Math.floor(m.troops[2]),
-          ratio: `${((m.troops[0] / m.max_troops) * 100).toFixed(1)}% / ${(
-            (m.troops[1] / m.max_troops) *
+          ratio: `${((m.troops[0] / m.max_troops) * 100).toFixed(1)}% / ${((
+            m.troops[1] / m.max_troops) *
             100
           ).toFixed(1)}% / ${((m.troops[2] / m.max_troops) * 100).toFixed(1)}%`,
         };
