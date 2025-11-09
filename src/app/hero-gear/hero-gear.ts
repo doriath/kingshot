@@ -299,6 +299,7 @@ export class HeroGearComponent {
   isAdvancedCollapsed = signal(true);
 
   constructor(@Inject(PLATFORM_ID) private platformId: object) {
+    this.reset();
     if (isPlatformBrowser(this.platformId)) {
       const savedHeroes = localStorage.getItem(this.HEROES_STORAGE_KEY);
       if (savedHeroes) {
@@ -321,6 +322,13 @@ export class HeroGearComponent {
         localStorage.setItem(this.HAMMERS_STORAGE_KEY, JSON.stringify(this.hammers()));
       }
     });
+  }
+
+  reset() {
+    this.heroes.set(this.defaultHeroes);
+    this.exp.set(0);
+    this.hammers.set(0);
+    this.optimizationResult.set(null);
   }
 
   toggleAdvanced() {

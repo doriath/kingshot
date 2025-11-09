@@ -15,29 +15,39 @@
   @for (hero of heroes(); track hero.name) {
     <div class="hero-section">
       <h2>{{ hero.name }}</h2>
-      <div class="gear-grid">
-        @for (gearType of objectKeys(hero.gear); track gearType) {
-          <div class="gear-item">
-            <label class="gear-label">{{ gearType }}</label>
-            <div class="gear-inputs">
-              <label>Mastery:</label>
-              <input type="number" [value]="hero.gear[gearType].mastery" (input)="updateMastery(hero.name, gearType, $event)">
-              <label>Enhancement:</label>
-              <input type="number" [value]="hero.gear[gearType].enhancement" (input)="updateEnhancement(hero.name, gearType, $event)">
-            </div>
-          </div>
-        }
+      <div class="table-wrapper">
+        <table class="gear-input-table">
+          <thead>
+            <tr>
+              <th>Gear</th>
+              <th>Enhancement</th>
+              <th>Mastery</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (gearType of objectKeys(hero.gear); track gearType) {
+              <tr>
+                <td>{{ gearType }}</td>
+                <td><input type="number" [value]="hero.gear[gearType].enhancement" (input)="updateEnhancement(hero.name, gearType, $event)"></td>
+                <td><input type="number" [value]="hero.gear[gearType].mastery" (input)="updateMastery(hero.name, gearType, $event)"></td>
+              </tr>
+            }
+          </tbody>
+        </table>
       </div>
     </div>
   }
 
   <div class="advanced-section">
     <button class="advanced-toggle" (click)="toggleAdvanced()">
-      Advanced Settings
-      <span class="toggle-icon">{{ isAdvancedCollapsed() ? '&#9660;' : '&#9650;' }}</span>
+      <span class="button-text">
+        Advanced Settings
+        <span class="toggle-icon">{{ isAdvancedCollapsed() ? '&#9660;' : '&#9650;' }}</span>
+      </span>
     </button>
     @if (!isAdvancedCollapsed()) {
       <div class="advanced-content">
+        <p>This section allows you to fine-tune the optimization by assigning weights to different stats for each hero. A higher weight means the optimizer will prioritize that stat more.</p>
         @for (hero of heroes(); track hero.name) {
           <div class="hero-weights">
             <h4>{{ hero.name }} Weights</h4>
@@ -53,7 +63,10 @@
     }
   </div>
 
-  <button (click)="optimize()">Optimize</button>
+  <div class="button-group">
+    <button (click)="optimize()"><span class="button-text">Optimize Your Gear</span></button>
+    <button class="secondary" (click)="reset()"><span class="button-text">Reset</span></button>
+  </div>
 
   @if (optimizationResult(); as results) {
     <div class="results-section">
@@ -61,51 +74,55 @@
       @for (result of results; track result.heroName) {
         <div class="hero-results">
           <h4>{{ result.heroName }}</h4>
-          <table class="results-table">
-            <thead>
-              <tr>
-                <th>Gear</th>
-                <th>Current Mastery</th>
-                <th>Recommended Mastery</th>
-                <th>Current Enhancement</th>
-                <th>Recommended Enhancement</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (gear of result.gear; track gear.type) {
+          <div class="table-wrapper">
+            <table class="results-table">
+              <thead>
                 <tr>
-                  <td>{{ gear.type }}</td>
-                  <td>{{ gear.currentMastery }}</td>
-                  <td>{{ gear.recommendedMastery }}</td>
-                  <td>{{ gear.currentEnhancement }}</td>
-                  <td>{{ gear.recommendedEnhancement }}</td>
+                  <th>Gear</th>
+                  <th>Current Enhancement</th>
+                  <th>Recommended Enhancement</th>
+                  <th>Current Mastery</th>
+                  <th>Recommended Mastery</th>
                 </tr>
-              }
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                @for (gear of result.gear; track gear.type) {
+                  <tr>
+                    <td>{{ gear.type }}</td>
+                    <td>{{ gear.currentEnhancement }}</td>
+                    <td>{{ gear.recommendedEnhancement }}</td>
+                    <td>{{ gear.currentMastery }}</td>
+                    <td>{{ gear.recommendedMastery }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
 
           <h5 class="stats-title">Stat Comparison</h5>
-          <table class="stats-table">
-            <thead>
-              <tr>
-                <th>Stat</th>
-                <th>Before</th>
-                <th>After</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Lethality</td>
-                <td>{{ (result.beforeStats.lethality * 100) | number:'1.2-2' }}%</td>
-                <td>{{ (result.afterStats.lethality * 100) | number:'1.2-2' }}%</td>
-              </tr>
-              <tr>
-                <td>Health</td>
-                <td>{{ (result.beforeStats.health * 100) | number:'1.2-2' }}%</td>
-                <td>{{ (result.afterStats.health * 100) | number:'1.2-2' }}%</td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="table-wrapper">
+            <table class="stats-table">
+              <thead>
+                <tr>
+                  <th>Stat</th>
+                  <th>Before</th>
+                  <th>After</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Lethality</td>
+                  <td>{{ (result.beforeStats.lethality * 100) | number:'1.2-2' }}%</td>
+                  <td>{{ (result.afterStats.lethality * 100) | number:'1.2-2' }}%</td>
+                </tr>
+                <tr>
+                  <td>Health</td>
+                  <td>{{ (result.beforeStats.health * 100) | number:'1.2-2' }}%</td>
+                  <td>{{ (result.afterStats.health * 100) | number:'1.2-2' }}%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       }
     </div>
