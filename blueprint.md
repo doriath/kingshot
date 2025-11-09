@@ -1,23 +1,23 @@
-
 # Project Overview
 
-This project is an Angular application that helps players of a strategy game to analyze their troop composition. The main feature is the ability to upload a screenshot of the troop overview screen and get a structured breakdown of troop types and quantities. The analysis is performed entirely on the client-side for privacy and speed.
+This project is an Angular application designed to help players of a strategy game optimize their hero gear. The main feature is to calculate the most effective distribution of enhancement levels across different pieces of gear for multiple heroes, based on their stats and user-provided resources.
 
 # Implemented Features
 
-*   **Bear Component:** A page that will host the troop analysis feature.
-*   **Client-Side OCR:** Using `tesseract.js` to extract text from images in the browser.
+*   **Hero and Gear Management:** Users can define multiple heroes, each with four pieces of gear (helmet, gloves, breastplate, boots). For each gear, they can set mastery and current enhancement levels.
+*   **Stat Weights:** Users can specify weights for `lethality` and `health` for each hero, indicating which stat is more important for them.
+*   **Resource Input:** Users can input the amount of extra experience (`exp`) they have available for upgrades.
 
-# Current Plan: Implement a more robust parsing logic
+# Current Plan: Implement a Greedy Algorithm for Gear Optimization
 
-## Phase 1: Update the `OcrService`
+## Phase 1: Refactor the `optimize` method in `hero-gear.ts`
 
-1.  **Modify the `OcrService`** to return the detailed recognition result, including word and line information with their coordinates.
-
-## Phase 2: Refactor the parsing logic in `BearComponent`
-
-1.  **Refactor the parsing logic in `BearComponent`** to use this detailed information. I will iterate through lines of text, and for each line, I'll look for a quantity (a number). I'll then associate that quantity with the text on the same line that describes the troop.
-
-## Phase 3: Refine the UI
-
-1.  **Refine the UI** to present this more accurately parsed information.
+1.  **Extract Cost Data:** Move the enhancement experience cost array from the `expCost` method to a private readonly class member for better access and to determine the maximum enhancement level.
+2.  **Calculate Total Experience:** Implement logic to calculate the total experience pool. This includes the experience from deconstructing all current gear (based on their enhancement levels) plus any extra experience provided by the user.
+3.  **Implement Greedy Algorithm:**
+    *   Initialize all hero gear to enhancement level 0.
+    *   Iteratively find the single most "score-efficient" enhancement upgrade across all gear pieces for all heroes. Efficiency is measured as `(score increase) / (experience cost)`.
+    *   Apply the best upgrade found.
+    *   Subtract the cost from the total experience pool.
+    *   Repeat this process until no more upgrades can be afforded.
+4.  **Update Results:** Once the algorithm is complete, update the `optimizationResult` signal with the `before` and `after` stats, and the recommended enhancement levels for each piece of gear.
