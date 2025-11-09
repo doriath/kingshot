@@ -45,6 +45,12 @@ export interface OptimizationResult {
   afterScore: number;
 }
 
+export interface OptimizationOutput {
+  results: OptimizationResult[];
+  totalBeforeScore: number;
+  totalAfterScore: number;
+}
+
 @Component({
   selector: 'app-hero-gear',
   templateUrl: './hero-gear.html',
@@ -295,7 +301,7 @@ export class HeroGearComponent {
   heroes = signal<HeroWeights[]>(this.defaultHeroes);
   exp = signal(0);
   hammers = signal(0);
-  optimizationResult = signal<OptimizationResult[] | null>(null);
+  optimizationResult = signal<OptimizationOutput | null>(null);
   isAdvancedCollapsed = signal(true);
 
   constructor(@Inject(PLATFORM_ID) private platformId: object) {
@@ -397,7 +403,6 @@ export class HeroGearComponent {
     const extraExp = this.exp();
     const result: OptimizationResult[] = [];
 
-    // Calculate total available experience
     let totalExp = extraExp;
     for (const hero of heroes) {
       for (const gearType of this.objectKeys(hero.gear)) {
@@ -423,7 +428,6 @@ export class HeroGearComponent {
       };
     });
 
-    // Reset all gear to level 0
     const optimizedHeroes = heroes.map(hero => ({
       ...hero,
       gear: {
@@ -472,15 +476,21 @@ export class HeroGearComponent {
         optimizedHeroes[bestUpgrade.heroIndex].gear[bestUpgrade.gearType].enhancement++;
         totalExp -= costOfBestUpgrade;
       } else {
-        break; // No more affordable upgrades
+        break;
       }
     }
     
+    let totalBeforeScore = 0;
+    let totalAfterScore = 0;
+
     for (let i = 0; i < optimizedHeroes.length; i++) {
       const hero = optimizedHeroes[i];
       const beforeResult = beforeOptimization[i];
       const afterStats = this.calculateStats(hero.gear);
       const afterScore = afterStats.lethality * hero.weights.lethality + afterStats.health * hero.weights.health;
+
+      totalBeforeScore += beforeResult.beforeScore;
+      totalAfterScore += afterScore;
 
       result.push({
         heroName: hero.name,
@@ -498,7 +508,13 @@ export class HeroGearComponent {
       });
     }
 
-    this.optimizationResult.set(result);
+    const optimizationOutput: OptimizationOutput = {
+      results: result,
+      totalBeforeScore,
+      totalAfterScore,
+    };
+
+    this.optimizationResult.set(optimizationOutput);
   }
 
   objectKeys<T extends object>(obj: T) {

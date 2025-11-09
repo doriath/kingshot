@@ -39,7 +39,7 @@
   }
 
   <div class="advanced-section">
-    <button class="advanced-toggle" (click)="toggleAdvanced()">
+    <button class.bind="advanced-toggle" (click)="toggleAdvanced()">
       <span class="button-text">
         Advanced Settings
         <span class="toggle-icon">{{ isAdvancedCollapsed() ? '&#9660;' : '&#9650;' }}</span>
@@ -68,10 +68,10 @@
     <button class="secondary" (click)="reset()"><span class="button-text">Reset</span></button>
   </div>
 
-  @if (optimizationResult(); as results) {
+  @if (optimizationResult(); as optimizationOutput) {
     <div class="results-section">
       <h3>Optimization Results</h3>
-      @for (result of results; track result.heroName) {
+      @for (result of optimizationOutput.results; track result.heroName) {
         <div class="hero-results">
           <h4>{{ result.heroName }}</h4>
           <div class="table-wrapper">
@@ -125,6 +125,20 @@
           </div>
         </div>
       }
+
+      <div class="final-stats-section">
+        <h3>Final Score</h3>
+        <div class="final-score-container">
+          <div class="score-card">
+            <span class="score-label">Before</span>
+            <span class="score-value">{{ optimizationOutput.totalBeforeScore | number:'1.2-2' }}</span>
+          </div>
+          <div class="score-card">
+            <span class="score-label">After</span>
+            <span class="score-value">{{ optimizationOutput.totalAfterScore | number:'1.2-2' }}</span>
+          </div>
+        </div>
+      </div>
     </div>
   }
 </div>

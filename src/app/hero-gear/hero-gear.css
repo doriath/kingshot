@@ -246,6 +246,51 @@ button.secondary:hover {
   background-color: #f8f9fa;
 }
 
+.final-stats-section {
+  margin-top: 3rem;
+  padding: 2rem;
+  background: var(--card-background);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+
+.final-stats-section h3 {
+  text-align: center;
+  color: var(--primary-color);
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+.final-score-container {
+  display: flex;
+  justify-content: space-around;
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.score-card {
+  background: #f8f9fa;
+  padding: 2rem;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  flex: 1;
+}
+
+.score-label {
+  display: block;
+  font-size: 1.2rem;
+  color: var(--subtle-text);
+  margin-bottom: 0.5rem;
+}
+
+.score-value {
+  display: block;
+  font-size: 2.5rem;
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
 /* Responsive Styles */
 @media (max-width: 768px) {
   .container {
@@ -262,7 +307,7 @@ button.secondary:hover {
     gap: 1.5rem;
   }
 
-  .hero-section, .advanced-section {
+  .hero-section, .advanced-section, .final-stats-section {
     padding: 1.5rem;
   }
 
@@ -276,6 +321,10 @@ button.secondary:hover {
   }
 
   .button-group {
+    flex-direction: column;
+  }
+
+  .final-score-container {
     flex-direction: column;
   }
 }
