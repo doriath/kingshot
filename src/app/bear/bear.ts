@@ -31,24 +31,19 @@ export class BearComponent {
 
   infDmg = computed(() => {
     // for now we will ignore troop level, and assume 10
-    const dmg = [40.0506,	41.6628,	43.7000,	45.9054,	48.1965,	50.6572];
-    return dmg[this.tgLevel()];
+    // const dmg = [40.0506,	41.6628,	43.7000,	45.9054,	48.1965,	50.6572];
+    // return dmg[this.tgLevel()];
+    return 43.7;
   });
 
   cavDmg = computed(() => {
-    const dmg = [40.0506,	41.6628,	43.7000,	45.9054,	48.1965,	50.6572];
-    return dmg[this.tgLevel()];
+    // const dmg = [40.0506,	41.6628,	43.7000,	45.9054,	48.1965,	50.6572];
+    // return dmg[this.tgLevel()];
+    return 131.1830;
   });
 
   arcDmg = computed(() => {
-    const baseDamage = 95;
-    const troopLevelFactor = 0.1;
-    const tgLevelFactor = 0.05;
-    return (
-      baseDamage *
-      (1 + troopLevelFactor * this.troopLevel()) *
-      (1 + tgLevelFactor * this.tgLevel())
-    );
+    return 211.7104;
   });
 
   marches = signal<MarchConfig[]>([

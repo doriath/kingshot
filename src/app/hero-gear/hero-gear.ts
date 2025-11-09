@@ -91,7 +91,7 @@ export class HeroGearComponent {
         breastplate: { mastery: 0, enhancement: 0 },
         boots: { mastery: 0, enhancement: 0 },
       },
-      weights: { lethality: 1, health: 2.5 },
+      weights: { lethality: 2.5, health: 1 },
     },
   ];
 
