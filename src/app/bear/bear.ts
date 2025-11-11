@@ -25,9 +25,9 @@ export class BearComponent {
 
   troopLevel = signal(10);
   tgLevel = signal(2);
-  infantry = signal(310000);
-  cavalry = signal(290000);
-  archers = signal(210000);
+  infantry = signal(100000);
+  cavalry = signal(100000);
+  archers = signal(100000);
 
   infDmg = computed(() => {
     // for now we will ignore troop level, and assume 10
@@ -49,14 +49,14 @@ export class BearComponent {
   marches = signal<MarchConfig[]>([
     {
       name: 'Rally Lead',
-      max_troops: 130000,
+      max_troops: 120000,
       parallel: 1,
       used: 5,
       dmg: 1.0,
     },
     {
-      name: 'Join with hero',
-      max_troops: 130000,
+      name: 'Join with hero x 3',
+      max_troops: 120000,
       parallel: 3,
       used: 30,
       dmg: 1.0,
@@ -127,7 +127,7 @@ export class BearComponent {
         arcDmg: this.arcDmg(),
       };
       const result = await this.scs.solve(config, marchesConfig);
-      //console.log('Solver result:', result);
+      // console.log('Solver result:', result);
 
       const formations: Formation[] = result.map((m, i) => {
         return {
@@ -144,7 +144,7 @@ export class BearComponent {
 
       this.computedResult.set(formations);
     } catch (error) {
-      //console.error('Solver failed:', error);
+      console.error('Solver failed:', error);
       window.alert("Solver failed");
     }
   }

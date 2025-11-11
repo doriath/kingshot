@@ -34,7 +34,7 @@
 
   <h2>March Configuration</h2>
   <div class="marches-grid">
-    @for (march of marches(); track march; let i = $index) {
+    @for (march of marches(); track i; let i = $index) {
       <div class="march-card">
         <div class="march-header">
           <h3>{{ march.name }}</h3>

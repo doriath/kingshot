@@ -401,7 +401,6 @@ export class HeroGearComponent {
   optimize() {
     const heroes = this.heroes();
     const extraExp = this.exp();
-    const result: OptimizationResult[] = [];
 
     let totalExp = extraExp;
     for (const hero of heroes) {
@@ -410,100 +409,86 @@ export class HeroGearComponent {
       }
     }
 
-    const beforeOptimization = heroes.map(hero => {
-      const beforeStats = this.calculateStats(hero.gear);
-      const beforeScore = beforeStats.lethality * hero.weights.lethality + beforeStats.health * hero.weights.health;
-      return {
+    const allGear = heroes.flatMap(hero =>
+      this.objectKeys(hero.gear).map(gearType => ({
         heroName: hero.name,
-        gear: this.objectKeys(hero.gear).map(type => ({
-          type,
-          currentMastery: hero.gear[type].mastery,
-          currentEnhancement: hero.gear[type].enhancement,
-          recommendedMastery: hero.gear[type].mastery,
-          recommendedEnhancement: 0,
-        })),
-        beforeStats: beforeStats,
-        beforeScore: beforeScore,
-        afterStats: { lethality: 0, health: 0 },
-      };
-    });
+        gearType,
+        mastery: hero.gear[gearType].mastery,
+        weights: hero.weights,
+        currentEnhancement: 0,
+      }))
+    );
 
-    const optimizedHeroes = heroes.map(hero => ({
-      ...hero,
-      gear: {
-        helmet: { ...hero.gear.helmet, enhancement: 0 },
-        gloves: { ...hero.gear.gloves, enhancement: 0 },
-        breastplate: { ...hero.gear.breastplate, enhancement: 0 },
-        boots: { ...hero.gear.boots, enhancement: 0 },
+    const memo = new Map<string, { score: number; solution: number[] }>();
+
+    const findOptimalGear = (itemIndex: number, remainingExp: number): { score: number; solution: number[] } => {
+      if (itemIndex === allGear.length || remainingExp <= 0) {
+        return { score: 0, solution: [] };
       }
-    }));
 
-    while (true) {
-      let bestUpgrade: { heroIndex: number; gearType: keyof Hero['gear']; efficiency: number } | null = null;
-      let costOfBestUpgrade = 0;
+      const memoKey = `${itemIndex}-${remainingExp}`;
+      if (memo.has(memoKey)) {
+        return memo.get(memoKey)!;
+      }
 
-      for (let i = 0; i < optimizedHeroes.length; i++) {
-        const hero = optimizedHeroes[i];
-        for (const gearType of this.objectKeys(hero.gear)) {
-          const currentGear = hero.gear[gearType];
+      let best = { score: -1, solution: [] as number[] };
 
-          if (currentGear.enhancement >= this.maxEnhancement) {
-            continue;
-          }
+      const item = allGear[itemIndex];
+      const currentEnhancement = item.currentEnhancement;
+      const currentGearScore = this.calculateItemScore(item, currentEnhancement);
 
-          const currentStats = this.calculateStats(hero.gear);
-          const currentScore = currentStats.lethality * hero.weights.lethality + currentStats.health * hero.weights.health;
-          
-          const nextEnhancement = currentGear.enhancement + 1;
-          const cost = this.expCost(nextEnhancement) - this.expCost(currentGear.enhancement);
-          if (totalExp < cost) {
-            continue;
-          }
+      for (let level = currentEnhancement; level <= this.maxEnhancement; level++) {
+        const cost = this.expCost(level) - this.expCost(currentEnhancement);
+        if (remainingExp >= cost) {
+          const result = findOptimalGear(itemIndex + 1, remainingExp - cost);
+          const newScore = this.calculateItemScore(item, level) - currentGearScore + result.score;
 
-          const nextGear = { ...hero.gear, [gearType]: { ...currentGear, enhancement: nextEnhancement } };
-          const nextStats = this.calculateStats(nextGear);
-          const nextScore = nextStats.lethality * hero.weights.lethality + nextStats.health * hero.weights.health;
-
-          const efficiency = (nextScore - currentScore) / cost;
-          if (!bestUpgrade || efficiency > bestUpgrade.efficiency) {
-            bestUpgrade = { heroIndex: i, gearType: gearType, efficiency };
-            costOfBestUpgrade = cost;
+          if (newScore > best.score) {
+            best = { score: newScore, solution: [level, ...result.solution] };
           }
         }
       }
 
-      if (bestUpgrade) {
-        optimizedHeroes[bestUpgrade.heroIndex].gear[bestUpgrade.gearType].enhancement++;
-        totalExp -= costOfBestUpgrade;
-      } else {
-        break;
+      memo.set(memoKey, best);
+      return best;
+    };
+
+    const { solution } = findOptimalGear(0, totalExp);
+
+    const newHeroes = JSON.parse(JSON.stringify(heroes)) as HeroWeights[];
+    let solutionIndex = 0;
+    for (let i = 0; i < newHeroes.length; i++) {
+      for (const gearType of this.objectKeys(newHeroes[i].gear)) {
+        newHeroes[i].gear[gearType].enhancement = solution[solutionIndex] ?? newHeroes[i].gear[gearType].enhancement;
+        solutionIndex++;
       }
     }
-    
+
     let totalBeforeScore = 0;
     let totalAfterScore = 0;
+    const result: OptimizationResult[] = [];
 
-    for (let i = 0; i < optimizedHeroes.length; i++) {
-      const hero = optimizedHeroes[i];
-      const beforeResult = beforeOptimization[i];
-      const afterStats = this.calculateStats(hero.gear);
-      const afterScore = afterStats.lethality * hero.weights.lethality + afterStats.health * hero.weights.health;
+    for (let i = 0; i < heroes.length; i++) {
+      const beforeStats = this.calculateStats(heroes[i].gear);
+      const beforeScore = beforeStats.lethality * heroes[i].weights.lethality + beforeStats.health * heroes[i].weights.health;
+      totalBeforeScore += beforeScore;
 
-      totalBeforeScore += beforeResult.beforeScore;
+      const afterStats = this.calculateStats(newHeroes[i].gear);
+      const afterScore = afterStats.lethality * newHeroes[i].weights.lethality + afterStats.health * newHeroes[i].weights.health;
       totalAfterScore += afterScore;
 
       result.push({
-        heroName: hero.name,
-        gear: this.objectKeys(hero.gear).map(type => ({
+        heroName: heroes[i].name,
+        gear: this.objectKeys(heroes[i].gear).map(type => ({
           type: type,
-          currentMastery: beforeResult.gear.find(g => g.type === type)!.currentMastery,
-          recommendedMastery: beforeResult.gear.find(g => g.type === type)!.currentMastery,
-          currentEnhancement: beforeResult.gear.find(g => g.type === type)!.currentEnhancement,
-          recommendedEnhancement: hero.gear[type].enhancement,
+          currentMastery: heroes[i].gear[type].mastery,
+          recommendedMastery: heroes[i].gear[type].mastery,
+          currentEnhancement: heroes[i].gear[type].enhancement,
+          recommendedEnhancement: newHeroes[i].gear[type].enhancement,
         })),
-        beforeStats: beforeResult.beforeStats,
+        beforeStats: beforeStats,
         afterStats: afterStats,
-        beforeScore: beforeResult.beforeScore,
+        beforeScore: beforeScore,
         afterScore: afterScore,
       });
     }
@@ -515,6 +500,14 @@ export class HeroGearComponent {
     };
 
     this.optimizationResult.set(optimizationOutput);
+  }
+
+  calculateItemScore(item: { gearType: keyof Hero['gear'], mastery: number, weights: StatWeights }, enhancement: number): number {
+    const stat = this.stat(enhancement, item.mastery);
+    if (item.gearType === 'helmet' || item.gearType === 'boots') {
+      return stat * item.weights.lethality;
+    }
+    return stat * item.weights.health;
   }
 
   objectKeys<T extends object>(obj: T) {

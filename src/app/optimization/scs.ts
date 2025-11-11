@@ -55,7 +55,11 @@ export class Scs {
     let arc_dmg = config.arcDmg;
 
     let troop_types = 3;
-    let linear = 3 + 2 * marches.length;
+    // 3 - sum of troos in each march <= total
+    // marches.length - inf+cav+arc <= max_troops
+    // marches.length - inf < 3% (inf + cav + arc)
+    // marches.length * 3 - troop >= 0
+    let linear = 3 + 2 * marches.length + marches.length * troop_types;
     let quadratic = 3 * marches.length * troop_types;
     let num_rows = linear + quadratic;
     let num_cols = 2 * marches.length * troop_types;
@@ -65,6 +69,9 @@ export class Scs {
 
     // create array of size linear filled with 0
     let b = new Array(num_rows).fill(0);
+    // What we are optimizing
+    // 0-11 - variables for number of troops
+    // 12-23 - variables for base_dmg * sqrt(troops)
     let c = new Array(num_cols).fill(0);
 
 
@@ -90,11 +97,20 @@ export class Scs {
       row += 1;
       // inf < 3% (inf + cav + arc)
       // 97 inf - 3 cav - 3 arc <= 0
-      a.set([row, i * troop_types], 97);
-      a.set([row, i * troop_types + 1], -3);
-      a.set([row, i * troop_types + 2], -3);
+      // inf < cav / 9
+      a.set([row, i * troop_types], 9);
+      a.set([row, i * troop_types + 1], -1);
+      //a.set([row, i * troop_types + 2], -3);
       row += 1;
 
+      for (let j = 0; j < troop_types; j+= 1) {
+        // -inf < 0 (inf >= 0)
+        a.set([row, i * troop_types + j], -1);
+        b[row] = 0;
+        row += 1;
+      }
+
+      // What we are optimizing, SCS finds minimum, so we use -1
       c[marches.length * troop_types + i * troop_types] = -1;
       c[marches.length * troop_types + i * troop_types + 1] = -1;
       c[marches.length * troop_types + i * troop_types + 2] = -1;
@@ -143,11 +159,17 @@ export class Scs {
     //console.log(cone);
     let settings = new scs.ScsSettings();
     scs.setDefaultSettings(settings);
-    settings.maxIters = 1000000;
+    // settings.maxIters = 1000000;
+    settings.warmStart = true;
     settings.verbose = false;
     //console.log(settings);
 
-    let result = scs.solve(plainData, cone, settings);
+    let start = {
+        x: new Array(num_cols).fill(0),
+        y: new Array(num_rows).fill(0),
+        s: b, 
+    };
+    let result = scs.solve(plainData, cone, settings, start);
     //console.log(result);
     if (result.status == "INFEASIBLE") {
       throw "failed to find best formations"
