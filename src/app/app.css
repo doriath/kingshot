@@ -80,3 +80,10 @@
   padding: 16px;
   overflow-y: auto; /* Allow content to scroll independently */
 }
+
+.category-title {
+  padding: 16px;
+  color: #888;
+  font-weight: 500;
+  border-bottom: 1px solid #ddd;
+}
