@@ -1,16 +1,9 @@
 import { Injectable } from '@angular/core';
-import { ScsData, ScsCone, ScsResult } from './scs.model';
-import { create, all, matrix, format } from 'mathjs';
-
-// Re-export the models for other modules to use
-export * from './scs.model';
-
-// Create a mathjs instance
-const math = create(all);
+import { matrix, format } from 'mathjs';
 
 export interface MarchConfig {
   name: string,
-  max_troops: number,
+  maxTroops: number,
   // How many of those marches we want to use in parallel
   parallel: number,
   // How many times this march will cause dmg
@@ -19,40 +12,34 @@ export interface MarchConfig {
   dmg: number,
 }
 
-export interface ScsConfig {
+export interface Troops {
   infCount: number,
   cavCount: number,
   arcCount: number,
-  infDmg: number,
-  cavDmg: number,
-  arcDmg: number,
 }
 
 export interface MarchResult {
   // inf/cav/arc
   troops: number[],
-  max_troops: number,
+  maxTroops: number,
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class Scs {
-
   /**
-   * Solves a Second-Order Cone Program using the scs-solver library.
-   * @param data The data for the SOCP problem.
-   * @param cone The cone for the SOCP problem.
+   * Optimizes bear formations.
    * @returns A promise that resolves with the solution of the problem.
    */
-  async solve(config: ScsConfig, marches: MarchConfig[]): Promise<MarchResult[]> {
+  async optimizeBear(config: Troops, marches: MarchConfig[]): Promise<MarchResult[]> {
     //console.log(config);
     //console.log(marches);
     const scs = await createSCS();
 
-    let inf_dmg = config.infDmg;
-    let cav_dmg = config.cavDmg;
-    let arc_dmg = config.arcDmg;
+    let inf_dmg = 43.7;
+    let cav_dmg = 131.1830;
+    let arc_dmg = 211.7104;
 
     let troop_types = 3;
     // 3 - sum of troos in each march <= total
@@ -93,7 +80,7 @@ export class Scs {
       a.set([row, i * troop_types], 1);
       a.set([row, i * troop_types + 1], 1);
       a.set([row, i * troop_types + 2], 1);
-      b[row] = marches[i].max_troops;
+      b[row] = marches[i].maxTroops;
       row += 1;
       // inf < 3% (inf + cav + arc)
       // 97 inf - 3 cav - 3 arc <= 0
@@ -179,7 +166,7 @@ export class Scs {
     for (let i = 0; i < marches.length; i += 1) {
       results.push({
         troops: [result.x[i * troop_types], result.x[i * troop_types + 1], result.x[i * troop_types + 2]],
-        max_troops: marches[i].max_troops,
+        maxTroops: marches[i].maxTroops,
       })
     }
     return results;

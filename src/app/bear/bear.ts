@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Scs, MarchConfig, ScsConfig } from '../optimization/scs';
+import { Scs, MarchConfig, Troops } from '../optimization/scs';
 import { create, all } from 'mathjs';
 
 const math = create(all);
@@ -29,41 +29,24 @@ export class BearComponent {
   cavalry = signal(100000);
   archers = signal(100000);
 
-  infDmg = computed(() => {
-    // for now we will ignore troop level, and assume 10
-    // const dmg = [40.0506,	41.6628,	43.7000,	45.9054,	48.1965,	50.6572];
-    // return dmg[this.tgLevel()];
-    return 43.7;
-  });
-
-  cavDmg = computed(() => {
-    // const dmg = [40.0506,	41.6628,	43.7000,	45.9054,	48.1965,	50.6572];
-    // return dmg[this.tgLevel()];
-    return 131.1830;
-  });
-
-  arcDmg = computed(() => {
-    return 211.7104;
-  });
-
   marches = signal<MarchConfig[]>([
     {
       name: 'Rally Lead',
-      max_troops: 120000,
+      maxTroops: 120000,
       parallel: 1,
       used: 5,
       dmg: 1.0,
     },
     {
       name: 'Join with hero x 3',
-      max_troops: 120000,
+      maxTroops: 120000,
       parallel: 3,
       used: 30,
       dmg: 1.0,
     },
     {
       name: 'Join without hero',
-      max_troops: 90000,
+      maxTroops: 90000,
       parallel: 1,
       used: 5,
       dmg: 1.0,
@@ -79,7 +62,7 @@ export class BearComponent {
         ...marches,
         {
           name: `March ${marches.length + 1}`,
-          max_troops: 100000,
+          maxTroops: 100000,
           parallel: 1,
           used: 1,
           dmg: 1.0,
@@ -118,15 +101,12 @@ export class BearComponent {
   async compute(): Promise<void> {
     try {
       const marchesConfig = this.marches();
-      let config: ScsConfig = {
+      let config: Troops = {
         infCount: this.infantry(),
         cavCount: this.cavalry(),
         arcCount: this.archers(),
-        infDmg: this.infDmg(),
-        cavDmg: this.cavDmg(),
-        arcDmg: this.arcDmg(),
       };
-      const result = await this.scs.solve(config, marchesConfig);
+      const result = await this.scs.optimizeBear(config, marchesConfig);
       // console.log('Solver result:', result);
 
       const formations: Formation[] = result.map((m, i) => {
@@ -135,10 +115,10 @@ export class BearComponent {
           infantry: Math.floor(m.troops[0]),
           cavalry: Math.floor(m.troops[1]),
           archers: Math.floor(m.troops[2]),
-          ratio: `${((m.troops[0] / m.max_troops) * 100).toFixed(1)}% / ${((
-            m.troops[1] / m.max_troops) *
+          ratio: `${((m.troops[0] / m.maxTroops) * 100).toFixed(1)}% / ${((
+            m.troops[1] / m.maxTroops) *
             100
-          ).toFixed(1)}% / ${((m.troops[2] / m.max_troops) * 100).toFixed(1)}%`,
+          ).toFixed(1)}% / ${((m.troops[2] / m.maxTroops) * 100).toFixed(1)}%`,
         };
       });
 
