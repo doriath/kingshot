@@ -19,8 +19,9 @@ export class BearEventComponent {
     { text: 'No Sniping! Join first rally first.', help: 'This ensures everyone can join good rallies and it maximizes the total damage of everyone in the alliance.' },
     { text: 'Max 90k troops per join.', help: 'By limiting the join size, we ensure more people can join rallies.' },
     { text: 'Max 3% infantry', help: 'Infantry has the lowest damage, so use minimal amount of infantry troops to best utilize the space.' },
-    { text: 'Everyone starts a rally.', help: 'Ensures we can utilize the waves' },
+    { text: 'Stop after reaching 1.2B', help: 'This allows others in the alliance to also reach 1.2B and get high rewards.' },
     { text: 'Join with Chenko/Amane/Yeonwoo/Amadeus.', help: 'Ensures maximum damage' },
+    { text: 'Everyone starts a rally.', help: 'Ensures we can utilize the waves' },
   ];
 
   // Form state signals
