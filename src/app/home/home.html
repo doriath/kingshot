@@ -1,2 +1,32 @@
-<h1>Home</h1>
-<p>Welcome to the Angular app!</p>
+<div class="home-container">
+  <header class="hero-section">
+    <div class="hero-content">
+      <h1 class="hero-title">Kingshot Companion</h1>
+      <p class="hero-subtitle">Your ultimate guide to mastering events and optimizing your gear.</p>
+    </div>
+  </header>
+
+  <main class="featured-content">
+    <div class="card-grid">
+      <div class="card" routerLink="/bear">
+        <div class="card-content">
+          <h2 class="card-title">Upcoming Event</h2>
+          <p class="card-description">Prepare for the Bear event! See the best strategies and rewards.</p>
+        </div>
+        <div class="card-footer">
+          <p>View Event Details</p>
+        </div>
+      </div>
+
+      <div class="card" routerLink="/hero-gear">
+        <div class="card-content">
+          <h2 class="card-title">Gear Optimizer</h2>
+          <p class="card-description">Optimize your hero's gear setup for maximum performance.</p>
+        </div>
+        <div class="card-footer">
+          <p>Go to Optimizer</p>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
