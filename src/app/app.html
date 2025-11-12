@@ -1,35 +1,33 @@
-<div class="app-container">
-  <div class="toolbar">
-    <button class="hamburger-menu" (click)="toggleSideNav()">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-      >
-        <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
+<header class="app-header">
+  <div class="header-container">
+    <button class="menu-button" (click)="toggleSideNav()">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
       </svg>
     </button>
-    <h1 class="title">{{ title() }}</h1>
-    <app-user-profile />
+    <h1 class="app-title">Kingshot Companion</h1>
+    <div class="header-actions">
+      <app-user-profile />
+    </div>
   </div>
+</header>
 
-  @if (isSideNavOpen()) {
+@if (isSideNavOpen()) {
   <div class="sidenav-overlay" (click)="toggleSideNav()"></div>
-  }
+}
 
-  <div class="sidenav" [class.open]="isSideNavOpen()">
-    <nav>
-      <a routerLink="/home" (click)="toggleSideNav()">Home</a>
-      <div class="category-title">Events</div>
-      <a routerLink="/events/bear" (click)="toggleSideNav()">Bear</a>
-      <div class="category-title">Tools</div>
-      <a routerLink="/tools/bear-optimizer" (click)="toggleSideNav()">Bear Optimizer</a>
-      <a routerLink="/hero-gear" (click)="toggleSideNav()">Hero Gear</a>
-    </nav>
-  </div>
+<aside class="sidenav" [class.open]="isSideNavOpen()">
+  <nav>
+    <a routerLink="/home" (click)="toggleSideNav()">Home</a>
+    <div class="nav-category">Events</div>
+    <a routerLink="/events/bear" (click)="toggleSideNav()">Bear Hunt</a>
+    <div class="nav-category">Tools</div>
+    <a routerLink="/tools/bear-optimizer" (click)="toggleSideNav()">Bear Optimizer</a>
+    <a routerLink="/hero-gear" (click)="toggleSideNav()">Hero Gear</a>
+    <a routerLink="/guides" (click)="toggleSideNav()">Community Guides</a>
+  </nav>
+</aside>
 
-  <main class="content">
-    <router-outlet />
-  </main>
-</div>
+<main class="main-content">
+  <router-outlet />
+</main>

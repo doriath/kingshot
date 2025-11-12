@@ -1,12 +1,110 @@
 /* You can add global styles to this file, and also import other style files */
 
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap');
+
+/* CSS Variables for the new design */
+:root {
+  --font-family-base: 'Montserrat', sans-serif;
+  
+  /* Dark Theme Palette */
+  --color-background: #1a1a1a;
+  --color-surface: #2c2c2c;
+  --color-primary: #f0b90b; /* Gold */
+  --color-secondary: #4a90e2; /* Bright Blue */
+  --color-text-primary: #f5f5f5;
+  --color-text-secondary: #a0a0a0;
+  --color-border: #444;
+
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.4);
+
+  --border-radius: 8px;
+}
+
+/* Global Styles */
 *,
 *::before,
 *::after {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
+/* Subtle noise texture for the background */
 body {
-  margin: 0;
-  font-family: sans-serif;
+  background-color: var(--color-background);
+  background-image: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 3px 3px;
+  color: var(--color-text-primary);
+  font-family: var(--font-family-base);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: 0.5em;
+}
+
+a {
+  color: var(--color-secondary);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+a:hover {
+  color: var(--color-primary);
+}
+
+/* Basic Form Styling */
+input,
+select,
+button {
+  font-family: inherit;
+  font-size: 1rem;
+  padding: 0.75em 1em;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+  transition: all 0.3s ease;
+}
+
+input:focus,
+select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(240, 185, 11, 0.2);
+}
+
+button {
+  cursor: pointer;
+  background-color: var(--color-secondary);
+  border-color: var(--color-secondary);
+  font-weight: 500;
+  color: #fff;
+}
+
+button:hover {
+  filter: brightness(1.1);
+  box-shadow: var(--shadow-md);
+}
+
+button:disabled {
+  background-color: #555;
+  color: #888;
+  cursor: not-allowed;
+}
+
+/* Utility Class */
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
 }

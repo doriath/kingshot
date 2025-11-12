@@ -1,7 +1,7 @@
-### Project Blueprint: Hero Gear Optimizer
+### Project Blueprint: Kingshot Companion
 
 #### Overview
-This application helps gamers optimize their hero's gear. Users input their current gear levels, available resources (like experience points), and how much they value different stats. The tool then calculates the most effective way to upgrade their gear to maximize their hero's power.
+This application is a companion for the mobile game Kingshot. It helps players optimize their hero's gear, track event progress, and provides other useful tools to enhance their gameplay experience. The application is designed to be mobile-first, ensuring a seamless experience on any device.
 
 #### Implemented Features
 *   **Hero Configuration:** Users can define multiple heroes (e.g., Infantry, Cavalry, Archers).
@@ -14,21 +14,24 @@ This application helps gamers optimize their hero's gear. Users input their curr
 
 ---
 
-### Current Task: Upgrade to Dynamic Programming Algorithm
+### Current Task: Visual Revamp
 
-**Goal:** Replace the existing greedy optimization algorithm with a more sophisticated dynamic programming (DP) approach. The greedy method is fast but can lead to suboptimal results; the DP method will guarantee the mathematically best gear configuration.
+**Goal:** Modernize the website's look and feel, with a strong focus on a mobile-first, responsive design. The new design will be more visually appealing, intuitive, and engaging for users.
 
 **Execution Plan:**
 
-1.  **Restructure the `optimize` Method:** The core logic within the `optimize()` function in `hero-gear.ts` will be entirely replaced to accommodate the new algorithm.
+**Phase 1: Foundational Redesign**
 
-2.  **Implement the DP Solver:**
-    *   A new recursive solver function, `findOptimalGear(itemIndex, remainingExp)`, will be the heart of the new algorithm.
-    *   This function will intelligently explore every possible enhancement level for each piece of gear.
-    *   To ensure performance, it will use **memoization**, storing the results of already-solved subproblems in a `Map`. This avoids re-calculating the same thing over and over.
+1.  **Blueprint Update:** Outline the full plan in `blueprint.md` to keep track of our goals and progress.
+2.  **Modernize Global Styles:** Update the main `styles.css` file with a new, vibrant color palette, modern typography from Google Fonts, and a subtle background texture to give the app a premium feel.
+3.  **Revamp the Home Page:** Completely rework the home page component's CSS to be mobile-first, responsive, and aligned with the new design language. This includes adding depth with shadows and improving the layout.
+4.  **Introduce Icons:** Add SVG icons to enhance visual communication and make the UI more intuitive.
 
-3.  **Define the DP State:** The "state" for each subproblem will be a combination of the gear item being considered and the amount of experience left (`(itemIndex, remainingExp)`). The solver will find the best score possible from that state onwards.
+**Phase 2: Enhancing Interactivity & Navigation**
 
-4.  **Reconstruct the Solution:** After the DP solver finds the maximum possible score, it will trace back through its decisions to build the exact list of recommended enhancement levels for each piece of gear.
+1.  **App Shell:** Redesign the main app component to include a clean, mobile-friendly navigation bar.
+2.  **Animations:** Add subtle animations and hover effects to buttons and cards to make the interface feel more alive and responsive.
 
-5.  **Update the UI:** The main "Optimize" button will now trigger the new DP calculation. The results will be formatted and displayed to the user in the same "before and after" comparison table.
+**Phase 3: Component Consistency**
+
+1.  **Component Audit:** Review the other components in the application and apply the new design system to them, ensuring a consistent and polished user experience across the entire site.

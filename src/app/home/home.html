@@ -8,23 +8,54 @@
 
   <main class="featured-content">
     <div class="card-grid">
-      <div class="card" routerLink="/events/bear">
+      <!-- Gear Optimizer Card -->
+      <div class="card">
         <div class="card-content">
-          <h2 class="card-title">Upcoming Event</h2>
-          <p class="card-description">Prepare for the Bear event! See the best strategies and rewards.</p>
-        </div>
-        <div class="card-footer">
-          <p>View Event Details</p>
-        </div>
-      </div>
-
-      <div class="card" routerLink="/tools/hero-gear">
-        <div class="card-content">
+          <div class="card-icon">
+            <!-- SVG for Gear/Settings -->
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="48" height="48">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12a7.5 7.5 0 0 0 15 0m-15 0a7.5 7.5 0 1 1 15 0m-15 0H3m18 0h-1.5m-15 0a7.5 7.5 0 1 1 15 0m-15 0H3m18 0h-1.5m-15 0a7.5 7.5 0 1 1 15 0m-15 0H3m18 0h-1.5M12 9.75v1.5m0 3v1.5m0-4.5v3m0-3h-1.5m3 0h-1.5m-1.5 3h1.5m-1.5 0h-1.5" />
+            </svg>
+          </div>
           <h2 class="card-title">Gear Optimizer</h2>
           <p class="card-description">Optimize your hero's gear setup for maximum performance.</p>
         </div>
         <div class="card-footer">
-          <p>Go to Optimizer</p>
+          <a routerLink="/tools/hero-gear" class="card-link">Launch Tool</a>
+        </div>
+      </div>
+
+      <!-- Event Tracker Card -->
+      <div class="card">
+        <div class="card-content">
+          <div class="card-icon">
+            <!-- SVG for Calendar/Events -->
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="48" height="48">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0h18M12 14.25h.008v.008H12v-.008Z" />
+            </svg>
+          </div>
+          <h2 class="card-title">Event Tracker</h2>
+          <p class="card-description">Prepare for upcoming events and track your progress.</p>
+        </div>
+        <div class="card-footer">
+          <a routerLink="/events/bear" class="card-link">View Events</a>
+        </div>
+      </div>
+
+      <!-- Community Guides Card -->
+      <div class="card">
+        <div class="card-content">
+          <div class="card-icon">
+            <!-- SVG for Book/Guides -->
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="48" height="48">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18c-2.305 0-4.408.867-6 2.292m0-14.25v14.25" />
+            </svg>
+          </div>
+          <h2 class="card-title">Community Guides</h2>
+          <p class="card-description">Learn from the best with guides created by the Kingshot community.</p>
+        </div>
+        <div class="card-footer">
+          <a routerLink="/guides" class="card-link">Browse Guides</a>
         </div>
       </div>
     </div>
