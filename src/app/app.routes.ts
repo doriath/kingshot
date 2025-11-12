@@ -1,19 +1,15 @@
 import { Routes } from '@angular/router';
 import { HomeComponent } from './home/home';
-import { BearComponent } from './bear/bear';
-import { VikingsComponent } from './vikings/vikings';
-import { SwordlandComponent } from './swordland/swordland';
-import { BearSimulatorComponent } from './bear-simulator/bear-simulator';
-import { MyResearchComponent } from './my-research/my-research';
-import { HeroGearComponent } from './hero-gear/hero-gear';
+import { BEAR_ROUTES } from './bear.routes';
+import { VIKINGS_ROUTES } from './vikings.routes';
+import { SWORDLAND_ROUTES } from './swordland.routes';
+import { MISC_ROUTES } from './misc.routes';
 
 export const routes: Routes = [
     { path: '', redirectTo: 'home', pathMatch: 'full' },
     { path: 'home', component: HomeComponent, title: 'Home' },
-    { path: 'bear', component: BearComponent, title: 'Bear' },
-    { path: 'vikings', component: VikingsComponent, title: 'Vikings' },
-    { path: 'swordland', component: SwordlandComponent, title: 'Swordland' },
-    { path: 'bear-simulator', component: BearSimulatorComponent, title: 'Bear Simulator' },
-    { path: 'my-research', component: MyResearchComponent, title: 'My Research' },
-    { path: 'hero-gear', component: HeroGearComponent, title: 'Hero Gear' },
+    ...BEAR_ROUTES,
+    ...VIKINGS_ROUTES,
+    ...SWORDLAND_ROUTES,
+    ...MISC_ROUTES,
 ];

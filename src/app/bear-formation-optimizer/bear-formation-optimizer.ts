@@ -14,13 +14,13 @@ interface Formation {
 }
 
 @Component({
-  selector: 'app-bear',
-  templateUrl: './bear.html',
-  styleUrls: ['./bear.css'],
+  selector: 'app-bear-formation-optimizer',
+  templateUrl: './bear-formation-optimizer.html',
+  styleUrls: ['./bear-formation-optimizer.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule],
 })
-export class BearComponent {
+export class BearFormationOptimizerComponent {
   private scs = inject(Scs);
 
   troopLevel = signal(10);
