@@ -9,6 +9,11 @@ export const BEAR_ROUTES: Routes = [
         title: 'Bear Event',
     },
     {
+        path: 'bear',
+        component: BearEventComponent,
+        title: 'Bear Event',
+    },
+    {
         path: 'tools/bear-optimizer',
         component: BearOptimizerComponent,
         title: 'Bear Optimizer',

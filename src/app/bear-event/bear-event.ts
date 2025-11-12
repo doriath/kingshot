@@ -1,9 +1,16 @@
-import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, signal, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 
-import { March, formations } from './formation.helpers';
 import { RulesComponent } from '../rules/rules';
+import { Scs, MarchConfig, Troops } from '../optimization/scs';
+
+export interface March {
+  name: string;
+  infantry: number;
+  cavalry: number;
+  archers: number;
+}
 
 @Component({
   selector: 'app-bear-event',
@@ -14,6 +21,7 @@ import { RulesComponent } from '../rules/rules';
   standalone: true,
 })
 export class BearEventComponent {
+  private scs = inject(Scs);
   // Define the rules for the event.
   public readonly rules = [
     { text: 'No Sniping! Join first rally first.', help: 'This ensures everyone can join good rallies and it maximizes the total damage of everyone in the alliance.' },
@@ -35,15 +43,35 @@ export class BearEventComponent {
   public computedResult = signal<March[] | undefined>(undefined);
 
   // Method to generate the formations.
-  public generateFormations(): void {
-    const result = formations(
-      this.infantry(),
-      this.cavalry(),
-      this.archers(),
-      this.hasAmadeus(),
-      this.numMarches(),
-      this.damageRatio()
-    );
-    this.computedResult.set(result);
+  public async generateFormations(): Promise<void> {
+    const troops: Troops = {
+      infCount: this.infantry(),
+      cavCount: this.cavalry(),
+      arcCount: this.archers(),
+    };
+
+    let joinWithHero = this.hasAmadeus() ? 4 : 3;
+    let joinWithoutHero = Math.min(5, this.numMarches()) - joinWithHero;
+    let maxTroops = 90000;
+
+    const marchConfigs: MarchConfig[] = [
+      { name: 'Rally Lead', maxTroops: maxTroops, parallel: 1, used: 5, dmg: this.damageRatio() },
+      { name: 'Join with hero x ' + joinWithHero, maxTroops: maxTroops, parallel: joinWithHero, used: joinWithHero * 5 * 3, dmg: 1.0 },
+      { name: 'Join no hero x ' + joinWithoutHero, maxTroops: maxTroops, parallel: joinWithoutHero, used: joinWithoutHero * 5 * 3, dmg: 1.0 },
+    ];
+
+    try {
+      const results = await this.scs.optimizeBear(troops, marchConfigs);
+      const finalResult: March[] = results.map((result, i) => ({
+        name: marchConfigs[i].name,
+        infantry: Math.round(result.troops[0]),
+        cavalry: Math.round(result.troops[1]),
+        archers: Math.round(result.troops[2]),
+      }));
+      this.computedResult.set(finalResult);
+    } catch (e) {
+      console.error(e);
+      alert('Failed to optimize formations. Check console for details.');
+    }
   }
 }
