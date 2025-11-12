@@ -1,1 +1,76 @@
-<p>bear-event works!</p>
+<div class="bear-event-container">
+  <header class="hero-section">
+    <div class="hero-content">
+      <h1 class="hero-title">Bear Event 1 (20:00 UTC)</h1>
+    </div>
+  </header>
+
+  <main class="rules-section">
+    <h2>Rules</h2>
+    <ul class="rules-list">
+      @for (rule of rules; track rule.text) {
+        <li>
+          <span>{{ rule.text }}</span>
+          <button class="help-button" (click)="toggleHelp(rule)">?</button>
+          @if (rule.showHelp()) {
+            <p class="help-text">{{ rule.help }}</p>
+          }
+        </li>
+      }
+    </ul>
+  </main>
+
+  <section class="formation-generation">
+    <h2>Formation Generator</h2>
+    <form (ngSubmit)="generateFormations()">
+      <div class="form-grid">
+        <div class="form-field">
+          <label for="infantry">Infantry</label>
+          <input id="infantry" type="number" [(ngModel)]="infantry" name="infantry">
+          <span class="tooltip">Total number of infantry troops.</span>
+        </div>
+        <div class="form-field">
+          <label for="cavalry">Cavalry</label>
+          <input id="cavalry" type="number" [(ngModel)]="cavalry" name="cavalry">
+          <span class="tooltip">Total number of cavalry troops.</span>
+        </div>
+        <div class="form-field">
+          <label for="archers">Archers</label>
+          <input id="archers" type="number" [(ngModel)]="archers" name="archers">
+          <span class="tooltip">Total number of archer troops.</span>
+        </div>
+        <div class="form-field">
+          <label for="amadeus">Amadeus Hero</label>
+          <input id="amadeus" type="checkbox" [(ngModel)]="hasAmadeus" name="amadeus">
+          <span class="tooltip">Do you have Amadeus hero available?</span>
+        </div>
+        <div class="form-field">
+          <label for="marches">Available Marches</label>
+          <input id="marches" type="number" [(ngModel)]="numMarches" name="marches">
+          <span class="tooltip">How many marches can you send?</span>
+        </div>
+        <div class="form-field">
+          <label for="damage">Damage vs Average</label>
+          <input id="damage" type="number" step="0.1" [(ngModel)]="damageRatio" name="damage">
+          <span class="tooltip">Your rally damage compared to an average rally (e.g., 1.2 for 20% more damage).</span>
+        </div>
+      </div>
+      <button type="submit" class="generate-button">Generate Formations</button>
+    </form>
+
+    @if (computedResult()) {
+      <h3>Generated Formations</h3>
+      <div class="results-grid">
+        @for (formation of computedResult(); track formation.name) {
+          <div class="formation-card">
+            <h4>{{ formation.name }}</h4>
+            <p>Infantry: {{ formation.infantry }}</p>
+            <p>Cavalry: {{ formation.cavalry }}</p>
+            <p>Archers: {{ formation.archers }}</p>
+            <p>Ratio: {{ formation.ratio }}</p>
+          </div>
+        }
+      </div>
+    }
+  </section>
+</div>
