@@ -1,130 +1,48 @@
-import { ChangeDetectionStrategy, Component, signal, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Scs, MarchConfig, Troops } from '../optimization/scs';
+import { CommonModule } from '@angular/common';
 
-interface Formation {
-  name: string;
-  infantry: number;
-  cavalry: number;
-  archers: number;
-  ratio: string;
-}
+import { March, formations } from './formation.helpers';
+import { RulesComponent } from '../rules/rules';
 
 @Component({
   selector: 'app-bear-event',
+  imports: [CommonModule, FormsModule, RulesComponent],
   templateUrl: './bear-event.html',
   styleUrls: ['./bear-event.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule],
+  standalone: true,
 })
 export class BearEventComponent {
-  private scs = inject(Scs);
-
-  rules = [
-    {
-      text: 'No sniping',
-      help: 'Sniping is attacking a rally that is already in progress. This is discouraged to ensure everyone gets a fair chance to participate.',
-      showHelp: signal(false)
-    },
-    {
-      text: 'Max Infantry = Cavalry / 10',
-      help: 'To maximize damage, the number of infantry units should be at most 10% of your cavalry units.',
-      showHelp: signal(false)
-    },
-    {
-      text: 'Max join 90k',
-      help: 'To ensure smaller players can also participate, the maximum number of troops you can send to a rally is 90,000.',
-      showHelp: signal(false)
-    },
-    {
-      text: 'Everyone creates a rally',
-      help: 'Everyone should start their own rally. This ensures that we have enough rallies for everyone to join.',
-      showHelp: signal(false)
-    }
+  // Define the rules for the event.
+  public readonly rules = [
+    { text: 'No Sniping! Join first rally first.', help: 'This ensures everyone can join good rallies and it maximizes the total damage of everyone in the alliance.' },
+    { text: 'Max 90k troops per join.', help: 'By limiting the join size, we ensure more people can join rallies.' },
+    { text: 'Max 3% infantry', help: 'Infantry has the lowest damage, so use minimal amount of infantry troops to best utilize the space.' },
+    { text: 'Everyone starts a rally.', help: 'Ensures we can utilize the waves' },
+    { text: 'Join with Chenko/Amane/Yeonwoo/Amadeus.', help: 'Ensures maximum damage' },
   ];
 
-  // Form properties
-  infantry: number = 100000;
-  cavalry: number = 100000;
-  archers: number = 100000;
-  hasAmadeus: boolean = false;
-  numMarches: number = 1;
-  damageRatio: number = 1.0;
+  // Form state signals
+  public infantry = signal(300_000);
+  public cavalry = signal(200_000);
+  public archers = signal(300_000);
+  public hasAmadeus = signal(true);
+  public numMarches = signal(5);
+  public damageRatio = signal(1);
 
-  computedResult = signal<Formation[] | null>(null);
+  public computedResult = signal<March[] | undefined>(undefined);
 
-  toggleHelp(rule: any) {
-    rule.showHelp.set(!rule.showHelp());
-  }
-
-  async generateFormations(): Promise<void> {
-    const marchConfigs: MarchConfig[] = [];
-
-    if (this.numMarches > 0) {
-        marchConfigs.push({
-            name: 'Rally Lead',
-            maxTroops: 120000, 
-            parallel: 1,
-            used: 5, 
-            dmg: this.damageRatio,
-        });
-    }
-
-    const joiningMarches = this.numMarches - 1;
-    if (joiningMarches > 0) {
-        if (this.hasAmadeus) {
-            marchConfigs.push({
-                name: 'Join with Amadeus',
-                maxTroops: 90000,
-                parallel: 1,
-                used: 5,
-                dmg: this.damageRatio * 1.1, // Assuming Amadeus gives a damage boost
-            });
-            if (joiningMarches > 1) {
-                marchConfigs.push({
-                    name: `Join others`,
-                    maxTroops: 90000,
-                    parallel: joiningMarches - 1,
-                    used: 5 * (joiningMarches - 1),
-                    dmg: this.damageRatio,
-                });
-            }
-        } else {
-             marchConfigs.push({
-                name: `Join`,
-                maxTroops: 90000,
-                parallel: joiningMarches,
-                used: 5 * joiningMarches,
-                dmg: this.damageRatio,
-            });
-        }
-    }
-
-
-    try {
-        const troops: Troops = {
-            infCount: this.infantry,
-            cavCount: this.cavalry,
-            arcCount: this.archers,
-        };
-
-        const result = await this.scs.optimizeBear(troops, marchConfigs);
-
-        const formations: Formation[] = result.map((m, i) => {
-            return {
-              name: marchConfigs[i].name,
-              infantry: Math.floor(m.troops[0]),
-              cavalry: Math.floor(m.troops[1]),
-              archers: Math.floor(m.troops[2]),
-              ratio: `${((m.troops[0] / m.maxTroops) * 100).toFixed(1)}% / ${((m.troops[1] / m.maxTroops) * 100).toFixed(1)}% / ${((m.troops[2] / m.maxTroops) * 100).toFixed(1)}%`,
-            };
-        });
-
-        this.computedResult.set(formations);
-    } catch (error) {
-        console.error('Solver failed:', error);
-        window.alert("Solver failed");
-    }
+  // Method to generate the formations.
+  public generateFormations(): void {
+    const result = formations(
+      this.infantry(),
+      this.cavalry(),
+      this.archers(),
+      this.hasAmadeus(),
+      this.numMarches(),
+      this.damageRatio()
+    );
+    this.computedResult.set(result);
   }
 }

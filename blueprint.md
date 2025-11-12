@@ -35,3 +35,4 @@ This application is a companion for the mobile game Kingshot. It helps players o
 **Phase 3: Component Consistency**
 
 1.  **Component Audit:** Review the other components in the application and apply the new design system to them, ensuring a consistent and polished user experience across the entire site.
+2.  **Bear Event Page:** Optimize the Bear Event page for mobile devices. This includes rewriting the CSS to be mobile-first and responsive, styling the form controls to match the new design system, and fixing the styling of the generated formation results to be clear and readable.

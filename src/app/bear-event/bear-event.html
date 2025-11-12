@@ -1,76 +1,67 @@
 <div class="bear-event-container">
-  <header class="hero-section">
-    <div class="hero-content">
-      <h1 class="hero-title">Bear Event 1 (20:00 UTC)</h1>
-    </div>
+  <header class="page-header">
+    <h1 class="page-title">Bear 1 (20:00 UTC)</h1>
   </header>
 
-  <main class="rules-section">
-    <h2>Rules</h2>
-    <ul class="rules-list">
-      @for (rule of rules; track rule.text) {
-        <li>
-          <span>{{ rule.text }}</span>
-          <button class="help-button" (click)="toggleHelp(rule)">?</button>
-          @if (rule.showHelp()) {
-            <p class="help-text">{{ rule.help }}</p>
-          }
-        </li>
-      }
-    </ul>
-  </main>
+  <app-rules [rules]="rules" />
 
-  <section class="formation-generation">
-    <h2>Formation Generator</h2>
-    <form (ngSubmit)="generateFormations()">
-      <div class="form-grid">
-        <div class="form-field">
-          <label for="infantry">Infantry</label>
-          <input id="infantry" type="number" [(ngModel)]="infantry" name="infantry">
-          <span class="tooltip">Total number of infantry troops.</span>
-        </div>
-        <div class="form-field">
-          <label for="cavalry">Cavalry</label>
-          <input id="cavalry" type="number" [(ngModel)]="cavalry" name="cavalry">
-          <span class="tooltip">Total number of cavalry troops.</span>
-        </div>
-        <div class="form-field">
-          <label for="archers">Archers</label>
-          <input id="archers" type="number" [(ngModel)]="archers" name="archers">
-          <span class="tooltip">Total number of archer troops.</span>
-        </div>
-        <div class="form-field">
-          <label for="amadeus">Amadeus Hero</label>
-          <input id="amadeus" type="checkbox" [(ngModel)]="hasAmadeus" name="amadeus">
-          <span class="tooltip">Do you have Amadeus hero available?</span>
-        </div>
-        <div class="form-field">
-          <label for="marches">Available Marches</label>
-          <input id="marches" type="number" [(ngModel)]="numMarches" name="marches">
-          <span class="tooltip">How many marches can you send?</span>
-        </div>
-        <div class="form-field">
-          <label for="damage">Damage vs Average</label>
-          <input id="damage" type="number" step="0.1" [(ngModel)]="damageRatio" name="damage">
-          <span class="tooltip">Your rally damage compared to an average rally (e.g., 1.2 for 20% more damage).</span>
-        </div>
+  <form (submit)="generateFormations()" class="formation-generator-form">
+    <h2 class="section-title">Generator Settings</h2>
+
+    <div class="form-grid">
+      <div class="form-field">
+        <label for="infantry">Infantry Troops</label>
+        <input id="infantry" type="number" [(ngModel)]="infantry" name="infantry" placeholder="e.g., 1200000" />
+        <p class="tooltip">Total number of infantry you can send.</p>
       </div>
-      <button type="submit" class="generate-button">Generate Formations</button>
-    </form>
 
-    @if (computedResult()) {
-      <h3>Generated Formations</h3>
+      <div class="form-field">
+        <label for="cavalry">Cavalry Troops</label>
+        <input id="cavalry" type="number" [(ngModel)]="cavalry" name="cavalry" placeholder="e.g., 800000" />
+        <p class="tooltip">Total number of cavalry you can send.</p>
+      </div>
+
+      <div class="form-field">
+        <label for="archers">Archer Troops</label>
+        <input id="archers" type="number" [(ngModel)]="archers" name="archers" placeholder="e.g., 1500000" />
+        <p class="tooltip">Total number of archers you can send.</p>
+      </div>
+
+      <div class="form-field">
+        <label for="numMarches">Available Marches</label>
+        <input id="numMarches" type="number" [(ngModel)]="numMarches" name="numMarches" placeholder="e.g., 5" />
+        <p class="tooltip">How many marches can you send at once?</p>
+      </div>
+
+      <div class="form-field">
+        <label for="damageRatio">Damage vs. Average</label>
+        <input id="damageRatio" type="number" step="0.1" [(ngModel)]="damageRatio" name="damageRatio" placeholder="e.g., 1.2" />
+        <p class="tooltip">Your damage versus an average rally (4 = 400% more).</p>
+      </div>
+
+      <div class="form-field-checkbox">
+        <input id="hasAmadeus" type="checkbox" [(ngModel)]="hasAmadeus" name="hasAmadeus" />
+        <label for="hasAmadeus">Amadeus Hero Available</label>
+      </div>
+    </div>
+
+    <button type="submit" class="generate-button">Generate Formations</button>
+  </form>
+
+  @if (computedResult()?.length) {
+    <section class="results-section">
+      <h2 class="section-title">Generated Formations</h2>
       <div class="results-grid">
         @for (formation of computedResult(); track formation.name) {
           <div class="formation-card">
             <h4>{{ formation.name }}</h4>
-            <p>Infantry: {{ formation.infantry }}</p>
-            <p>Cavalry: {{ formation.cavalry }}</p>
-            <p>Archers: {{ formation.archers }}</p>
-            <p>Ratio: {{ formation.ratio }}</p>
+            <p><strong>Infantry:</strong> {{ formation.infantry | number }}</p>
+            <p><strong>Cavalry:</strong> {{ formation.cavalry | number }}</p>
+            <p><strong>Archers:</strong> {{ formation.archers | number }}</p>
+            <p><strong>Ratio:</strong> {{ formation.ratio | percent:'1.0-2' }}</p>
           </div>
         }
       </div>
-    }
-  </section>
+    </section>
+  }
 </div>
