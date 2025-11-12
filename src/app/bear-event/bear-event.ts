@@ -27,7 +27,7 @@ export class BearEventComponent {
   public infantry = signal(300_000);
   public cavalry = signal(200_000);
   public archers = signal(300_000);
-  public hasAmadeus = signal(true);
+  public hasAmadeus = signal(false);
   public numMarches = signal(5);
   public damageRatio = signal(1);
 
