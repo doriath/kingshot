@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { BearEventComponent } from './bear-event/bear-event';
-import { BearFormationOptimizerComponent } from './bear-formation-optimizer/bear-formation-optimizer';
+import { BearOptimizerComponent } from './bear-optimizer/bear-optimizer';
 
 export const BEAR_ROUTES: Routes = [
     {
@@ -9,8 +9,8 @@ export const BEAR_ROUTES: Routes = [
         title: 'Bear Event',
     },
     {
-        path: 'tools/bear-formation-optimizer',
-        component: BearFormationOptimizerComponent,
+        path: 'tools/bear-optimizer',
+        component: BearOptimizerComponent,
         title: 'Bear Optimizer',
     },
 ];
