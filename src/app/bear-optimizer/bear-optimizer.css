@@ -34,7 +34,7 @@ input[type="number"], input[type="text"] {
 input[type="number"]:focus, input[type="text"]:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.3);
+  box-shadow: 0 0 0 3px rgba(74, 144, 226,.3);
 }
 
 /* === CONTAINER AND HEADER === */
@@ -221,8 +221,8 @@ input[type="number"]:focus, input[type="text"]:focus {
 }
 
 .button-primary {
-  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
-  color: white;
+  background: linear-gradient(90deg, #ffeb3b, #fbc02d);
+  color: #1a1a1a;
   font-size: 1.1rem;
   font-weight: bold;
   padding: 1rem 1.5rem;
@@ -239,7 +239,7 @@ input[type="number"]:focus, input[type="text"]:focus {
 
 .button-primary:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 6px 12px rgba(255, 235, 59, 0.4);
 }
 
 .button-primary svg {

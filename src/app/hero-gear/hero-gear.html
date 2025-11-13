@@ -1,144 +1,172 @@
-<div class="container">
-  <h1>Hero Gear Optimizer</h1>
+<div class="gear-optimizer-container">
+  <header class="optimizer-header">
+    <h1>Hero Gear Optimizer</h1>
+    <p>Find the optimal distribution of your resources to maximize hero stats.</p>
+  </header>
 
-  <div class="resource-inputs">
-    <div class="resource-item">
-      <label for="exp-input">Available EXP:</label>
-      <input id="exp-input" type="number" [value]="exp()" (input)="updateExp($event)">
+  <!-- Resource Inputs -->
+  <section class="card resource-card">
+    <div class="card-header">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5l-2.25-1.313M21 7.5v2.25m0-2.25l-2.25 1.313M3 7.5l2.25-1.313M3 7.5l2.25 1.313M3 7.5v2.25m9 3l2.25-1.313M12 12.75l-2.25-1.313M12 12.75V15m0 6.75l2.25-1.313M12 21.75V19.5m0 2.25l-2.25-1.313m0-16.875L12 2.25l2.25 1.313M12 7.5v2.25m0 0l2.25 1.313M12 9.75l-2.25 1.313M12 5.25v2.25m-3-1.5l-2.25-1.313M9 5.25L12 3.75M9 5.25l-2.25 1.313M15 5.25l2.25-1.313M15 5.25L12 3.75M15 5.25l2.25 1.313m-3 8.25l2.25-1.313M15 13.5L12 15m0 0l-2.25-1.5m2.25 1.5V18m0 0l2.25-1.313m-2.25 1.313l-2.25-1.313" /></svg>
+      <h2>Available Resources</h2>
     </div>
-    <div class="resource-item">
-      <label for="hammers-input">Number of Hammers:</label>
-      <input id="hammers-input" type="number" [value]="hammers()" (input)="updateHammers($event)">
-    </div>
-  </div>
-
-  @for (hero of heroes(); track hero.name) {
-    <div class="hero-section">
-      <h2>{{ hero.name }}</h2>
-      <div class="table-wrapper">
-        <table class="gear-input-table">
-          <thead>
-            <tr>
-              <th>Gear</th>
-              <th>Enhancement</th>
-              <th>Mastery</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (gearType of objectKeys(hero.gear); track gearType) {
-              <tr>
-                <td>{{ gearType }}</td>
-                <td><input type="number" [value]="hero.gear[gearType].enhancement" (input)="updateEnhancement(hero.name, gearType, $event)"></td>
-                <td><input type="number" [value]="hero.gear[gearType].mastery" (input)="updateMastery(hero.name, gearType, $event)"></td>
-              </tr>
-            }
-          </tbody>
-        </table>
+    <div class="card-content resource-inputs">
+      <div class="form-group">
+        <label for="exp-input">Available EXP</label>
+        <input id="exp-input" type="number" [value]="exp()" (input)="updateExp($event)">
+      </div>
+      <div class="form-group">
+        <label for="hammers-input">Number of Hammers</label>
+        <input id="hammers-input" type="number" [value]="hammers()" (input)="updateHammers($event)">
       </div>
     </div>
-  }
+  </section>
 
-  <div class="advanced-section">
-    <button class="advanced-toggle" (click)="toggleAdvanced()">
-      <span class_="button-text">
-        Advanced Settings
-        <span class="toggle-icon">{{ isAdvancedCollapsed() ? '&#9660;' : '&#9650;' }}</span>
-      </span>
+  <!-- Hero Gear Configurations -->
+  <section class="hero-gear-section">
+    @for (hero of heroes(); track hero.name) {
+      <div class="card hero-card">
+        <div class="card-header">
+          <h2>{{ hero.name }} Gear</h2>
+        </div>
+        <div class="card-content gear-grid">
+          @for (gearType of objectKeys(hero.gear); track gearType) {
+            <fieldset class="gear-fieldset">
+              <legend>{{ gearType }}</legend>
+              <div class="form-group">
+                <label for="{{hero.name}}-{{gearType}}-enh">Enhancement</label>
+                <input id="{{hero.name}}-{{gearType}}-enh" type="number" [value]="hero.gear[gearType].enhancement" (input)="updateEnhancement(hero.name, gearType, $event)">
+              </div>
+              <div class="form-group">
+                <label for="{{hero.name}}-{{gearType}}-mas">Mastery</label>
+                <input id="{{hero.name}}-{{gearType}}-mas" type="number" [value]="hero.gear[gearType].mastery" (input)="updateMastery(hero.name, gearType, $event)">
+              </div>
+            </fieldset>
+          }
+        </div>
+      </div>
+    }
+  </section>
+
+  <!-- Advanced Settings -->
+  <section class="card advanced-card">
+    <button class="card-header-button" (click)="toggleAdvanced()">
+      <div class="card-header">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.822.256 1.255.256h.52c.608 0 1.156.34 1.437.87l.278.556c.28.56.026 1.232-.505 1.451l-.757.324c-.413.176-.74.45-.96.793a6.01 6.01 0 0 1-.062 1.108c.026.413.11.814.24 1.197l.428 1.282c.28.84.026 1.773-.642 2.15l-.757.426c-.413.233-.822.34-1.255.34h-.52c-.608 0-1.156-.34-1.437-.87l-.278-.556c-.28-.56-.026-1.232.505-1.451l.757-.324c.413-.176.74-.45.96-.793a6.01 6.01 0 0 1 .062-1.108c-.026-.413-.11-.814-.24-1.197l-.428-1.282c-.28-.84-.026-1.773.642-2.15l.757-.426c.413-.233.822-.34 1.255-.34h.52Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a5.25 5.25 0 1 1 0 10.5 5.25 5.25 0 0 1 0-10.5ZM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" /></svg>
+        <h2>Advanced Stat Weights</h2>
+      </div>
+      <div class="toggle-icon">
+        @if (isAdvancedCollapsed()) {
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
+        } @else {
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 15.75 7.5-7.5 7.5 7.5" /></svg>
+        }
+      </div>
     </button>
     @if (!isAdvancedCollapsed()) {
       <div class="advanced-content">
-        <p>This section allows you to fine-tune the optimization by assigning weights to different stats for each hero. A higher weight means the optimizer will prioritize that stat more.</p>
-        @for (hero of heroes(); track hero.name) {
-          <div class="hero-weights">
-            <h4>{{ hero.name }} Weights</h4>
-            <div class="weight-inputs">
-              <label>Lethality:</label>
-              <input type="number" [value]="hero.weights.lethality" (input)="updateWeight(hero.name, 'lethality', $event)">
-              <label>Health:</label>
-              <input type="number" [value]="hero.weights.health" (input)="updateWeight(hero.name, 'health', $event)">
-            </div>
-          </div>
-        }
+        <p>Fine-tune the optimization by assigning weights to stats. A higher weight means the optimizer will prioritize that stat more.</p>
+        <div class="weights-grid">
+          @for (hero of heroes(); track hero.name) {
+            <fieldset class="hero-weights">
+              <legend>{{ hero.name }}</legend>
+              <div class="form-group">
+                <label>Lethality</label>
+                <input type="number" [value]="hero.weights.lethality" (input)="updateWeight(hero.name, 'lethality', $event)">
+              </div>
+              <div class="form-group">
+                <label>Health</label>
+                <input type="number" [value]="hero.weights.health" (input)="updateWeight(hero.name, 'health', $event)">
+              </div>
+            </fieldset>
+          }
+        </div>
       </div>
     }
+  </section>
+
+  <!-- Action Buttons -->
+  <div class="action-buttons">
+    <button class="button-primary" (click)="optimize()">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" /></svg>
+      <span>Optimize Gear</span>
+    </button>
+    <button class="button-secondary" (click)="reset()">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 11.664 0l3.181-3.183m-11.664 0-3.181 3.183" /></svg>
+      <span>Reset</span>
+    </button>
   </div>
 
-  <div class="button-group">
-    <button (click)="optimize()"><span class="button-text">Optimize Your Gear</span></button>
-    <button class="secondary" (click)="reset()"><span class="button-text">Reset</span></button>
-  </div>
-
+  <!-- Optimization Results -->
   @if (optimizationResult(); as optimizationOutput) {
-    <div class="results-section">
-      <h3>Optimization Results</h3>
+    <section class="results-section">
+      <header class="section-header">
+        <h2>Optimization Results</h2>
+      </header>
+      
       @for (result of optimizationOutput.results; track result.heroName) {
-        <div class="hero-results">
-          <h4>{{ result.heroName }}</h4>
-          <div class="table-wrapper">
-            <table class="results-table">
-              <thead>
-                <tr>
-                  <th>Gear</th>
-                  <th>Current Enhancement</th>
-                  <th>Recommended Enhancement</th>
-                  <th>Current Mastery</th>
-                  <th>Recommended Mastery</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (gear of result.gear; track gear.type) {
-                  <tr>
-                    <td>{{ gear.type }}</td>
-                    <td>{{ gear.currentEnhancement }}</td>
-                    <td>{{ gear.recommendedEnhancement }}</td>
-                    <td>{{ gear.currentMastery }}</td>
-                    <td>{{ gear.recommendedMastery }}</td>
-                  </tr>
-                }
-              </tbody>
-            </table>
+        <div class="card result-card">
+          <div class="card-header">
+            <h3>{{ result.heroName }}</h3>
           </div>
-
-          <h5 class="stats-title">Stat Comparison</h5>
-          <div class="table-wrapper">
-            <table class="stats-table">
-              <thead>
-                <tr>
-                  <th>Stat</th>
-                  <th>Before</th>
-                  <th>After</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Lethality</td>
-                  <td>{{ (result.beforeStats.lethality * 100) | number:'1.2-2' }}%</td>
-                  <td>{{ (result.afterStats.lethality * 100) | number:'1.2-2' }}%</td>
-                </tr>
-                <tr>
-                  <td>Health</td>
-                  <td>{{ (result.beforeStats.health * 100) | number:'1.2-2' }}%</td>
-                  <td>{{ (result.afterStats.health * 100) | number:'1.2-2' }}%</td>
-                </tr>
-              </tbody>
-            </table>
+          <div class="card-content">
+            <div class="result-grid">
+              <!-- Recommended Upgrades -->
+              <div class="result-group">
+                <h4>Recommended Upgrades</h4>
+                <ul class="upgrade-list">
+                  @for (gear of result.gear; track gear.type) {
+                    <li>
+                      <strong>{{gear.type}}:</strong>
+                      <span>{{ gear.currentEnhancement }} &rarr; {{ gear.recommendedEnhancement }}</span>
+                      <span>(M: {{ gear.currentMastery }} &rarr; {{ gear.recommendedMastery }})</span>
+                    </li>
+                  }
+                </ul>
+              </div>
+              <!-- Stat Comparison -->
+              <div class="result-group">
+                <h4>Stat Comparison</h4>
+                <dl class="stats-list">
+                  <dt>Lethality</dt>
+                  <dd>
+                    <span>{{ (result.beforeStats.lethality * 100) | number:'1.2-2' }}%</span>
+                    <span class="arrow">&rarr;</span>
+                    <span class="after">{{ (result.afterStats.lethality * 100) | number:'1.2-2' }}%</span>
+                  </dd>
+                  <dt>Health</dt>
+                  <dd>
+                    <span>{{ (result.beforeStats.health * 100) | number:'1.2-2' }}%</span>
+                    <span class="arrow">&rarr;</span>
+                    <span class="after">{{ (result.afterStats.health * 100) | number:'1.2-2' }}%</span>
+                  </dd>
+                </dl>
+              </div>
+            </div>
           </div>
         </div>
       }
 
-      <div class="final-stats-section">
-        <h3>Final Score</h3>
-        <div class="final-score-container">
-          <div class="score-card">
-            <span class="score-label">Before</span>
-            <span class="score-value">{{ optimizationOutput.totalBeforeScore | number:'1.2-2' }}</span>
-          </div>
-          <div class="score-card">
-            <span class="score-label">After</span>
-            <span class="score-value">{{ optimizationOutput.totalAfterScore | number:'1.2-2' }}</span>
-          </div>
+      <!-- Final Score -->
+      <div class="card final-score-card">
+        <div class="card-header">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9a9.75 9.75 0 1 1 0-13.5h9a9.75 9.75 0 1 1 0 13.5ZM10.5 6.75h.008v.008h-.008V6.75Zm.75 4.5h.008v.008h-.008v-.008Zm-.75 4.5h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008h-.008v-.008Zm.75 4.5h.008v.008h-.008v-.008Zm-.75-9h.008v.008h-.008V6.75Z" /></svg>
+          <h3>Final Score Comparison</h3>
+        </div>
+        <div class="card-content score-comparison">
+            <div class="score-item">
+                <span class="score-label">Before</span>
+                <span class="score-value before">{{ optimizationOutput.totalBeforeScore | number:'1.2-2' }}</span>
+            </div>
+            <div class="score-arrow">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17.25 8.25 21 12m0 0-3.75 3.75M21 12H3" /></svg>
+            </div>
+            <div class="score-item">
+                <span class="score-label">After</span>
+                <span class="score-value after">{{ optimizationOutput.totalAfterScore | number:'1.2-2' }}</span>
+            </div>
         </div>
       </div>
-    </div>
+    </section>
   }
 </div>

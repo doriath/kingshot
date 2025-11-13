@@ -43,3 +43,16 @@ This application is a companion for the mobile game Kingshot. It helps players o
 2.  **HTML Structure**: Rewrite the HTML for clarity and responsiveness, using a card-based layout for marches.
 3.  **CSS Styling**: Implement a new mobile-first stylesheet with a modern design, including a clean layout, better typography, and improved user interactions.
 4.  **Interactivity**: Add copy-to-clipboard functionality with visual feedback for the results.
+
+**Phase 5: Hero Gear UI Revamp**
+
+1.  **Goal**: Overhaul the Hero Gear Optimizer page with the new dark-theme design system, focusing on a clean, mobile-first, and intuitive user experience.
+2.  **HTML Structure**: Restructure the page using a card-based system for resources, hero gear, advanced settings, and results. Replace input tables with responsive form layouts.
+3.  **CSS Styling**: Write a new, mobile-first stylesheet using the established CSS variables for a consistent look. Style all elements, including cards, forms, and result tables, to be visually appealing and easy to interact with on any device.
+
+**Phase 6: UI Polish and Final Touches**
+
+1.  **Goal**: Address user feedback by making targeted UI improvements to the Hero Gear page for better clarity and visual appeal.
+2.  **Advanced Settings Header**: Fix the styling of the "Advanced Stat Weights" header to ensure the background covers the entire area, not just the text.
+3.  **Reset Button**: Redesign the reset button to be more visually distinct and convey a sense of caution, using a red color scheme.
+4.  **Optimize Button**: Change the primary action button to a yellow/accent color to make it the main focal point.
