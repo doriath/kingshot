@@ -1,113 +1,159 @@
-<div class="container">
-  <h1>Bear Damage Calculator</h1>
+<div class="optimizer-container">
+  <header class="optimizer-header">
+    <h1>Bear Formation Optimizer</h1>
+    <p>Optimize your march formations to maximize bear damage.</p>
+  </header>
 
-  <div class="form-container">
-    <div class="form-grid main-grid">
-      <div class="form-group">
-        <label for="troop-level">Troop Level (1-10)</label>
-        <input id="troop-level" type="number" [value]="troopLevel()" (input)="troopLevel.set($event.target.valueAsNumber)" min="1" max="10">
+  <section class="card-grid">
+    <!-- General Settings -->
+    <div class="card settings-card">
+      <div class="card-header">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.24-.438.613-.438.995s.145.755.438.995l1.003.827c.424.35.534.954.26 1.431l-1.296 2.247a1.125 1.125 0 0 1-1.37.49l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 0 1-.22.128c-.332.183-.582.495-.645.87l-.213 1.28c-.09.543-.56.94-1.11.94h-2.593c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.063-.374-.313-.686-.645-.87a6.52 6.52 0 0 1-.22-.127c-.324-.196-.72-.257-1.075-.124l-1.217.456a1.125 1.125 0 0 1-1.37-.49l-1.296-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.437-.995s-.145-.755-.437-.995l-1.004-.827a1.125 1.125 0 0 1-.26-1.431l1.296-2.247a1.125 1.125 0 0 1 1.37-.49l1.217.456c.355.133.75.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.645-.87l.213-1.28Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+        <h2>General Settings</h2>
       </div>
-
-      <div class="form-group">
-        <label for="tg-level">TG Level (0-5)</label>
-        <input id="tg-level" type="number" [value]="tgLevel()" (input)="tgLevel.set($event.target.valueAsNumber)" min="0" max="5">
+      <div class="card-content">
+        <div class="form-group">
+          <label for="troop-level">Troop Level (1-10)</label>
+          <input id="troop-level" type="number" [value]="troopLevel()" (input)="troopLevel.set($event.target.valueAsNumber)" min="1" max="10">
+        </div>
+        <div class="form-group">
+          <label for="tg-level">TG Level (0-5)</label>
+          <input id="tg-level" type="number" [value]="tgLevel()" (input)="tgLevel.set($event.target.valueAsNumber)" min="0" max="5">
+        </div>
       </div>
     </div>
 
-    <div class="form-grid troop-grid">
-      <div class="form-group">
-        <label for="infantry">Infantry</label>
-        <input id="infantry" type="number" [value]="infantry()" (input)="infantry.set($event.target.valueAsNumber)">
+    <!-- Troop Counts -->
+    <div class="card troop-card">
+      <div class="card-header">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m-7.5-2.962a3.75 3.75 0 0 1 5.304 0M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+        <h2>Available Troops</h2>
       </div>
-
-      <div class="form-group">
-        <label for="cavalry">Cavalry</label>
-        <input id="cavalry" type="number" [value]="cavalry()" (input)="cavalry.set($event.target.valueAsNumber)">
-      </div>
-
-      <div class="form-group">
-        <label for="archers">Archers</label>
-        <input id="archers" type="number" [value]="archers()" (input)="archers.set($event.target.valueAsNumber)">
+      <div class="card-content">
+        <div class="form-group">
+          <label for="infantry">Infantry</label>
+          <input id="infantry" type="number" [value]="infantry()" (input)="infantry.set($event.target.valueAsNumber)">
+        </div>
+        <div class="form-group">
+          <label for="cavalry">Cavalry</label>
+          <input id="cavalry" type="number" [value]="cavalry()" (input)="cavalry.set($event.target.valueAsNumber)">
+        </div>
+        <div class="form-group">
+          <label for="archers">Archers</label>
+          <input id="archers" type="number" [value]="archers()" (input)="archers.set($event.target.valueAsNumber)">
+        </div>
       </div>
     </div>
+  </section>
+
+  <!-- March Configuration -->
+  <section class="marches-section">
+    <header class="section-header">
+      <h2>March Configuration</h2>
+      <button class="icon-button add-march-button" (click)="addMarch()">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
+        <span>Add March</span>
+      </button>
+    </header>
+
+    <div class="marches-grid">
+      @for (march of marches(); track i; let i = $index) {
+        <div class="card march-card">
+          <div class="card-header">
+            <input class="march-name-input" type="text" [value]="march.name" (input)="updateMarch(i, 'name', $event.target.value)" placeholder="March Name">
+            <button class="icon-button remove-march-button" (click)="removeMarch(i)">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.58.22-2.365.426C1.98 4.973 1 6.169 1 7.5v3c0 1.332.98 2.527 2.635 2.831.785.206 1.57.349 2.365.426v.443A2.75 2.75 0 0 0 8.75 17h2.5A2.75 2.75 0 0 0 14 14.25v-.443c.795-.077 1.58-.22 2.365-.426C18.02 13.027 19 11.832 19 10.5v-3c0-1.332-.98-2.527-2.635-2.831-.785-.206-1.57-.349-2.365-.426v-.443A2.75 2.75 0 0 0 11.25 1h-2.5ZM7.5 3.75c0-.69.56-1.25 1.25-1.25h2.5c.69 0 1.25.56 1.25 1.25v.519c-.357.034-.71.08-1.056.136-.348.056-.692.12-1.028.19-1.054.226-2.022.52-2.816.85v-1.695Z" clip-rule="evenodd" /></svg>
+            </button>
+          </div>
+          <div class="card-content">
+            <div class="form-group">
+              <label for="max-troops-{{i}}">Max Troops</label>
+              <input id="max-troops-{{i}}" type="number" [value]="march.maxTroops" (input)="updateMarch(i, 'maxTroops', $event.target.value)">
+            </div>
+            <div class="form-group">
+              <label for="parallel-{{i}}">Parallel</label>
+              <input id="parallel-{{i}}" type="number" [value]="march.parallel" (input)="updateMarch(i, 'parallel', $event.target.value)">
+            </div>
+            <div class="form-group">
+              <label for="used-{{i}}">Used</label>
+              <input id="used-{{i}}" type="number" [value]="march.used" (input)="updateMarch(i, 'used', $event.target.value)">
+            </div>
+            <div class="form-group">
+              <label for="dmg-{{i}}">Damage %</label>
+              <input id="dmg-{{i}}" type="number" [value]="march.dmg" (input)="updateMarch(i, 'dmg', $event.target.value)" step="0.01">
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </section>
+
+  <div class="compute-container">
+    <button (click)="compute()" class="button-primary">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 15.75V18m-7.5-6.75h.008v.008H8.25v-.008Zm0 3h.008v.008H8.25v-.008Zm0 3h.008v.008H8.25v-.008Zm3-6h.008v.008H11.25v-.008Zm0 3h.008v.008H11.25v-.008Zm0 3h.008v.008H11.25v-.008Zm3-6h.008v.008H14.25v-.008Zm0 3h.008v.008H14.25v-.008Zm0 3h.008v.008H14.25v-.008Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h18M3 21h18v-3H3v3Zm0-6h18v-3H3v3Zm0-6h18V6H3v3Z" /></svg>
+      <span>Compute Optimal Formations</span>
+    </button>
   </div>
 
-  <h2>March Configuration</h2>
-  <div class="marches-grid">
-    @for (march of marches(); track i; let i = $index) {
-      <div class="march-card">
-        <div class="march-header">
-          <h3>{{ march.name }}</h3>
-          <button class="remove-march-button" (click)="removeMarch(i)">&times;</button>
-        </div>
-        <div class="march-form">
-          <div class="form-group">
-            <label for="march-name-{{i}}">Name</label>
-            <input id="march-name-{{i}}" type="text" [value]="march.name" (input)="updateMarch(i, 'name', $event.target.value)">
-          </div>
-          <div class="form-group">
-            <label for="max-troops-{{i}}">Max Troops</label>
-            <input id="max-troops-{{i}}" type="number" [value]="march.maxTroops" (input)="updateMarch(i, 'maxTroops', $event.target.value)">
-          </div>
-          <div class="form-group">
-            <label for="parallel-{{i}}">Parallel</label>
-            <input id="parallel-{{i}}" type="number" [value]="march.parallel" (input)="updateMarch(i, 'parallel', $event.target.value)">
-          </div>
-          <div class="form-group">
-            <label for="used-{{i}}">Used</label>
-            <input id="used-{{i}}" type="number" [value]="march.used" (input)="updateMarch(i, 'used', $event.target.value)">
-          </div>
-          <div class="form-group">
-            <label for="dmg-{{i}}">Damage</label>
-            <input id="dmg-{{i}}" type="number" [value]="march.dmg" (input)="updateMarch(i, 'dmg', $event.target.value)" step="0.01">
-          </div>
-        </div>
-      </div>
-    }
-  </div>
-
-  <button class="add-march-button" (click)="addMarch()">+ Add March</button>
-
-  <button (click)="compute()" class="compute-button">Compute</button>
 
   @if (computedResult(); as formations) {
     @if (formations.length > 0) {
-      <div class="results-grid">
-        @for (formation of formations; track formation.name) {
-          <div class="formation-card">
-            <h2>{{ formation.name }}</h2>
-            <div class="troop-info">
-              <span>Troops (I/C/A):</span>
-              <span class="troop-values">
-                <span class="copyable" (click)="copyNumber(formation.infantry, formation.name, 'infantry')" [class.copied]="copiedIdentifier() === formation.name + '-infantry'">
-                  {{ formation.infantry }}
-                  @if (copiedIdentifier() === formation.name + '-infantry') {
-                    <span class="copied-message">Copied!</span>
-                  }
-                </span>
-                <span>&nbsp;/&nbsp;</span>
-                <span class="copyable" (click)="copyNumber(formation.cavalry, formation.name, 'cavalry')" [class.copied]="copiedIdentifier() === formation.name + '-cavalry'">
-                  {{ formation.cavalry }}
-                  @if (copiedIdentifier() === formation.name + '-cavalry') {
-                    <span class="copied-message">Copied!</span>
-                  }
-                </span>
-                <span>&nbsp;/&nbsp;</span>
-                <span class="copyable" (click)="copyNumber(formation.archers, formation.name, 'archers')" [class.copied]="copiedIdentifier() === formation.name + '-archers'">
-                  {{ formation.archers }}
-                  @if (copiedIdentifier() === formation.name + '-archers') {
-                    <span class="copied-message">Copied!</span>
-                  }
-                </span>
-              </span>
+      <section class="results-section">
+        <header class="section-header">
+          <h2>Optimal Formations</h2>
+        </header>
+        <div class="results-grid">
+          @for (formation of formations; track formation.name) {
+            <div class="card result-card">
+              <div class="card-header">
+                <h3>{{ formation.name }}</h3>
+                <div class="ratio-badge">
+                  <span>Ratio:</span>
+                  <strong>{{ formation.ratio }}</strong>
+                </div>
+              </div>
+              <div class="card-content">
+                <div class="troop-info">
+                  <label>Infantry:</label>
+                  <div class="copyable-item">
+                    <span class="troop-value">{{ formation.infantry | number }}</span>
+                    <button class="icon-button" (click)="copyNumber(formation.infantry, formation.name, 'infantry')">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a2.25 2.25 0 0 1-2.25 2.25H9.75A2.25 2.25 0 0 1 7.5 4.5v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" /></svg>
+                      @if (copiedIdentifier() === formation.name + '-infantry') {
+                        <span class="copied-feedback">Copied!</span>
+                      }
+                    </button>
+                  </div>
+                </div>
+                <div class="troop-info">
+                  <label>Cavalry:</label>
+                  <div class="copyable-item">
+                    <span class="troop-value">{{ formation.cavalry | number }}</span>
+                    <button class="icon-button" (click)="copyNumber(formation.cavalry, formation.name, 'cavalry')">
+                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a2.25 2.25 0 0 1-2.25 2.25H9.75A2.25 2.25 0 0 1 7.5 4.5v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" /></svg>
+                      @if (copiedIdentifier() === formation.name + '-cavalry') {
+                        <span class="copied-feedback">Copied!</span>
+                      }
+                    </button>
+                  </div>
+                </div>
+                <div class="troop-info">
+                  <label>Archers:</label>
+                  <div class="copyable-item">
+                    <span class="troop-value">{{ formation.archers | number }}</span>
+                    <button class="icon-button" (click)="copyNumber(formation.archers, formation.name, 'archers')">
+                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a2.25 2.25 0 0 1-2.25 2.25H9.75A2.25 2.25 0 0 1 7.5 4.5v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" /></svg>
+                      @if (copiedIdentifier() === formation.name + '-archers') {
+                        <span class="copied-feedback">Copied!</span>
+                      }
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="ratio-info">
-              <span>Ratio:</span>
-              <span>{{ formation.ratio }}</span>
-            </div>
-          </div>
-        }
-      </div>
+          }
+        </div>
+      </section>
     }
   }
 </div>

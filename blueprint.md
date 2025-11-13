@@ -36,3 +36,10 @@ This application is a companion for the mobile game Kingshot. It helps players o
 
 1.  **Component Audit:** Review the other components in the application and apply the new design system to them, ensuring a consistent and polished user experience across the entire site.
 2.  **Bear Event Page:** Optimize the Bear Event page for mobile devices. This includes rewriting the CSS to be mobile-first and responsive, styling the form controls to match the new design system, and fixing the styling of the generated formation results to be clear and readable.
+
+**Phase 4: Bear Optimizer UI Revamp**
+
+1.  **Goal**: Completely redesign the Bear Optimizer page to be more modern, mobile-first, and visually appealing, while preserving all existing functionality.
+2.  **HTML Structure**: Rewrite the HTML for clarity and responsiveness, using a card-based layout for marches.
+3.  **CSS Styling**: Implement a new mobile-first stylesheet with a modern design, including a clean layout, better typography, and improved user interactions.
+4.  **Interactivity**: Add copy-to-clipboard functionality with visual feedback for the results.
