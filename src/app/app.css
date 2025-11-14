@@ -40,13 +40,20 @@
   height: 24px;
 }
 
+.app-title-link {
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+}
+
 .app-title {
   font-size: 1.5rem;
   font-weight: 700;
   color: var(--color-primary);
   margin: 0;
   text-align: center;
-  flex-grow: 1;
 }
 
 .header-actions {
