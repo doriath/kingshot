@@ -1,9 +1,10 @@
-import { ChangeDetectionStrategy, Component, computed, signal, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, signal, inject, OnInit, effect } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 
 import { RulesComponent } from '../rules/rules';
 import { Scs, MarchConfig, Troops } from '../optimization/scs';
+import { StorageService } from '../storage.service';
 
 export interface March {
   name: string;
@@ -20,9 +21,10 @@ export interface March {
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
 })
-export class BearEventComponent {
+export class BearEventComponent implements OnInit {
   private scs = inject(Scs);
-  // Define the rules for the event.
+  private storageService = inject(StorageService);
+
   public readonly rules = [
     { text: 'No Sniping! Join first rally first.', help: 'This ensures everyone can join good rallies and it maximizes the total damage of everyone in the alliance.' },
     { text: 'Max 90k troops per join.', help: 'By limiting the join size, we ensure more people can join rallies.' },
@@ -32,7 +34,6 @@ export class BearEventComponent {
     { text: 'Everyone starts a rally.', help: 'Ensures we can utilize the waves' },
   ];
 
-  // Form state signals
   public infantry = signal(300_000);
   public cavalry = signal(200_000);
   public archers = signal(300_000);
@@ -44,7 +45,35 @@ export class BearEventComponent {
 
   public computedResult = signal<March[] | undefined>(undefined);
 
-  // Method to generate the formations.
+  constructor() {
+    effect(() => {
+      this.storageService.setItem('bear-event-settings', {
+        infantry: this.infantry(),
+        cavalry: this.cavalry(),
+        archers: this.archers(),
+        hasAmadeus: this.hasAmadeus(),
+        hasMargot: this.hasMargot(),
+        numMarches: this.numMarches(),
+        damageRatio: this.damageRatio(),
+        joinCapacity: this.joinCapacity(),
+      });
+    });
+  }
+
+  ngOnInit(): void {
+    const settings = this.storageService.getItem<any>('bear-event-settings');
+    if (settings) {
+      this.infantry.set(settings.infantry || 300_000);
+      this.cavalry.set(settings.cavalry || 200_000);
+      this.archers.set(settings.archers || 300_000);
+      this.hasAmadeus.set(settings.hasAmadeus || false);
+      this.hasMargot.set(settings.hasMargot || false);
+      this.numMarches.set(settings.numMarches || 5);
+      this.damageRatio.set(settings.damageRatio || 1);
+      this.joinCapacity.set(settings.joinCapacity || 90000);
+    }
+  }
+
   public async generateFormations(): Promise<void> {
     const troops: Troops = {
       infCount: this.infantry(),
@@ -59,8 +88,8 @@ export class BearEventComponent {
     const marchConfigs: MarchConfig[] = [
       { name: 'Rally Lead', maxTroops: maxTroops, parallel: 1, used: 5, dmg: this.damageRatio() },
       { name: 'Join with hero x ' + joinWithHero, maxTroops: maxTroops, parallel: joinWithHero, used: joinWithHero * 5 * 3, dmg: 1.0 },
-
     ];
+
     if (joinWithoutHero > 0) {
       marchConfigs.push(
         { name: 'Join no hero x ' + joinWithoutHero, maxTroops: maxTroops, parallel: joinWithoutHero, used: joinWithoutHero * 5 * 3, dmg: 1.0 },
