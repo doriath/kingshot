@@ -33,18 +33,31 @@
           <div class="form-field">
             <label for="numMarches">Available Marches</label>
             <input id="numMarches" type="number" [(ngModel)]="numMarches" name="numMarches" placeholder="e.g., 5" />
-            <p class="tooltip">How many join marches can you send at once?</p>
+            <p class="tooltip">How many join marches can you send at once? (we will use 5 at most)</p>
           </div>
 
           <div class="form-field">
-            <label for="damageRatio">Damage vs. Average</label>
+            <label for="damageRatio">Your Damage vs. Average</label>
             <input id="damageRatio" type="number" step="0.1" [(ngModel)]="damageRatio" name="damageRatio" placeholder="e.g., 4.0" />
             <p class="tooltip">Your rally damage versus an average rally. Most users should keep this number as 1. Change this only if your rally is doing a lot more damage compared to others (e.g. x5 more), then change this to e.g. 5.</p>
           </div>
 
-          <div class="form-field-checkbox">
-            <input id="hasAmadeus" type="checkbox" [(ngModel)]="hasAmadeus" name="hasAmadeus" />
-            <label for="hasAmadeus">Amadeus Hero Available</label>
+          <div class="form-field">
+            <label for="joinCapacity">Limit Join Capacity</label>
+            <input id="joinCapacity" type="number" [(ngModel)]="joinCapacity" name="joinCapacity" placeholder="e.g., 90000" />
+            <p class="tooltip">Set a custom troop limit for joining rallies (at most 90 000). Makes more space for others in the alliance.</p>
+          </div>
+
+          <div class="checkbox-group">
+            <div class="form-field-checkbox">
+              <input id="hasAmadeus" type="checkbox" [(ngModel)]="hasAmadeus" name="hasAmadeus" />
+              <label for="hasAmadeus">Amadeus Hero Available</label>
+            </div>
+
+            <div class="form-field-checkbox">
+              <input id="hasMargot" type="checkbox" [(ngModel)]="hasMargot" name="hasMargot" />
+              <label for="hasMargot">Margot Hero Available</label>
+            </div>
           </div>
         </div>
 

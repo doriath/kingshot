@@ -28,7 +28,7 @@ export class BearEventComponent {
     { text: 'Max 90k troops per join.', help: 'By limiting the join size, we ensure more people can join rallies.' },
     { text: 'Max 3% infantry', help: 'Infantry has the lowest damage, so use minimal amount of infantry troops to best utilize the space.' },
     { text: 'Stop after reaching 1.2B', help: 'This allows others in the alliance to also reach 1.2B and get high rewards.' },
-    { text: 'Join with Chenko/Amane/Yeonwoo/Amadeus.', help: 'Ensures maximum damage' },
+    { text: 'Join with Chenko/Amane/Yeonwoo/Amadeus/Margot.', help: 'Ensures maximum damage' },
     { text: 'Everyone starts a rally.', help: 'Ensures we can utilize the waves' },
   ];
 
@@ -37,8 +37,10 @@ export class BearEventComponent {
   public cavalry = signal(200_000);
   public archers = signal(300_000);
   public hasAmadeus = signal(false);
+  public hasMargot = signal(false);
   public numMarches = signal(5);
   public damageRatio = signal(1);
+  public joinCapacity = signal(90000);
 
   public computedResult = signal<March[] | undefined>(undefined);
 
@@ -50,15 +52,20 @@ export class BearEventComponent {
       arcCount: this.archers(),
     };
 
-    let joinWithHero = this.hasAmadeus() ? 4 : 3;
+    let joinWithHero = Math.min(this.numMarches(), (this.hasAmadeus() ? 1 : 0) + (this.hasMargot() ? 1 : 0) + 3);
     let joinWithoutHero = Math.min(5, this.numMarches()) - joinWithHero;
-    let maxTroops = 90000;
+    let maxTroops = Math.min(90000, this.joinCapacity());
 
     const marchConfigs: MarchConfig[] = [
       { name: 'Rally Lead', maxTroops: maxTroops, parallel: 1, used: 5, dmg: this.damageRatio() },
       { name: 'Join with hero x ' + joinWithHero, maxTroops: maxTroops, parallel: joinWithHero, used: joinWithHero * 5 * 3, dmg: 1.0 },
-      { name: 'Join no hero x ' + joinWithoutHero, maxTroops: maxTroops, parallel: joinWithoutHero, used: joinWithoutHero * 5 * 3, dmg: 1.0 },
+
     ];
+    if (joinWithoutHero > 0) {
+      marchConfigs.push(
+        { name: 'Join no hero x ' + joinWithoutHero, maxTroops: maxTroops, parallel: joinWithoutHero, used: joinWithoutHero * 5 * 3, dmg: 1.0 },
+      );
+    }
 
     try {
       const results = await this.scs.optimizeBear(troops, marchConfigs);

@@ -112,11 +112,16 @@
   box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.3);
 }
 
+.checkbox-group {
+  display: flex;
+  gap: 1.5rem;
+  padding-top: 1rem;
+}
+
 .form-field-checkbox {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding-top: 1rem;
 }
 
 .form-field-checkbox input {
