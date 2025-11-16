@@ -11,7 +11,7 @@ export class SolverService {
 
   constructor() {
     // Initialize the wasm module, telling it where to find the wasm file
-    init()
+    init('assets/solver/solver_bg.wasm')
       .then(() => {
         this.solverLoaded.set(true);
         console.log('Solver loaded!');
