@@ -6,7 +6,8 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "build:solver": "wasm-pack build solver --target web --out-name solver --out-dir target/package"
   },
   "prettier": {
     "printWidth": 100,
@@ -34,6 +35,7 @@
     "mathjs": "^15.0.0",
     "rxjs": "~7.8.0",
     "scs-solver": "^1.0.2",
+    "solver": "file:solver/target/pkg",
     "tesseract.js": "^6.0.1",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.0"

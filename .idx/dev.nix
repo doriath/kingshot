@@ -6,6 +6,10 @@
   # Use https://search.nixos.org/packages to find packages
   packages = [
     pkgs.nodejs_20
+    pkgs.rustup
+    pkgs.cargo
+    pkgs.wasm-pack
+    pkgs.gcc
   ];
   # Sets environment variables in the workspace
   env = {};

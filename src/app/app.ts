@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, signal, inject } from '@angular/cor
 import { ActivatedRoute, NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
 import { UserProfileComponent } from './user-profile/user-profile';
+import { SolverService } from './solver.service'; // Import the service
 
 @Component({
   selector: 'app-root',
@@ -17,6 +18,7 @@ export class App {
 
   private router = inject(Router);
   private activatedRoute = inject(ActivatedRoute);
+  private solverService = inject(SolverService); // Inject the service
 
   constructor() {
     this.router.events.pipe(
@@ -37,5 +39,17 @@ export class App {
 
   toggleSideNav() {
     this.isSideNavOpen.set(!this.isSideNavOpen());
+  }
+
+  // Add the test method
+  async testSolver() {
+    if (this.solverService.isSolverLoaded()) {
+      console.log('Solver is loaded, running test...');
+      const data = { message: 'Hello from Angular!' };
+      const result = await this.solverService.solve(data);
+      console.log('Solver result:', result);
+    } else {
+      console.error('Solver is not loaded yet.');
+    }
   }
 }

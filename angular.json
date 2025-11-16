@@ -22,7 +22,12 @@
             "tsConfig": "tsconfig.app.json",
             "assets": [
               "src/assets",
-              "src/manifest.webmanifest"
+              "src/manifest.webmanifest",
+              {
+                "glob": "**/*.wasm",
+                "input": "solver/target/pkg",
+                "output": "/"
+              }
             ],
             "styles": [
               "src/styles.css"
