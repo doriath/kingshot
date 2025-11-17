@@ -6,10 +6,39 @@
 .trial-list li {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   padding: 0.5rem 0;
   border-bottom: 1px solid #333;
+  transition: background-color 0.3s ease;
 }
 
 .trial-name {
   font-weight: bold;
+}
+
+.trial-list li.active {
+  background-color: #2a3a52;
+  color: #fff;
+}
+
+.trial-ratio {
+  display: flex;
+  align-items: center;
+}
+
+.trial-ratio .ratio-part {
+  background-color: #444;
+  color: #fff;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  margin: 0 0.1rem;
+  width: 2rem;
+  text-align: center;
+}
+
+.trial-ratio span.separator {
+  background-color: transparent;
+  color: #fff;
+  margin: 0;
+  padding: 0;
 }

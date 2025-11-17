@@ -7,30 +7,18 @@
   <div class="card">
     <h2>Troop Ratio Recommendations</h2>
     <ul class="trial-list">
-      <li>
-        <span class="trial-name">Coliseum:</span>
-        <span class="trial-ratio">50/10/40</span>
-      </li>
-      <li>
-        <span class="trial-name">Forest of Life:</span>
-        <span class="trial-ratio">50/15/35</span>
-      </li>
-      <li>
-        <span class="trial-name">Crystal Cave:</span>
-        <span class="trial-ratio">60/20/20</span>
-      </li>
-      <li>
-        <span class="trial-name">Knowledge Nexus:</span>
-        <span class="trial-ratio">50/20/30</span>
-      </li>
-      <li>
-        <span class="trial-name">Molten Fort:</span>
-        <span class="trial-ratio">60/15/25</span>
-      </li>
-      <li>
-        <span class="trial-name">Radian Spire:</span>
-        <span class="trial-ratio">50/15/35</span>
-      </li>
+      @for (event of events(); track event.name) {
+        <li [class.active]="isActive(event)">
+          <span class="trial-name">{{ event.name }}:</span>
+          <div class="trial-ratio">
+            <span class="ratio-part">{{ event.ratio.split('/')[0] }}</span>
+            <span class="separator">/</span>
+            <span class="ratio-part">{{ event.ratio.split('/')[1] }}</span>
+            <span class="separator">/</span>
+            <span class="ratio-part">{{ event.ratio.split('/')[2] }}</span>
+          </div>
+        </li>
+      }
     </ul>
   </div>
 </div>
