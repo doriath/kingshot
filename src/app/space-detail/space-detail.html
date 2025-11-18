@@ -1,0 +1,40 @@
+
+@if (space(); as space) {
+  <div class="space-detail-container">
+    <h1>{{ space.name }}</h1>
+
+    <div class="admin-section">
+      <h2>Admins</h2>
+      <div class="add-admin-form">
+        <input type="text" [(ngModel)]="newAdminName" placeholder="Enter Admin Name">
+        <button (click)="addAdmin()">Add Admin</button>
+      </div>
+      <ul>
+        @for (admin of space.admins; track $index) {
+          <li>{{ admin }}</li>
+        }
+      </ul>
+    </div>
+
+    <div class="enemy-section">
+      <h2>Enemies</h2>
+
+      <div class="add-enemy-form">
+        <input type="text" [(ngModel)]="newEnemyName" placeholder="Enter Enemy Name">
+        <button (click)="addEnemy()">Add Enemy</button>
+      </div>
+
+      <ul>
+        @for (enemy of space.enemies; track enemy.id) {
+          <li>
+            <input type="checkbox" [checked]="enemy.defeated" (change)="toggleEnemyDefeated(enemy.id)">
+            <span [class.defeated]="enemy.defeated">{{ enemy.name }}</span>
+          </li>
+        }
+      </ul>
+    </div>
+
+  </div>
+} @else {
+  <p>Space not found.</p>
+}
