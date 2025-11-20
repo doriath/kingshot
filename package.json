@@ -7,7 +7,7 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "build:solver": "wasm-pack build solver --target web --out-name solver --out-dir target/package"
+    "build:solver": "wasm-pack build solver --target web --out-name solver --out-dir target/pkg"
   },
   "prettier": {
     "printWidth": 100,
@@ -33,6 +33,7 @@
     "@types/mathjs": "^9.4.1",
     "firebase": "^12.4.0",
     "mathjs": "^15.0.0",
+    "ng": "^0.0.0",
     "rxjs": "~7.8.0",
     "scs-solver": "^1.0.2",
     "solver": "file:solver/target/pkg",
