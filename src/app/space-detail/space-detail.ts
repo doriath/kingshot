@@ -100,7 +100,7 @@ export class SpaceDetailComponent {
   });
 
   // Actions
-  public newRallyData = signal<{ buildingId: BuildingType, enemyId: string, travelTimeStr: string } | null>(null);
+  public newRallyData = signal<{ buildingId: BuildingType, enemyId: string, travelTimeStr: string, newEnemyName?: string } | null>(null);
 
   public initiateAddRally(buildingId: BuildingType) {
     this.newRallyData.set({ buildingId, enemyId: '', travelTimeStr: '' });
@@ -113,10 +113,28 @@ export class SpaceDetailComponent {
   public async submitRally() {
     const data = this.newRallyData();
     if (data && data.enemyId && data.travelTimeStr) {
+      let enemyId = data.enemyId;
+
+      // Handle new enemy creation
+      if (enemyId === '__NEW__') {
+        // We need a name for the new enemy. 
+        // Since we don't have a separate field yet, let's assume we'll add one to the data object
+        // or prompt for it. But prompting is bad UX here.
+        // Let's rely on a new field in newRallyData: 'newEnemyName'
+        const name = (data as any).newEnemyName;
+        if (name) {
+          const ref = await this.service.addEnemy(this.id(), { name });
+          enemyId = ref.id;
+        } else {
+          alert("Please enter a name for the new enemy");
+          return;
+        }
+      }
+
       const ms = this.parseTime(data.travelTimeStr);
       await this.service.addRally(this.id(), {
         buildingId: data.buildingId,
-        enemyId: data.enemyId,
+        enemyId: enemyId,
         startTime: Date.now(),
         travelTime: ms
       });

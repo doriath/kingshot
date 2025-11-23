@@ -1,17 +1,18 @@
-
 <div class="castle-event-container">
   <h1>Castle Event Coordination</h1>
 
+  @if (currentUser()) {
   <div class="create-space-form">
     <input type="text" [(ngModel)]="newSpaceName" placeholder="Enter Space Name">
     <button (click)="createSpace()">Create New Space</button>
   </div>
+  }
 
   <div class="spaces-list">
     <h2>Spaces</h2>
     <ul>
       @for (space of spaces(); track space.id) {
-        <li><a [routerLink]="['/castle-event', space.id]">{{ space.name }}</a></li>
+      <li><a [routerLink]="['/castle-event', space.id]">{{ space.name }}</a></li>
       }
     </ul>
   </div>

@@ -6,7 +6,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { CastleEventService } from './castle-event.service';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { Auth } from '@angular/fire/auth';
+import { Auth, user } from '@angular/fire/auth';
 
 @Component({
   selector: 'app-castle-event',
@@ -18,6 +18,8 @@ import { Auth } from '@angular/fire/auth';
 export class CastleEventComponent {
   private castleService = inject(CastleEventService);
   private auth = inject(Auth);
+  private user$ = user(this.auth);
+  public currentUser = toSignal(this.user$);
 
   public spaces = toSignal(this.castleService.getSpaces(), { initialValue: [] });
   public newSpaceName = signal('');

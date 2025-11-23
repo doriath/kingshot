@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Firestore, collection, collectionData, doc, docData, addDoc, deleteDoc, setDoc, updateDoc, query, where } from '@angular/fire/firestore';
+import { Firestore, collection, collectionData, doc, docData, addDoc, deleteDoc, setDoc, updateDoc, query, where, DocumentReference } from '@angular/fire/firestore';
 import { Observable, from } from 'rxjs';
 import { Space, Rally, Enemy } from './castle-event.models';
 
@@ -53,9 +53,9 @@ export class CastleEventService {
         return collectionData(enemiesCollection, { idField: 'id' }) as Observable<Enemy[]>;
     }
 
-    addEnemy(spaceId: string, enemy: Omit<Enemy, 'id'>): Promise<void> {
+    addEnemy(spaceId: string, enemy: Omit<Enemy, 'id'>): Promise<DocumentReference> {
         const enemiesCollection = collection(this.firestore, `spaces/${spaceId}/enemies`);
-        return addDoc(enemiesCollection, enemy).then(() => { });
+        return addDoc(enemiesCollection, enemy);
     }
 
     updateEnemy(spaceId: string, enemyId: string, data: Partial<Enemy>): Promise<void> {

@@ -1,69 +1,74 @@
 @if (space(); as space) {
-  <div class="space-detail-container">
-    <header>
-      <h1>{{ space.name }}</h1>
-      <!-- Add Admin/Enemy management buttons here if needed, or separate page -->
-    </header>
+<div class="space-detail-container">
+  <header>
+    <h1>{{ space.name }}</h1>
+    <!-- Add Admin/Enemy management buttons here if needed, or separate page -->
+  </header>
 
-    <div class="buildings-grid">
-      @for (building of buildings(); track building.id) {
-        <div class="building-card" [class.under-attack]="building.rallies.length > 0">
-          <div class="building-header">
-            <h2>{{ building.name }}</h2>
-            <span class="status-badge" [class.danger]="building.rallies.length > 0">
-              {{ building.rallies.length > 0 ? 'UNDER ATTACK' : 'SAFE' }}
+  <div class="buildings-grid">
+    @for (building of buildings(); track building.id) {
+    <div class="building-card" [class.under-attack]="building.rallies.length > 0">
+      <div class="building-header">
+        <h2>{{ building.name }}</h2>
+        <span class="status-badge" [class.danger]="building.rallies.length > 0">
+          {{ building.rallies.length > 0 ? 'UNDER ATTACK' : 'SAFE' }}
+        </span>
+      </div>
+
+      <div class="travel-time-config">
+        <label>My Travel Time:</label>
+        <input type="text" [ngModel]="userTravelTimes()[building.id]"
+          (ngModelChange)="updateUserTravelTime(building.id, $event)" placeholder="MM:SS">
+      </div>
+
+      <div class="rallies-list">
+        @for (rally of building.rallies; track rally.id) {
+        <div class="rally-item">
+          <div class="rally-info">
+            <span class="enemy-name">{{ rally.enemyName }}</span>
+            <span class="timer impact-timer">Impact: {{ formatMs(rally.timeToImpact) }}</span>
+          </div>
+          <div class="reinforcement-info">
+            <span class="timer departure-timer"
+              [class.urgent]="rally.timeToDeparture < 60000 && rally.timeToDeparture > 0">
+              Leave in: {{ formatMs(rally.timeToDeparture) }}
             </span>
           </div>
+          <!-- Only show delete if admin (or for now everyone for testing) -->
+          <button class="delete-btn" (click)="deleteRally(rally.id)">×</button>
+        </div>
+        }
+      </div>
 
-          <div class="travel-time-config">
-             <label>My Travel Time:</label>
-             <input type="text" 
-                    [ngModel]="userTravelTimes()[building.id]" 
-                    (ngModelChange)="updateUserTravelTime(building.id, $event)"
-                    placeholder="MM:SS">
-          </div>
-
-          <div class="rallies-list">
-            @for (rally of building.rallies; track rally.id) {
-              <div class="rally-item">
-                <div class="rally-info">
-                  <span class="enemy-name">{{ rally.enemyName }}</span>
-                  <span class="timer impact-timer">Impact: {{ formatMs(rally.timeToImpact) }}</span>
-                </div>
-                <div class="reinforcement-info">
-                   <span class="timer departure-timer" [class.urgent]="rally.timeToDeparture < 60000 && rally.timeToDeparture > 0">
-                     Leave in: {{ formatMs(rally.timeToDeparture) }}
-                   </span>
-                </div>
-                <!-- Only show delete if admin (or for now everyone for testing) -->
-                <button class="delete-btn" (click)="deleteRally(rally.id)">×</button>
-              </div>
+      <div class="actions">
+        @if (newRallyData()?.buildingId === building.id) {
+        <div class="add-rally-form">
+          <select [(ngModel)]="newRallyData()!.enemyId">
+            <option value="" disabled>Select Enemy</option>
+            <option value="__NEW__">+ Create New Enemy</option>
+            @for (enemy of enemies(); track enemy.id) {
+            <option [value]="enemy.id">{{ enemy.name }}</option>
             }
-          </div>
+          </select>
 
-          <div class="actions">
-            @if (newRallyData()?.buildingId === building.id) {
-              <div class="add-rally-form">
-                <select [(ngModel)]="newRallyData()!.enemyId">
-                  <option value="" disabled>Select Enemy</option>
-                  @for (enemy of enemies(); track enemy.id) {
-                    <option [value]="enemy.id">{{ enemy.name }}</option>
-                  }
-                </select>
-                <input type="text" [(ngModel)]="newRallyData()!.travelTimeStr" placeholder="Travel Time (MM:SS)">
-                <div class="form-buttons">
-                  <button (click)="submitRally()">Start</button>
-                  <button (click)="cancelAddRally()">Cancel</button>
-                </div>
-              </div>
-            } @else {
-              <button class="add-rally-btn" (click)="initiateAddRally(building.id)">+ Add Rally</button>
-            }
+          @if (newRallyData()!.enemyId === '__NEW__') {
+          <input type="text" [(ngModel)]="newRallyData()!.newEnemyName" placeholder="New Enemy Name">
+          }
+
+          <input type="text" [(ngModel)]="newRallyData()!.travelTimeStr" placeholder="Travel Time (MM:SS)">
+          <div class="form-buttons">
+            <button (click)="submitRally()">Start</button>
+            <button (click)="cancelAddRally()">Cancel</button>
           </div>
         </div>
-      }
+        } @else {
+        <button class="add-rally-btn" (click)="initiateAddRally(building.id)">+ Add Rally</button>
+        }
+      </div>
     </div>
+    }
   </div>
+</div>
 } @else {
-  <p>Loading Space...</p>
+<p>Loading Space...</p>
 }
