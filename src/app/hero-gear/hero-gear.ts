@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, signal, effect, Inject, PLATFORM_ID } from '@angular/core';
+import { ChangeDetectionStrategy, Component, signal, effect, Inject, PLATFORM_ID, inject } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { SolverService } from '../solver.service';
 
 export interface Gear {
   mastery: number;
@@ -263,39 +264,7 @@ export class HeroGearComponent {
     322620,
     328620,
     334720,
-    340920,
-    347220,
-    353620,
-    360120,
-    366720,
-    373420,
-    380220,
-    387120,
-    394120,
-    401220,
-    408420,
-    415720,
-    415720,
-    423220,
-    430820,
-    438520,
-    446320,
-    454220,
-    462220,
-    470320,
-    478520,
-    486820,
-    495220,
-    503720,
-    512320,
-    521020,
-    529820,
-    538720,
-    547720,
-    556820,
-    566020,
-    575320,
-    575320];
+    340920, 347220, 353620, 360120, 366720, 373420, 380220, 387120, 394120, 401220, 408420, 415720, 415720, 423220, 430820, 438520, 446320, 454220, 462220, 470320, 478520, 486820, 495220, 503720, 512320, 521020, 529820, 538720, 547720, 556820, 566020, 575320, 575320];
 
   maxEnhancement = this.expCosts.length - 1;
   heroes = signal<HeroWeights[]>(this.defaultHeroes);
@@ -303,6 +272,8 @@ export class HeroGearComponent {
   hammers = signal(0);
   optimizationResult = signal<OptimizationOutput | null>(null);
   isAdvancedCollapsed = signal(true);
+
+  private solverService = inject(SolverService);
 
   constructor(@Inject(PLATFORM_ID) private platformId: object) {
     this.reset();
@@ -399,115 +370,22 @@ export class HeroGearComponent {
   }
 
   optimize() {
-    const heroes = this.heroes();
-    const extraExp = this.exp();
-
-    let totalExp = extraExp;
-    for (const hero of heroes) {
-      for (const gearType of this.objectKeys(hero.gear)) {
-        totalExp += this.expCost(hero.gear[gearType].enhancement);
-      }
+    if (!this.solverService.isSolverLoaded()) {
+      console.warn('Solver not loaded yet');
+      return;
     }
 
-    const allGear = heroes.flatMap(hero =>
-      this.objectKeys(hero.gear).map(gearType => ({
-        heroName: hero.name,
-        gearType,
-        mastery: hero.gear[gearType].mastery,
-        weights: hero.weights,
-        currentEnhancement: 0,
-      }))
-    );
-
-    const memo = new Map<string, { score: number; solution: number[] }>();
-
-    const findOptimalGear = (itemIndex: number, remainingExp: number): { score: number; solution: number[] } => {
-      if (itemIndex === allGear.length || remainingExp <= 0) {
-        return { score: 0, solution: [] };
-      }
-
-      const memoKey = `${itemIndex}-${remainingExp}`;
-      if (memo.has(memoKey)) {
-        return memo.get(memoKey)!;
-      }
-
-      let best = { score: -1, solution: [] as number[] };
-
-      const item = allGear[itemIndex];
-      const currentEnhancement = item.currentEnhancement;
-      const currentGearScore = this.calculateItemScore(item, currentEnhancement);
-
-      for (let level = currentEnhancement; level <= this.maxEnhancement; level++) {
-        const cost = this.expCost(level) - this.expCost(currentEnhancement);
-        if (remainingExp >= cost) {
-          const result = findOptimalGear(itemIndex + 1, remainingExp - cost);
-          const newScore = this.calculateItemScore(item, level) - currentGearScore + result.score;
-
-          if (newScore > best.score) {
-            best = { score: newScore, solution: [level, ...result.solution] };
-          }
-        }
-      }
-
-      memo.set(memoKey, best);
-      return best;
+    const inputData = {
+      heroes: this.heroes(),
+      exp: this.exp()
     };
 
-    const { solution } = findOptimalGear(0, totalExp);
-
-    const newHeroes = JSON.parse(JSON.stringify(heroes)) as HeroWeights[];
-    let solutionIndex = 0;
-    for (let i = 0; i < newHeroes.length; i++) {
-      for (const gearType of this.objectKeys(newHeroes[i].gear)) {
-        newHeroes[i].gear[gearType].enhancement = solution[solutionIndex] ?? newHeroes[i].gear[gearType].enhancement;
-        solutionIndex++;
-      }
+    try {
+      const result = this.solverService.solve(inputData);
+      this.optimizationResult.set(result);
+    } catch (e) {
+      console.error('Optimization failed:', e);
     }
-
-    let totalBeforeScore = 0;
-    let totalAfterScore = 0;
-    const result: OptimizationResult[] = [];
-
-    for (let i = 0; i < heroes.length; i++) {
-      const beforeStats = this.calculateStats(heroes[i].gear);
-      const beforeScore = beforeStats.lethality * heroes[i].weights.lethality + beforeStats.health * heroes[i].weights.health;
-      totalBeforeScore += beforeScore;
-
-      const afterStats = this.calculateStats(newHeroes[i].gear);
-      const afterScore = afterStats.lethality * newHeroes[i].weights.lethality + afterStats.health * newHeroes[i].weights.health;
-      totalAfterScore += afterScore;
-
-      result.push({
-        heroName: heroes[i].name,
-        gear: this.objectKeys(heroes[i].gear).map(type => ({
-          type: type,
-          currentMastery: heroes[i].gear[type].mastery,
-          recommendedMastery: heroes[i].gear[type].mastery,
-          currentEnhancement: heroes[i].gear[type].enhancement,
-          recommendedEnhancement: newHeroes[i].gear[type].enhancement,
-        })),
-        beforeStats: beforeStats,
-        afterStats: afterStats,
-        beforeScore: beforeScore,
-        afterScore: afterScore,
-      });
-    }
-
-    const optimizationOutput: OptimizationOutput = {
-      results: result,
-      totalBeforeScore,
-      totalAfterScore,
-    };
-
-    this.optimizationResult.set(optimizationOutput);
-  }
-
-  calculateItemScore(item: { gearType: keyof Hero['gear'], mastery: number, weights: StatWeights }, enhancement: number): number {
-    const stat = this.stat(enhancement, item.mastery);
-    if (item.gearType === 'helmet' || item.gearType === 'boots') {
-      return stat * item.weights.lethality;
-    }
-    return stat * item.weights.health;
   }
 
   objectKeys<T extends object>(obj: T) {
