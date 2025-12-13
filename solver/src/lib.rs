@@ -1,6 +1,5 @@
 use wasm_bindgen::prelude::*;
 use serde::{Serialize, Deserialize};
-use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Gear {
@@ -119,19 +118,6 @@ fn calculate_stats(gear: &HeroGear) -> Stats {
     Stats { lethality, health }
 }
 
-fn calculate_item_score(
-    gear_type: &str,
-    mastery: i32,
-    weights: &StatWeights,
-    enhancement: i32,
-) -> f64 {
-    let s = stat(enhancement, mastery);
-    if gear_type == "helmet" || gear_type == "boots" {
-        s * weights.lethality
-    } else {
-        s * weights.health
-    }
-}
 
 struct OptimizationItem {
     // hero_name: String, // Not strictly needed for calculation but good for debugging
@@ -143,11 +129,6 @@ struct OptimizationItem {
     current_enhancement: i32,
 }
 
-#[derive(Clone)]
-struct BestResult {
-    score: f64,
-    solution: Vec<i32>,
-}
 
 #[wasm_bindgen]
 pub fn solve(data: &str) -> String {
@@ -197,79 +178,7 @@ pub fn solve(data: &str) -> String {
     }
 
     let max_enhancement = (EXP_COSTS.len() - 1) as i32;
-    let mut memo: HashMap<String, BestResult> = HashMap::new();
-
-    // Recursive function with memoization
-    // We can't easily use a closure for recursion in Rust without some tricks,
-    // so we'll use a helper function or struct.
-    // Given the constraints and simplicity, a separate function or struct method is best.
-    // However, passing `memo` around is mutable.
-    
-    // Iterative DP or recursive with HashMap?
-    // The original was recursive with memoization.
-    // Let's stick to recursive with memoization but we need to handle the mutable borrow of memo.
-    
-    fn find_optimal_gear(
-        item_index: usize,
-        remaining_exp: i32,
-        all_gear: &Vec<OptimizationItem>,
-        memo: &mut HashMap<String, BestResult>,
-        max_enhancement: i32,
-    ) -> BestResult {
-        if item_index == all_gear.len() || remaining_exp <= 0 {
-            return BestResult {
-                score: 0.0,
-                solution: Vec::new(),
-            };
-        }
-
-        let memo_key = format!("{}-{}", item_index, remaining_exp);
-        if let Some(res) = memo.get(&memo_key) {
-            return res.clone();
-        }
-
-        let mut best = BestResult {
-            score: -1.0,
-            solution: Vec::new(),
-        };
-
-        let item = &all_gear[item_index];
-        let current_enhancement = item.current_enhancement;
-        
-        // Calculate score for the base case (current enhancement 0 in the loop context, 
-        // but effectively we iterate from 0 to max possible with remaining exp)
-        // Wait, the original logic iterates level from current_enhancement to max_enhancement.
-        // But here current_enhancement is 0 for all items in `all_gear` because we reset them?
-        // In the TS code:
-        // currentEnhancement: 0,
-        // So yes, we start from 0.
-        
-        let current_gear_score_base = calculate_item_score_internal(item, current_enhancement);
-
-        for level in current_enhancement..=max_enhancement {
-            let cost = exp_cost(level) - exp_cost(current_enhancement);
-            if remaining_exp >= cost {
-                let result = find_optimal_gear(item_index + 1, remaining_exp - cost, all_gear, memo, max_enhancement);
-                let new_score = calculate_item_score_internal(item, level) - current_gear_score_base + result.score;
-
-                if new_score > best.score {
-                    let mut new_solution = vec![level];
-                    new_solution.extend(result.solution);
-                    best = BestResult {
-                        score: new_score,
-                        solution: new_solution,
-                    };
-                }
-            } else {
-                // Since costs increase monotonically, we can break early?
-                // exp_cost array is increasing.
-                break;
-            }
-        }
-
-        memo.insert(memo_key, best.clone());
-        best
-    }
+    let mut remaining_exp = total_exp;
 
     fn calculate_item_score_internal(item: &OptimizationItem, enhancement: i32) -> f64 {
         let s = stat(enhancement, item.mastery);
@@ -280,8 +189,50 @@ pub fn solve(data: &str) -> String {
         }
     }
 
-    let result = find_optimal_gear(0, total_exp, &all_gear, &mut memo, max_enhancement);
-    let solution = result.solution;
+    // Greedy Algorithm
+    loop {
+        let mut best_idx = None;
+        let mut best_efficiency = -1.0;
+        let mut best_cost = 0;
+
+        for (i, item) in all_gear.iter().enumerate() {
+            if item.current_enhancement >= max_enhancement {
+                continue;
+            }
+
+            let next_lvl = item.current_enhancement + 1;
+            let cost = exp_cost(next_lvl) - exp_cost(item.current_enhancement);
+
+            if cost > remaining_exp {
+                continue;
+            }
+
+            let current_score = calculate_item_score_internal(item, item.current_enhancement);
+            let next_score = calculate_item_score_internal(item, next_lvl);
+            let gain = next_score - current_score;
+
+            // Avoid division by zero if cost is 0 (though exp costs are usually > 0 for levels > 0)
+            // If cost is 0, efficiency is infinite.
+            let efficiency = if cost == 0 {
+                f64::INFINITY
+            } else {
+                gain / (cost as f64)
+            };
+
+            if efficiency > best_efficiency {
+                best_efficiency = efficiency;
+                best_idx = Some(i);
+                best_cost = cost;
+            }
+        }
+
+        if let Some(idx) = best_idx {
+            all_gear[idx].current_enhancement += 1;
+            remaining_exp -= best_cost;
+        } else {
+            break;
+        }
+    }
 
     // Reconstruct results
     let mut new_heroes = input.heroes.clone();
@@ -289,10 +240,10 @@ pub fn solve(data: &str) -> String {
 
     for hero in &mut new_heroes {
         // Order: helmet, gloves, breastplate, boots
-        if solution_index < solution.len() { hero.gear.helmet.enhancement = solution[solution_index]; } solution_index += 1;
-        if solution_index < solution.len() { hero.gear.gloves.enhancement = solution[solution_index]; } solution_index += 1;
-        if solution_index < solution.len() { hero.gear.breastplate.enhancement = solution[solution_index]; } solution_index += 1;
-        if solution_index < solution.len() { hero.gear.boots.enhancement = solution[solution_index]; } solution_index += 1;
+        if solution_index < all_gear.len() { hero.gear.helmet.enhancement = all_gear[solution_index].current_enhancement; } solution_index += 1;
+        if solution_index < all_gear.len() { hero.gear.gloves.enhancement = all_gear[solution_index].current_enhancement; } solution_index += 1;
+        if solution_index < all_gear.len() { hero.gear.breastplate.enhancement = all_gear[solution_index].current_enhancement; } solution_index += 1;
+        if solution_index < all_gear.len() { hero.gear.boots.enhancement = all_gear[solution_index].current_enhancement; } solution_index += 1;
     }
 
     let mut total_before_score = 0.0;
@@ -361,4 +312,72 @@ pub fn solve(data: &str) -> String {
     };
 
     serde_json::to_string(&output).unwrap_or_else(|e| format!("Error serializing output: {}", e))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_exp_cost() {
+        assert_eq!(exp_cost(0), 0);
+        assert_eq!(exp_cost(1), 10);
+        assert_eq!(exp_cost(200), 575320);
+        assert_eq!(exp_cost(-1), 0);
+        assert_eq!(exp_cost(1000), 0);
+    }
+
+    #[test]
+    fn test_stat() {
+        // Base case: enh 0, mastery 0 -> 0.15
+        assert!((stat(0, 0) - 0.15).abs() < 1e-10);
+        
+        // Enh 100, mastery 0 -> 0.15 + 100 * 0.0035 = 0.15 + 0.35 = 0.5
+        assert!((stat(100, 0) - 0.5).abs() < 1e-10);
+
+        // Enh 101, mastery 0 -> 0.5 + 1 * 0.005 = 0.505
+        assert!((stat(101, 0) - 0.505).abs() < 1e-10);
+
+        // Enh 0, mastery 10 -> 0.15 * (1 + 10 * 0.1) = 0.15 * 2 = 0.3
+        assert!((stat(0, 10) - 0.3).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_solve_greedy() {
+        let hero = HeroWeights {
+            name: "TestHero".to_string(),
+            gear: HeroGear {
+                helmet: Gear { mastery: 0, enhancement: 0 },
+                gloves: Gear { mastery: 0, enhancement: 0 },
+                breastplate: Gear { mastery: 0, enhancement: 0 },
+                boots: Gear { mastery: 0, enhancement: 0 },
+            },
+            weights: StatWeights { lethality: 1.0, health: 1.0 },
+        };
+        
+        let input = InputData {
+            heroes: vec![hero],
+            exp: 1000, // Enough for a few upgrades
+        };
+
+        let json_input = serde_json::to_string(&input).unwrap();
+        let json_output = solve(&json_input);
+        
+        let output: OptimizationOutput = serde_json::from_str(&json_output).unwrap();
+        
+        assert_eq!(output.results.len(), 1);
+        assert!(output.total_after_score > output.total_before_score);
+        
+        // Verify total cost used is valid
+        // We started with 0 exp used on gear.
+        // We gave 1000 exp.
+        // We should verify we didn't use more than 1000.
+        // But we don't easily have the used cost in output, just the resulting levels.
+        // Let's calculate cost of resulting gear.
+        let mut used_exp = 0;
+        for res in &output.results[0].gear {
+             used_exp += exp_cost(res.recommended_enhancement);
+        }
+        assert!(used_exp <= 1000);
+    }
 }
