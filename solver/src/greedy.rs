@@ -71,6 +71,15 @@ pub fn solve_greedy(input: InputData) -> OptimizationOutput {
             }
 
             let next_lvl = item.current_enhancement + 1;
+
+            // Mastery Constraint Check
+            if next_lvl > 100 {
+                let req_mastery = 10 + (next_lvl - 100) / 10;
+                if item.mastery < req_mastery {
+                    continue;
+                }
+            }
+
             let cost = exp_cost(next_lvl) - exp_cost(item.current_enhancement);
 
             if cost > remaining_exp {
@@ -120,6 +129,8 @@ pub fn solve_greedy(input: InputData) -> OptimizationOutput {
             } else {
                 gain / (cost as f64)
             };
+            
+            // println!("Hammer Check: i={}, mastery={}, next={}, cost={}, gain={}, eff={}", i, item.mastery, next_lvl, cost, gain, efficiency);
 
             if efficiency > best_hammer_efficiency {
                 best_hammer_efficiency = efficiency;
@@ -127,6 +138,9 @@ pub fn solve_greedy(input: InputData) -> OptimizationOutput {
                 best_hammer_cost = cost;
             }
         }
+        
+        // Debug print
+        // println!("Loop: did_upgrade={}, best_exp_idx={:?}, best_hammer_idx={:?}", did_upgrade, best_exp_idx, best_hammer_idx);
 
         // Apply upgrades
         if let Some(idx) = best_exp_idx {
@@ -136,6 +150,7 @@ pub fn solve_greedy(input: InputData) -> OptimizationOutput {
         }
 
         if let Some(idx) = best_hammer_idx {
+            // println!("Upgrading hammer for idx {} to {}", idx, all_gear[idx].mastery + 1);
             all_gear[idx].mastery += 1;
             remaining_hammers -= best_hammer_cost;
             did_upgrade = true;
@@ -197,7 +212,7 @@ pub fn solve_greedy(input: InputData) -> OptimizationOutput {
         gear_results.push(GearResult {
             gear_type: "helmet".to_string(),
             current_mastery: input.heroes[i].gear.helmet.mastery,
-            recommended_mastery: input.heroes[i].gear.helmet.mastery,
+            recommended_mastery: new_heroes[i].gear.helmet.mastery,
             current_enhancement: input.heroes[i].gear.helmet.enhancement,
             recommended_enhancement: new_heroes[i].gear.helmet.enhancement,
         });
@@ -205,7 +220,7 @@ pub fn solve_greedy(input: InputData) -> OptimizationOutput {
         gear_results.push(GearResult {
             gear_type: "gloves".to_string(),
             current_mastery: input.heroes[i].gear.gloves.mastery,
-            recommended_mastery: input.heroes[i].gear.gloves.mastery,
+            recommended_mastery: new_heroes[i].gear.gloves.mastery,
             current_enhancement: input.heroes[i].gear.gloves.enhancement,
             recommended_enhancement: new_heroes[i].gear.gloves.enhancement,
         });
@@ -213,7 +228,7 @@ pub fn solve_greedy(input: InputData) -> OptimizationOutput {
         gear_results.push(GearResult {
             gear_type: "breastplate".to_string(),
             current_mastery: input.heroes[i].gear.breastplate.mastery,
-            recommended_mastery: input.heroes[i].gear.breastplate.mastery,
+            recommended_mastery: new_heroes[i].gear.breastplate.mastery,
             current_enhancement: input.heroes[i].gear.breastplate.enhancement,
             recommended_enhancement: new_heroes[i].gear.breastplate.enhancement,
         });
@@ -221,7 +236,7 @@ pub fn solve_greedy(input: InputData) -> OptimizationOutput {
         gear_results.push(GearResult {
             gear_type: "boots".to_string(),
             current_mastery: input.heroes[i].gear.boots.mastery,
-            recommended_mastery: input.heroes[i].gear.boots.mastery,
+            recommended_mastery: new_heroes[i].gear.boots.mastery,
             current_enhancement: input.heroes[i].gear.boots.enhancement,
             recommended_enhancement: new_heroes[i].gear.boots.enhancement,
         });

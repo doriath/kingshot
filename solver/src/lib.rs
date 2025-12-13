@@ -172,6 +172,44 @@ mod tests {
     }
 
     #[test]
+    fn test_mastery_gate() {
+        let hero = HeroWeights {
+            name: "TestGate".to_string(),
+            gear: HeroGear {
+                helmet: Gear { mastery: 9, enhancement: 100 }, // Needs mastery 10 to go to 101
+                // Set other gear to max so they don't consume resources
+                gloves: Gear { mastery: 20, enhancement: 200 },
+                breastplate: Gear { mastery: 20, enhancement: 200 },
+                boots: Gear { mastery: 20, enhancement: 200 },
+            },
+            weights: StatWeights { lethality: 1.0, health: 1.0 },
+        };
+        
+        // Case 1: Lots of EXP, 0 Hammers. Should stay at 100.
+        let input1 = InputData {
+            heroes: vec![hero.clone()],
+            exp: 1000000, 
+            hammers: 0,
+            mythics: 0,
+            mythril: 0,
+        };
+        let output1: OptimizationOutput = serde_json::from_str(&solve(&serde_json::to_string(&input1).unwrap())).unwrap();
+        assert_eq!(output1.results[0].gear[0].recommended_enhancement, 100);
+        
+        // Case 2: Lots of EXP, Lots of Hammers. Should upgrade mastery to 10, then enhancement to 101+.
+        let input2 = InputData {
+            heroes: vec![hero.clone()],
+            exp: 1000000, 
+            hammers: 1000,
+            mythics: 0,
+            mythril: 0,
+        };
+        let output2: OptimizationOutput = serde_json::from_str(&solve(&serde_json::to_string(&input2).unwrap())).unwrap();
+        assert!(output2.results[0].gear[0].recommended_enhancement > 100);
+        assert!(output2.results[0].gear[0].recommended_mastery >= 10);
+    }
+
+    #[test]
     fn test_solve_greedy() {
         let hero = HeroWeights {
             name: "TestHero".to_string(),
