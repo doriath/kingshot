@@ -1,0 +1,187 @@
+use crate::types::*;
+
+struct OptimizationItem {
+    // hero_name: String, // Not strictly needed for calculation but good for debugging
+    // gear_type: String,
+    is_lethality: bool,
+    mastery: i32,
+    weights_lethality: f64,
+    weights_health: f64,
+    current_enhancement: i32,
+}
+
+pub fn solve_greedy(input: InputData) -> OptimizationOutput {
+    let mut total_exp = input.exp;
+    for hero in &input.heroes {
+        total_exp += exp_cost(hero.gear.helmet.enhancement);
+        total_exp += exp_cost(hero.gear.gloves.enhancement);
+        total_exp += exp_cost(hero.gear.breastplate.enhancement);
+        total_exp += exp_cost(hero.gear.boots.enhancement);
+    }
+
+    let mut all_gear = Vec::new();
+    for hero in &input.heroes {
+        all_gear.push(OptimizationItem {
+            is_lethality: true,
+            mastery: hero.gear.helmet.mastery,
+            weights_lethality: hero.weights.lethality,
+            weights_health: hero.weights.health,
+            current_enhancement: 0,
+        });
+        all_gear.push(OptimizationItem {
+            is_lethality: false,
+            mastery: hero.gear.gloves.mastery,
+            weights_lethality: hero.weights.lethality,
+            weights_health: hero.weights.health,
+            current_enhancement: 0,
+        });
+        all_gear.push(OptimizationItem {
+            is_lethality: false,
+            mastery: hero.gear.breastplate.mastery,
+            weights_lethality: hero.weights.lethality,
+            weights_health: hero.weights.health,
+            current_enhancement: 0,
+        });
+        all_gear.push(OptimizationItem {
+            is_lethality: true,
+            mastery: hero.gear.boots.mastery,
+            weights_lethality: hero.weights.lethality,
+            weights_health: hero.weights.health,
+            current_enhancement: 0,
+        });
+    }
+
+    let max_enhancement = (EXP_COSTS.len() - 1) as i32;
+    let mut remaining_exp = total_exp;
+
+    fn calculate_item_score_internal(item: &OptimizationItem, enhancement: i32) -> f64 {
+        let s = stat(enhancement, item.mastery);
+        if item.is_lethality {
+            s * item.weights_lethality
+        } else {
+            s * item.weights_health
+        }
+    }
+
+    // Greedy Algorithm
+    loop {
+        let mut best_idx = None;
+        let mut best_efficiency = -1.0;
+        let mut best_cost = 0;
+
+        for (i, item) in all_gear.iter().enumerate() {
+            if item.current_enhancement >= max_enhancement {
+                continue;
+            }
+
+            let next_lvl = item.current_enhancement + 1;
+            let cost = exp_cost(next_lvl) - exp_cost(item.current_enhancement);
+
+            if cost > remaining_exp {
+                continue;
+            }
+
+            let current_score = calculate_item_score_internal(item, item.current_enhancement);
+            let next_score = calculate_item_score_internal(item, next_lvl);
+            let gain = next_score - current_score;
+
+            // Avoid division by zero if cost is 0 (though exp costs are usually > 0 for levels > 0)
+            // If cost is 0, efficiency is infinite.
+            let efficiency = if cost == 0 {
+                f64::INFINITY
+            } else {
+                gain / (cost as f64)
+            };
+
+            if efficiency > best_efficiency {
+                best_efficiency = efficiency;
+                best_idx = Some(i);
+                best_cost = cost;
+            }
+        }
+
+        if let Some(idx) = best_idx {
+            all_gear[idx].current_enhancement += 1;
+            remaining_exp -= best_cost;
+        } else {
+            break;
+        }
+    }
+
+    // Reconstruct results
+    let mut new_heroes = input.heroes.clone();
+    let mut solution_index = 0;
+
+    for hero in &mut new_heroes {
+        // Order: helmet, gloves, breastplate, boots
+        if solution_index < all_gear.len() { hero.gear.helmet.enhancement = all_gear[solution_index].current_enhancement; } solution_index += 1;
+        if solution_index < all_gear.len() { hero.gear.gloves.enhancement = all_gear[solution_index].current_enhancement; } solution_index += 1;
+        if solution_index < all_gear.len() { hero.gear.breastplate.enhancement = all_gear[solution_index].current_enhancement; } solution_index += 1;
+        if solution_index < all_gear.len() { hero.gear.boots.enhancement = all_gear[solution_index].current_enhancement; } solution_index += 1;
+    }
+
+    let mut total_before_score = 0.0;
+    let mut total_after_score = 0.0;
+    let mut results = Vec::new();
+
+    for i in 0..input.heroes.len() {
+        let before_stats = calculate_stats(&input.heroes[i].gear);
+        let before_score = before_stats.lethality * input.heroes[i].weights.lethality
+            + before_stats.health * input.heroes[i].weights.health;
+        total_before_score += before_score;
+
+        let after_stats = calculate_stats(&new_heroes[i].gear);
+        let after_score = after_stats.lethality * new_heroes[i].weights.lethality
+            + after_stats.health * new_heroes[i].weights.health;
+        total_after_score += after_score;
+
+        let mut gear_results = Vec::new();
+        // Helmet
+        gear_results.push(GearResult {
+            gear_type: "helmet".to_string(),
+            current_mastery: input.heroes[i].gear.helmet.mastery,
+            recommended_mastery: input.heroes[i].gear.helmet.mastery,
+            current_enhancement: input.heroes[i].gear.helmet.enhancement,
+            recommended_enhancement: new_heroes[i].gear.helmet.enhancement,
+        });
+        // Gloves
+        gear_results.push(GearResult {
+            gear_type: "gloves".to_string(),
+            current_mastery: input.heroes[i].gear.gloves.mastery,
+            recommended_mastery: input.heroes[i].gear.gloves.mastery,
+            current_enhancement: input.heroes[i].gear.gloves.enhancement,
+            recommended_enhancement: new_heroes[i].gear.gloves.enhancement,
+        });
+        // Breastplate
+        gear_results.push(GearResult {
+            gear_type: "breastplate".to_string(),
+            current_mastery: input.heroes[i].gear.breastplate.mastery,
+            recommended_mastery: input.heroes[i].gear.breastplate.mastery,
+            current_enhancement: input.heroes[i].gear.breastplate.enhancement,
+            recommended_enhancement: new_heroes[i].gear.breastplate.enhancement,
+        });
+        // Boots
+        gear_results.push(GearResult {
+            gear_type: "boots".to_string(),
+            current_mastery: input.heroes[i].gear.boots.mastery,
+            recommended_mastery: input.heroes[i].gear.boots.mastery,
+            current_enhancement: input.heroes[i].gear.boots.enhancement,
+            recommended_enhancement: new_heroes[i].gear.boots.enhancement,
+        });
+
+        results.push(OptimizationResult {
+            hero_name: input.heroes[i].name.clone(),
+            gear: gear_results,
+            before_stats,
+            after_stats,
+            before_score,
+            after_score,
+        });
+    }
+
+    OptimizationOutput {
+        results,
+        total_before_score,
+        total_after_score,
+    }
+}
