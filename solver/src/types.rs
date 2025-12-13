@@ -75,6 +75,9 @@ pub struct OptimizationOutput {
 pub struct InputData {
     pub heroes: Vec<HeroWeights>,
     pub exp: i32,
+    pub hammers: i32,
+    pub mythics: i32,
+    pub mythril: i32,
 }
 
 pub const EXP_COSTS: [i32; 201] = [

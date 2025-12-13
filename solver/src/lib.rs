@@ -62,6 +62,9 @@ mod tests {
         let input = InputData {
             heroes: vec![hero],
             exp: 1000, // Enough for a few upgrades
+            hammers: 0,
+            mythics: 0,
+            mythril: 0,
         };
 
         let json_input = serde_json::to_string(&input).unwrap();

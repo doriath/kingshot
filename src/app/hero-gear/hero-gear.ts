@@ -63,6 +63,8 @@ export class HeroGearComponent {
   private readonly HEROES_STORAGE_KEY = 'heroGearOptimizer.heroes';
   private readonly EXP_STORAGE_KEY = 'heroGearOptimizer.exp';
   private readonly HAMMERS_STORAGE_KEY = 'heroGearOptimizer.hammers';
+  private readonly MYTHICS_STORAGE_KEY = 'heroGearOptimizer.mythics';
+  private readonly MYTHRIL_STORAGE_KEY = 'heroGearOptimizer.mythril';
   private readonly defaultHeroes: HeroWeights[] = [
     {
       name: 'Infantry',
@@ -270,6 +272,8 @@ export class HeroGearComponent {
   heroes = signal<HeroWeights[]>(this.defaultHeroes);
   exp = signal(0);
   hammers = signal(0);
+  mythics = signal(0);
+  mythril = signal(0);
   optimizationResult = signal<OptimizationOutput | null>(null);
   isAdvancedCollapsed = signal(true);
 
@@ -290,6 +294,14 @@ export class HeroGearComponent {
       if (savedHammers) {
         this.hammers.set(JSON.parse(savedHammers));
       }
+      const savedMythics = localStorage.getItem(this.MYTHICS_STORAGE_KEY);
+      if (savedMythics) {
+        this.mythics.set(JSON.parse(savedMythics));
+      }
+      const savedMythril = localStorage.getItem(this.MYTHRIL_STORAGE_KEY);
+      if (savedMythril) {
+        this.mythril.set(JSON.parse(savedMythril));
+      }
     }
 
     effect(() => {
@@ -297,6 +309,8 @@ export class HeroGearComponent {
         localStorage.setItem(this.HEROES_STORAGE_KEY, JSON.stringify(this.heroes()));
         localStorage.setItem(this.EXP_STORAGE_KEY, JSON.stringify(this.exp()));
         localStorage.setItem(this.HAMMERS_STORAGE_KEY, JSON.stringify(this.hammers()));
+        localStorage.setItem(this.MYTHICS_STORAGE_KEY, JSON.stringify(this.mythics()));
+        localStorage.setItem(this.MYTHRIL_STORAGE_KEY, JSON.stringify(this.mythril()));
       }
     });
   }
@@ -305,6 +319,8 @@ export class HeroGearComponent {
     this.heroes.set(this.defaultHeroes);
     this.exp.set(0);
     this.hammers.set(0);
+    this.mythics.set(0);
+    this.mythril.set(0);
     this.optimizationResult.set(null);
   }
 
@@ -320,6 +336,16 @@ export class HeroGearComponent {
   updateHammers(event: Event) {
     const value = (event.target as HTMLInputElement).value;
     this.hammers.set(+value);
+  }
+
+  updateMythics(event: Event) {
+    const value = (event.target as HTMLInputElement).value;
+    this.mythics.set(+value);
+  }
+
+  updateMythril(event: Event) {
+    const value = (event.target as HTMLInputElement).value;
+    this.mythril.set(+value);
   }
 
   updateMastery(heroName: string, gearType: keyof Hero['gear'], event: Event) {
@@ -377,7 +403,10 @@ export class HeroGearComponent {
 
     const inputData = {
       heroes: this.heroes(),
-      exp: this.exp()
+      exp: this.exp(),
+      hammers: this.hammers(),
+      mythics: this.mythics(),
+      mythril: this.mythril()
     };
 
     try {
