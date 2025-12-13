@@ -55,6 +55,46 @@ mod tests {
     }
 
     #[test]
+    fn test_solve_greedy_level_101() {
+        let hero = HeroWeights {
+            name: "TestHero".to_string(),
+            gear: HeroGear {
+                helmet: Gear { mastery: 0, enhancement: 105 }, // Should NOT be reset
+                gloves: Gear { mastery: 0, enhancement: 10 }, // Should be reset
+                breastplate: Gear { mastery: 0, enhancement: 0 },
+                boots: Gear { mastery: 0, enhancement: 0 },
+            },
+            weights: StatWeights { lethality: 1.0, health: 1.0 },
+        };
+        
+        let input = InputData {
+            heroes: vec![hero],
+            exp: 100, // Small amount of extra exp
+            hammers: 0,
+            mythics: 0,
+            mythril: 0,
+        };
+
+        let json_input = serde_json::to_string(&input).unwrap();
+        let json_output = solve(&json_input);
+        
+        let output: OptimizationOutput = serde_json::from_str(&json_output).unwrap();
+        
+        assert_eq!(output.results.len(), 1);
+        
+        let helmet_res = &output.results[0].gear[0];
+        let gloves_res = &output.results[0].gear[1];
+        
+        // Helmet started at 105, should be >= 105
+        assert!(helmet_res.recommended_enhancement >= 105);
+        
+        // Gloves started at 10, but exp was reclaimed. 
+        // With only 100 extra exp + reclaimed exp from gloves (cost(10) = 325), 
+        // it might not reach 10 if other items are more efficient.
+        // But we just want to ensure the logic runs.
+    }
+
+    #[test]
     fn test_solve_greedy() {
         let hero = HeroWeights {
             name: "TestHero".to_string(),

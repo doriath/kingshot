@@ -15,44 +15,32 @@ pub fn solve_greedy(input: InputData) -> OptimizationOutput {
     // We do NOT pool hammers. We only use the available hammers.
     let mut remaining_hammers = input.hammers;
 
-    // Calculate total available EXP by reclaiming from current gear
-    for hero in &input.heroes {
-        total_exp += exp_cost(hero.gear.helmet.enhancement);
-        total_exp += exp_cost(hero.gear.gloves.enhancement);
-        total_exp += exp_cost(hero.gear.breastplate.enhancement);
-        total_exp += exp_cost(hero.gear.boots.enhancement);
-    }
-
     let mut all_gear = Vec::new();
+    
+    // Helper to process a single gear piece
+    let mut process_gear = |gear: &Gear, is_lethality: bool, weights_lethality: f64, weights_health: f64| {
+        let (start_enhancement, cost_to_reclaim) = if gear.enhancement >= 101 {
+            (gear.enhancement, 0)
+        } else {
+            (0, exp_cost(gear.enhancement))
+        };
+        
+        total_exp += cost_to_reclaim;
+        
+        all_gear.push(OptimizationItem {
+            is_lethality,
+            mastery: gear.mastery,
+            weights_lethality,
+            weights_health,
+            current_enhancement: start_enhancement,
+        });
+    };
+
     for hero in &input.heroes {
-        all_gear.push(OptimizationItem {
-            is_lethality: true,
-            mastery: hero.gear.helmet.mastery,
-            weights_lethality: hero.weights.lethality,
-            weights_health: hero.weights.health,
-            current_enhancement: 0,
-        });
-        all_gear.push(OptimizationItem {
-            is_lethality: false,
-            mastery: hero.gear.gloves.mastery,
-            weights_lethality: hero.weights.lethality,
-            weights_health: hero.weights.health,
-            current_enhancement: 0,
-        });
-        all_gear.push(OptimizationItem {
-            is_lethality: false,
-            mastery: hero.gear.breastplate.mastery,
-            weights_lethality: hero.weights.lethality,
-            weights_health: hero.weights.health,
-            current_enhancement: 0,
-        });
-        all_gear.push(OptimizationItem {
-            is_lethality: true,
-            mastery: hero.gear.boots.mastery,
-            weights_lethality: hero.weights.lethality,
-            weights_health: hero.weights.health,
-            current_enhancement: 0,
-        });
+        process_gear(&hero.gear.helmet, true, hero.weights.lethality, hero.weights.health);
+        process_gear(&hero.gear.gloves, false, hero.weights.lethality, hero.weights.health);
+        process_gear(&hero.gear.breastplate, false, hero.weights.lethality, hero.weights.health);
+        process_gear(&hero.gear.boots, true, hero.weights.lethality, hero.weights.health);
     }
 
     let max_enhancement = (EXP_COSTS.len() - 1) as i32;
