@@ -47,6 +47,14 @@ mod tests {
     }
 
     #[test]
+    fn test_hammer_cost() {
+        assert_eq!(hammer_cost(1), 10);
+        assert_eq!(hammer_cost(2), 20);
+        assert_eq!(hammer_cost(20), 200);
+        assert_eq!(hammer_cost(21), 0); // Invalid
+    }
+
+    #[test]
     fn test_solve_greedy() {
         let hero = HeroWeights {
             name: "TestHero".to_string(),
@@ -62,7 +70,7 @@ mod tests {
         let input = InputData {
             heroes: vec![hero],
             exp: 1000, // Enough for a few upgrades
-            hammers: 0,
+            hammers: 100, // Enough for some mastery upgrades
             mythics: 0,
             mythril: 0,
         };
@@ -76,15 +84,16 @@ mod tests {
         assert!(output.total_after_score > output.total_before_score);
         
         // Verify total cost used is valid
-        // We started with 0 exp used on gear.
-        // We gave 1000 exp.
-        // We should verify we didn't use more than 1000.
-        // But we don't easily have the used cost in output, just the resulting levels.
-        // Let's calculate cost of resulting gear.
         let mut used_exp = 0;
+        let mut used_hammers = 0;
         for res in &output.results[0].gear {
              used_exp += exp_cost(res.recommended_enhancement);
+             // Mastery cost is incremental from current (0) to recommended
+             for m in (res.current_mastery + 1)..=res.recommended_mastery {
+                 used_hammers += hammer_cost(m);
+             }
         }
         assert!(used_exp <= 1000);
+        assert!(used_hammers <= 100);
     }
 }

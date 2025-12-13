@@ -105,6 +105,13 @@ pub fn exp_cost(enhancement: i32) -> i32 {
     EXP_COSTS[enhancement as usize]
 }
 
+pub fn hammer_cost(target_level: i32) -> i32 {
+    if target_level <= 0 || target_level > 20 {
+        return 0; // Or handle error? For now 0 cost for invalid levels implies we shouldn't call it.
+    }
+    10 * target_level
+}
+
 pub fn stat(enh: i32, mastery: i32) -> f64 {
     let enh_f = enh as f64;
     let mastery_f = mastery as f64;

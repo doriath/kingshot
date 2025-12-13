@@ -12,6 +12,10 @@ struct OptimizationItem {
 
 pub fn solve_greedy(input: InputData) -> OptimizationOutput {
     let mut total_exp = input.exp;
+    // We do NOT pool hammers. We only use the available hammers.
+    let mut remaining_hammers = input.hammers;
+
+    // Calculate total available EXP by reclaiming from current gear
     for hero in &input.heroes {
         total_exp += exp_cost(hero.gear.helmet.enhancement);
         total_exp += exp_cost(hero.gear.gloves.enhancement);
@@ -52,10 +56,11 @@ pub fn solve_greedy(input: InputData) -> OptimizationOutput {
     }
 
     let max_enhancement = (EXP_COSTS.len() - 1) as i32;
+    let max_mastery = 20;
     let mut remaining_exp = total_exp;
 
-    fn calculate_item_score_internal(item: &OptimizationItem, enhancement: i32) -> f64 {
-        let s = stat(enhancement, item.mastery);
+    fn calculate_item_score_internal(item: &OptimizationItem, enhancement: i32, mastery: i32) -> f64 {
+        let s = stat(enhancement, mastery);
         if item.is_lethality {
             s * item.weights_lethality
         } else {
@@ -65,9 +70,12 @@ pub fn solve_greedy(input: InputData) -> OptimizationOutput {
 
     // Greedy Algorithm
     loop {
-        let mut best_idx = None;
-        let mut best_efficiency = -1.0;
-        let mut best_cost = 0;
+        let mut did_upgrade = false;
+
+        // 1. Find best EXP upgrade
+        let mut best_exp_idx = None;
+        let mut best_exp_efficiency = -1.0;
+        let mut best_exp_cost = 0;
 
         for (i, item) in all_gear.iter().enumerate() {
             if item.current_enhancement >= max_enhancement {
@@ -81,29 +89,71 @@ pub fn solve_greedy(input: InputData) -> OptimizationOutput {
                 continue;
             }
 
-            let current_score = calculate_item_score_internal(item, item.current_enhancement);
-            let next_score = calculate_item_score_internal(item, next_lvl);
+            let current_score = calculate_item_score_internal(item, item.current_enhancement, item.mastery);
+            let next_score = calculate_item_score_internal(item, next_lvl, item.mastery);
             let gain = next_score - current_score;
 
-            // Avoid division by zero if cost is 0 (though exp costs are usually > 0 for levels > 0)
-            // If cost is 0, efficiency is infinite.
             let efficiency = if cost == 0 {
                 f64::INFINITY
             } else {
                 gain / (cost as f64)
             };
 
-            if efficiency > best_efficiency {
-                best_efficiency = efficiency;
-                best_idx = Some(i);
-                best_cost = cost;
+            if efficiency > best_exp_efficiency {
+                best_exp_efficiency = efficiency;
+                best_exp_idx = Some(i);
+                best_exp_cost = cost;
             }
         }
 
-        if let Some(idx) = best_idx {
+        // 2. Find best Hammer upgrade
+        let mut best_hammer_idx = None;
+        let mut best_hammer_efficiency = -1.0;
+        let mut best_hammer_cost = 0;
+
+        for (i, item) in all_gear.iter().enumerate() {
+            if item.mastery >= max_mastery {
+                continue;
+            }
+
+            let next_lvl = item.mastery + 1;
+            let cost = hammer_cost(next_lvl);
+
+            if cost > remaining_hammers {
+                continue;
+            }
+
+            let current_score = calculate_item_score_internal(item, item.current_enhancement, item.mastery);
+            let next_score = calculate_item_score_internal(item, item.current_enhancement, next_lvl);
+            let gain = next_score - current_score;
+
+            let efficiency = if cost == 0 {
+                f64::INFINITY
+            } else {
+                gain / (cost as f64)
+            };
+
+            if efficiency > best_hammer_efficiency {
+                best_hammer_efficiency = efficiency;
+                best_hammer_idx = Some(i);
+                best_hammer_cost = cost;
+            }
+        }
+
+        // Apply upgrades
+        if let Some(idx) = best_exp_idx {
             all_gear[idx].current_enhancement += 1;
-            remaining_exp -= best_cost;
-        } else {
+            remaining_exp -= best_exp_cost;
+            did_upgrade = true;
+        }
+
+        if let Some(idx) = best_hammer_idx {
+            all_gear[idx].mastery += 1;
+            remaining_hammers -= best_hammer_cost;
+            did_upgrade = true;
+        }
+
+        if !did_upgrade {
             break;
         }
     }
@@ -114,10 +164,29 @@ pub fn solve_greedy(input: InputData) -> OptimizationOutput {
 
     for hero in &mut new_heroes {
         // Order: helmet, gloves, breastplate, boots
-        if solution_index < all_gear.len() { hero.gear.helmet.enhancement = all_gear[solution_index].current_enhancement; } solution_index += 1;
-        if solution_index < all_gear.len() { hero.gear.gloves.enhancement = all_gear[solution_index].current_enhancement; } solution_index += 1;
-        if solution_index < all_gear.len() { hero.gear.breastplate.enhancement = all_gear[solution_index].current_enhancement; } solution_index += 1;
-        if solution_index < all_gear.len() { hero.gear.boots.enhancement = all_gear[solution_index].current_enhancement; } solution_index += 1;
+        if solution_index < all_gear.len() { 
+            hero.gear.helmet.enhancement = all_gear[solution_index].current_enhancement; 
+            hero.gear.helmet.mastery = all_gear[solution_index].mastery;
+        } 
+        solution_index += 1;
+        
+        if solution_index < all_gear.len() { 
+            hero.gear.gloves.enhancement = all_gear[solution_index].current_enhancement; 
+            hero.gear.gloves.mastery = all_gear[solution_index].mastery;
+        } 
+        solution_index += 1;
+        
+        if solution_index < all_gear.len() { 
+            hero.gear.breastplate.enhancement = all_gear[solution_index].current_enhancement; 
+            hero.gear.breastplate.mastery = all_gear[solution_index].mastery;
+        } 
+        solution_index += 1;
+        
+        if solution_index < all_gear.len() { 
+            hero.gear.boots.enhancement = all_gear[solution_index].current_enhancement; 
+            hero.gear.boots.mastery = all_gear[solution_index].mastery;
+        } 
+        solution_index += 1;
     }
 
     let mut total_before_score = 0.0;
