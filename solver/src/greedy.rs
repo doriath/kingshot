@@ -15,6 +15,7 @@ pub fn solve_greedy(input: InputData) -> OptimizationOutput {
     // We do NOT pool hammers. We only use the available hammers.
     let mut remaining_hammers = input.hammers;
     let mut remaining_mythril = input.mythril;
+    let mut remaining_mythics = input.mythics;
 
     let mut all_gear = Vec::new();
     
@@ -66,6 +67,7 @@ pub fn solve_greedy(input: InputData) -> OptimizationOutput {
         let mut best_exp_efficiency = -1.0;
         let mut best_exp_cost = 0;
         let mut best_exp_mythril_cost = 0;
+        let mut best_exp_mythic_cost = 0;
 
         for (i, item) in all_gear.iter().enumerate() {
             if item.current_enhancement >= max_enhancement {
@@ -84,12 +86,17 @@ pub fn solve_greedy(input: InputData) -> OptimizationOutput {
 
             let cost = exp_cost(next_lvl) - exp_cost(item.current_enhancement);
             let m_cost = mythril_cost(next_lvl);
+            let mc_cost = mythic_cost(next_lvl);
 
             if cost > remaining_exp {
                 continue;
             }
             
             if m_cost > remaining_mythril {
+                continue;
+            }
+
+            if mc_cost > remaining_mythics {
                 continue;
             }
 
@@ -108,6 +115,7 @@ pub fn solve_greedy(input: InputData) -> OptimizationOutput {
                 best_exp_idx = Some(i);
                 best_exp_cost = cost;
                 best_exp_mythril_cost = m_cost;
+                best_exp_mythic_cost = mc_cost;
             }
         }
 
@@ -155,6 +163,7 @@ pub fn solve_greedy(input: InputData) -> OptimizationOutput {
             all_gear[idx].current_enhancement += 1;
             remaining_exp -= best_exp_cost;
             remaining_mythril -= best_exp_mythril_cost;
+            remaining_mythics -= best_exp_mythic_cost;
             did_upgrade = true;
         }
 

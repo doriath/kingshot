@@ -123,6 +123,18 @@ pub fn mythril_cost(target_level: i32) -> i32 {
     }
 }
 
+pub fn mythic_cost(target_level: i32) -> i32 {
+    match target_level {
+        101 => 2,
+        120 => 3,
+        140 => 5,
+        160 => 5,
+        180 => 10,
+        200 => 10,
+        _ => 0,
+    }
+}
+
 pub fn stat(enh: i32, mastery: i32) -> f64 {
     let enh_f = enh as f64;
     let mastery_f = mastery as f64;
