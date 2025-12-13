@@ -251,4 +251,51 @@ mod tests {
         assert!(used_exp <= 1000);
         assert!(used_hammers <= 100);
     }
+    #[test]
+    fn test_mythril_cost() {
+        assert_eq!(mythril_cost(119), 0);
+        assert_eq!(mythril_cost(120), 10);
+        assert_eq!(mythril_cost(121), 0);
+        assert_eq!(mythril_cost(140), 20);
+        assert_eq!(mythril_cost(160), 30);
+        assert_eq!(mythril_cost(180), 40);
+        assert_eq!(mythril_cost(200), 50);
+    }
+
+    #[test]
+    fn test_mythril_gate() {
+        let hero = HeroWeights {
+            name: "TestMythril".to_string(),
+            gear: HeroGear {
+                helmet: Gear { mastery: 20, enhancement: 119 }, // Needs 10 mythril to go to 120
+                // Max out others
+                gloves: Gear { mastery: 20, enhancement: 200 },
+                breastplate: Gear { mastery: 20, enhancement: 200 },
+                boots: Gear { mastery: 20, enhancement: 200 },
+            },
+            weights: StatWeights { lethality: 1.0, health: 1.0 },
+        };
+        
+        // Case 1: Lots of EXP, 0 Mythril. Should stay at 119.
+        let input1 = InputData {
+            heroes: vec![hero.clone()],
+            exp: 1000000, 
+            hammers: 0,
+            mythics: 0,
+            mythril: 0,
+        };
+        let output1: OptimizationOutput = serde_json::from_str(&solve(&serde_json::to_string(&input1).unwrap())).unwrap();
+        assert_eq!(output1.results[0].gear[0].recommended_enhancement, 119);
+        
+        // Case 2: Lots of EXP, 10 Mythril. Should go to 120+.
+        let input2 = InputData {
+            heroes: vec![hero.clone()],
+            exp: 1000000, 
+            hammers: 0,
+            mythics: 0,
+            mythril: 10,
+        };
+        let output2: OptimizationOutput = serde_json::from_str(&solve(&serde_json::to_string(&input2).unwrap())).unwrap();
+        assert!(output2.results[0].gear[0].recommended_enhancement >= 120);
+    }
 }

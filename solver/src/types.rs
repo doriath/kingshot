@@ -112,6 +112,17 @@ pub fn hammer_cost(target_level: i32) -> i32 {
     10 * target_level
 }
 
+pub fn mythril_cost(target_level: i32) -> i32 {
+    match target_level {
+        120 => 10,
+        140 => 20,
+        160 => 30,
+        180 => 40,
+        200 => 50,
+        _ => 0,
+    }
+}
+
 pub fn stat(enh: i32, mastery: i32) -> f64 {
     let enh_f = enh as f64;
     let mastery_f = mastery as f64;
