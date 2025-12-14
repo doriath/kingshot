@@ -77,10 +77,22 @@ pub fn solve_greedy(input: InputData) -> OptimizationOutput {
             let next_lvl = item.current_enhancement + 1;
 
             // Mastery Constraint Check
+            let mut mastery_upgrade_hammer_cost = 0;
+            let mut mastery_upgrade_mythic_cost = 0;
             if next_lvl > 100 {
-                let req_mastery = 10 + (next_lvl - 100) / 10;
+                let req_mastery = required_mastery(next_lvl);
                 if item.mastery < req_mastery {
-                    continue;
+                    // We need to upgrade mastery. Check if we have enough hammers AND mythics.
+                    for m in (item.mastery + 1)..=req_mastery {
+                        mastery_upgrade_hammer_cost += hammer_cost(m);
+                        mastery_upgrade_mythic_cost += mastery_mythic_cost(m);
+                    }
+                    if mastery_upgrade_hammer_cost > remaining_hammers {
+                        continue;
+                    }
+                    if mastery_upgrade_mythic_cost > remaining_mythics {
+                        continue;
+                    }
                 }
             }
 
@@ -96,7 +108,9 @@ pub fn solve_greedy(input: InputData) -> OptimizationOutput {
                 continue;
             }
 
-            if mc_cost > remaining_mythics {
+            // Total mythic cost = enhancement mythic cost + mastery upgrade mythic cost
+            let total_mythic_cost = mc_cost + mastery_upgrade_mythic_cost;
+            if total_mythic_cost > remaining_mythics {
                 continue;
             }
 
@@ -115,7 +129,7 @@ pub fn solve_greedy(input: InputData) -> OptimizationOutput {
                 best_exp_idx = Some(i);
                 best_exp_cost = cost;
                 best_exp_mythril_cost = m_cost;
-                best_exp_mythic_cost = mc_cost;
+                best_exp_mythic_cost = total_mythic_cost;
             }
         }
 
@@ -123,6 +137,7 @@ pub fn solve_greedy(input: InputData) -> OptimizationOutput {
         let mut best_hammer_idx = None;
         let mut best_hammer_efficiency = -1.0;
         let mut best_hammer_cost = 0;
+        let mut best_hammer_mythic_cost = 0;
 
         for (i, item) in all_gear.iter().enumerate() {
             if item.mastery >= max_mastery {
@@ -133,6 +148,11 @@ pub fn solve_greedy(input: InputData) -> OptimizationOutput {
             let cost = hammer_cost(next_lvl);
 
             if cost > remaining_hammers {
+                continue;
+            }
+
+            let m_mythic_cost = mastery_mythic_cost(next_lvl);
+            if m_mythic_cost > remaining_mythics {
                 continue;
             }
 
@@ -152,6 +172,7 @@ pub fn solve_greedy(input: InputData) -> OptimizationOutput {
                 best_hammer_efficiency = efficiency;
                 best_hammer_idx = Some(i);
                 best_hammer_cost = cost;
+                best_hammer_mythic_cost = m_mythic_cost;
             }
         }
         
@@ -171,6 +192,7 @@ pub fn solve_greedy(input: InputData) -> OptimizationOutput {
             // println!("Upgrading hammer for idx {} to {}", idx, all_gear[idx].mastery + 1);
             all_gear[idx].mastery += 1;
             remaining_hammers -= best_hammer_cost;
+            remaining_mythics -= best_hammer_mythic_cost;
             did_upgrade = true;
         }
 

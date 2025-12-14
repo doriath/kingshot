@@ -135,6 +135,24 @@ pub fn mythic_cost(target_level: i32) -> i32 {
     }
 }
 
+pub fn required_mastery(target_level: i32) -> i32 {
+    if target_level <= 100 {
+        0
+    } else if target_level < 120 {
+        10
+    } else {
+        11 + (target_level - 120) / 20
+    }
+}
+
+pub fn mastery_mythic_cost(target_mastery: i32) -> i32 {
+    if target_mastery <= 10 {
+        0
+    } else {
+        target_mastery - 10
+    }
+}
+
 pub fn stat(enh: i32, mastery: i32) -> f64 {
     let enh_f = enh as f64;
     let mastery_f = mastery as f64;

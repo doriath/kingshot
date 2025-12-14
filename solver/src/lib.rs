@@ -346,4 +346,87 @@ mod tests {
         let output2: OptimizationOutput = serde_json::from_str(&solve(&serde_json::to_string(&input2).unwrap())).unwrap();
         assert!(output2.results[0].gear[0].recommended_enhancement >= 101);
     }
+
+    #[test]
+    fn test_required_mastery() {
+        assert_eq!(required_mastery(100), 0);
+        assert_eq!(required_mastery(101), 10);
+        assert_eq!(required_mastery(119), 10);
+        assert_eq!(required_mastery(120), 11);
+        assert_eq!(required_mastery(139), 11);
+        assert_eq!(required_mastery(140), 12);
+        assert_eq!(required_mastery(159), 12);
+        assert_eq!(required_mastery(160), 13);
+        assert_eq!(required_mastery(179), 13);
+        assert_eq!(required_mastery(180), 14);
+        assert_eq!(required_mastery(199), 14);
+        assert_eq!(required_mastery(200), 15);
+    }
+
+    #[test]
+    fn test_mastery_mythic_cost() {
+        assert_eq!(mastery_mythic_cost(10), 0);
+        assert_eq!(mastery_mythic_cost(11), 1);
+        assert_eq!(mastery_mythic_cost(12), 2);
+        assert_eq!(mastery_mythic_cost(20), 10);
+    }
+
+    #[test]
+    fn test_mastery_mythic_gate() {
+        let hero = HeroWeights {
+            name: "TestMasteryMythic".to_string(),
+            gear: HeroGear {
+                helmet: Gear { mastery: 10, enhancement: 119 }, // Needs mastery 11 to go to 120. Mastery 11 costs 1 mythic.
+                // Max out others
+                gloves: Gear { mastery: 20, enhancement: 200 },
+                breastplate: Gear { mastery: 20, enhancement: 200 },
+                boots: Gear { mastery: 20, enhancement: 200 },
+            },
+            weights: StatWeights { lethality: 1.0, health: 1.0 },
+        };
+        
+        // Case 1: Lots of EXP/Hammers/Mythril, 0 Mythics. Should stay at 119 because we can't afford mastery 11.
+        let input1 = InputData {
+            heroes: vec![hero.clone()],
+            exp: 1000000, 
+            hammers: 1000,
+            mythics: 0,
+            mythril: 100,
+        };
+        let output1: OptimizationOutput = serde_json::from_str(&solve(&serde_json::to_string(&input1).unwrap())).unwrap();
+        assert_eq!(output1.results[0].gear[0].recommended_enhancement, 119);
+        assert_eq!(output1.results[0].gear[0].recommended_mastery, 10);
+        
+        // Case 2: Lots of everything, 1 Mythic.
+        // Enhancement 120 costs 3 mythics. Mastery 11 costs 1 mythic. Total 4.
+        // If we have 1 mythic, we can afford mastery 11 (cost 1), but then we have 0 left for enhancement (cost 3).
+        // So we should see mastery upgrade to 11, but enhancement stay at 119?
+        // Wait, the greedy algorithm only upgrades mastery IF it upgrades enhancement.
+        // So if we can't afford the enhancement, we won't upgrade mastery either.
+        // So with 1 mythic, we should stay at 119/10.
+        let input2 = InputData {
+            heroes: vec![hero.clone()],
+            exp: 1000000, 
+            hammers: 1000,
+            mythics: 1,
+            mythril: 100,
+        };
+        let output2: OptimizationOutput = serde_json::from_str(&solve(&serde_json::to_string(&input2).unwrap())).unwrap();
+        assert_eq!(output2.results[0].gear[0].recommended_enhancement, 119);
+        assert_eq!(output2.results[0].gear[0].recommended_mastery, 11);
+
+        // Case 3: Lots of everything, 4 Mythics.
+        // Mastery 11 (1) + Enhancement 120 (3) = 4.
+        // Should succeed.
+        let input3 = InputData {
+            heroes: vec![hero.clone()],
+            exp: 1000000, 
+            hammers: 1000,
+            mythics: 4,
+            mythril: 100,
+        };
+        let output3: OptimizationOutput = serde_json::from_str(&solve(&serde_json::to_string(&input3).unwrap())).unwrap();
+        assert!(output3.results[0].gear[0].recommended_enhancement >= 120);
+        assert!(output3.results[0].gear[0].recommended_mastery >= 11);
+    }
 }
