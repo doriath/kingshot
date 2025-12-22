@@ -80,6 +80,7 @@ Under no circumstances should you ever use the following outdated patterns:
 - **DO NOT USE** `NgClass` or `[ngClass]`. Use `[class]` bindings.
 - **DO NOT USE** `NgStyle` or `[ngStyle]`. Use `[style]` bindings.
 - **DO NOT USE** `@Input()` or `@Output()` decorators. Use `input()` and `output()` functions.
+- **DO NOT USE** inline templates (`template: '...'`) or inline styles (`styles: ['...']`). Always use `templateUrl` and `styleUrl`.
 
 ---
 
@@ -112,7 +113,7 @@ Under no circumstances should you ever use the following outdated patterns:
 - **Inputs**: Use `input()` signals. `public title = input.required<string>();`
 - **Outputs**: Use the `output()` function. `public search = output<string>();`
 - **State**: Use signals (`signal()`) for all local component state. Use `computed()` for state derived from other signals.
-- **Templates**: Prefer inline templates for simple components (\< 15 lines of HTML). Use template files for larger components.
+- **Templates**: Always use separate template (`.html`) and style (`.css`) files. Do NOT use inline templates or styles.
 
 ## Services
 

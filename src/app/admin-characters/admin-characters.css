@@ -1,0 +1,86 @@
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    color: #fff;
+}
+
+h1 {
+    color: #f0f0f0;
+    margin-bottom: 30px;
+}
+
+.registration-list {
+    display: grid;
+    gap: 15px;
+}
+
+.registration-card {
+    background: #2a2a2a;
+    padding: 20px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid #444;
+}
+
+.reg-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.info-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.label {
+    color: #aaa;
+    font-size: 0.9em;
+    width: 100px;
+}
+
+.value {
+    font-weight: bold;
+}
+
+.code {
+    font-family: monospace;
+    background: #333;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #00bcd4;
+    font-size: 1.1em;
+}
+
+.actions {
+    display: flex;
+    gap: 10px;
+}
+
+button {
+    padding: 8px 16px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    transition: opacity 0.2s;
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.approve-btn {
+    background: #28a745;
+    color: white;
+}
+
+.reject-btn {
+    background: #dc3545;
+    color: white;
+}

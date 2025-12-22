@@ -1,0 +1,32 @@
+<div class="container">
+    <h1>Admin: Pending Character Approvals</h1>
+
+    @if (pendingRegistrations().length === 0) {
+    <p>No pending registrations.</p>
+    } @else {
+    <div class="registration-list">
+        @for (reg of pendingRegistrations(); track reg.id) {
+        <div class="registration-card">
+            <div class="reg-info">
+                <div class="info-row">
+                    <span class="label">Character ID:</span>
+                    <span class="value">{{ reg.id }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">User ID:</span>
+                    <span class="value">{{ reg.userId }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Code:</span>
+                    <code class="code">{{ reg.verificationCode }}</code>
+                </div>
+            </div>
+            <div class="actions">
+                <button class="approve-btn" (click)="approve(reg)" [disabled]="isProcessing()">Approve</button>
+                <button class="reject-btn" (click)="reject(reg)" [disabled]="isProcessing()">Reject</button>
+            </div>
+        </div>
+        }
+    </div>
+    }
+</div>

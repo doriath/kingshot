@@ -21,6 +21,16 @@ export const routes: Routes = [
         loadComponent: () => import('./space-detail/space-detail').then(m => m.SpaceDetailComponent),
         title: 'Space Details'
     },
+    {
+        path: 'manage-characters',
+        loadComponent: () => import('./manage-characters/manage-characters').then(m => m.ManageCharactersComponent),
+        title: 'Manage Characters'
+    },
+    {
+        path: 'admin/characters',
+        loadComponent: () => import('./admin-characters/admin-characters').then(m => m.AdminCharactersComponent),
+        title: 'Admin: Character Approvals'
+    },
     ...BEAR_ROUTES,
     ...MISC_ROUTES,
 ];

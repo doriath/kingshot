@@ -8,7 +8,8 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "build:solver": "wasm-pack build solver --target web --out-name solver --out-dir target/pkg && cp solver/target/pkg/solver_bg.wasm src/assets/solver/",
-    "deploy": "firebase deploy"
+    "deploy": "firebase deploy",
+    "deploy:firestore": "firebase deploy --only firestore"
   },
   "prettier": {
     "printWidth": 100,

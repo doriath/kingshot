@@ -1,0 +1,116 @@
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    color: #fff;
+}
+
+h1,
+h2 {
+    color: #f0f0f0;
+}
+
+.add-character-section {
+    background: #2a2a2a;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+}
+
+.input-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+input {
+    flex: 1;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #444;
+    background: #333;
+    color: #fff;
+}
+
+button {
+    padding: 10px 20px;
+    border-radius: 4px;
+    border: none;
+    background: #007bff;
+    color: white;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+button:disabled {
+    background: #555;
+    cursor: not-allowed;
+}
+
+button.remove-btn {
+    background: #dc3545;
+    margin-top: 10px;
+    font-size: 0.9em;
+    padding: 5px 10px;
+}
+
+.error {
+    color: #ff4444;
+    margin-top: 5px;
+}
+
+.character-list {
+    display: grid;
+    gap: 15px;
+}
+
+.character-card {
+    background: #2a2a2a;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #ffc107;
+    /* Yellow for pending */
+}
+
+.character-card.verified {
+    border-left-color: #28a745;
+    /* Green for verified */
+}
+
+.char-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.char-id {
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+.status {
+    font-size: 0.9em;
+    color: #ffc107;
+}
+
+.status.verified {
+    color: #28a745;
+}
+
+.verification-info {
+    background: #333;
+    padding: 10px;
+    border-radius: 4px;
+    margin: 10px 0;
+}
+
+.verification-code {
+    display: block;
+    font-size: 1.5em;
+    font-family: monospace;
+    color: #00bcd4;
+    text-align: center;
+    margin-top: 5px;
+    letter-spacing: 2px;
+}

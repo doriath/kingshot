@@ -1,0 +1,43 @@
+<div class="container">
+    <h1>Manage Characters</h1>
+
+    <div class="add-character-section">
+        <h2>Register New Character</h2>
+        <div class="input-group">
+            <input type="text" [(ngModel)]="newCharacterId" placeholder="Enter Character ID" [disabled]="isLoading()">
+            <button (click)="addCharacter()" [disabled]="!newCharacterId() || isLoading()">
+                {{ isLoading() ? 'Registering...' : 'Register' }}
+            </button>
+        </div>
+        @if (error()) {
+        <p class="error">{{ error() }}</p>
+        }
+    </div>
+
+    <div class="character-list-section">
+        <h2>Your Characters</h2>
+        @if (characters().length === 0) {
+        <p>No characters registered yet.</p>
+        } @else {
+        <div class="character-list">
+            @for (char of characters(); track char.id) {
+            <div class="character-card" [class.verified]="char.verified">
+                <div class="char-info">
+                    <span class="char-id">ID: {{ char.id }}</span>
+                    <span class="status" [class.verified]="char.verified">
+                        {{ char.verified ? 'Verified' : 'Pending Verification' }}
+                    </span>
+                </div>
+                @if (!char.verified) {
+                <div class="verification-info">
+                    <p>Send this code in-game to verify:</p>
+                    <code class="verification-code">{{ char.verificationCode }}</code>
+                </div>
+                }
+                <button class="remove-btn" (click)="removeCharacter(char)">Remove</button>
+            </div>
+            }
+        </div>
+        }
+    </div>
+</div>
