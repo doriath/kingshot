@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { AuthService } from '../auth.service';
+import { UserDataService } from '../user-data.service';
 
 @Component({
   selector: 'app-user-profile',
@@ -12,7 +13,10 @@ import { AuthService } from '../auth.service';
 })
 export class UserProfileComponent {
   private authService = inject(AuthService);
+  private userDataService = inject(UserDataService);
+
   public user = toSignal(this.authService.user$);
+  public activeCharacter = this.userDataService.activeCharacter;
 
   isDropdownOpen = false;
 

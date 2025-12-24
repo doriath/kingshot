@@ -14,6 +14,7 @@ export class ManageCharactersComponent {
   private userDataService = inject(UserDataService);
 
   characters = this.userDataService.characters;
+  activeCharacterId = this.userDataService.activeCharacterId;
   newCharacterId = signal('');
   isLoading = signal(false);
   error = signal<string | null>(null);
@@ -43,6 +44,24 @@ export class ManageCharactersComponent {
     } catch (e: any) {
       console.error(e);
       alert('Failed to remove character: ' + e.message);
+    }
+  }
+
+  setActive(char: CharacterUI) {
+    this.userDataService.setActiveCharacter(char.id);
+  }
+
+  async saveDetails(char: CharacterUI, name: string, server: string, alliance: string) {
+    try {
+      await this.userDataService.updateCharacterDetails(char.id, {
+        name,
+        server,
+        alliance
+      });
+      alert('Saved!');
+    } catch (e: any) {
+      console.error(e);
+      alert('Failed to save details: ' + e.message);
     }
   }
 }

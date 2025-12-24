@@ -228,6 +228,11 @@ The AI's workflow is iterative, transparent, and responsive to user input.
   5. **Preview Check:** AI observes the browser preview for visual and runtime errors.
   6. **Remediation/Report:** If errors are found, AI attempts automatic fixes. If unsuccessful, it reports details to the user.
 
+
+# Safety & Security
+
+* **Firestore Rules:** Always check and update `firestore.rules` when adding new data access patterns or collections. Ensure users can only read/write their own data unless public access is explicitly required.
+
 # Firebase MCP
 
 When requested for Firebase add the following the server configurations to .idx/mcp.json. Just add the following and don't add anything else.

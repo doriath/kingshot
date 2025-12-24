@@ -18,6 +18,7 @@ export interface CharacterAssignmentView extends Omit<CharacterAssignment, 'rein
     reinforce: {
         characterId: string;
         characterName: string;
+        powerLevel?: number;
         marchType?: string;
     }[];
 }
@@ -53,19 +54,24 @@ export class VikingsService {
     }
 
     private transformEventToView(event: VikingsEvent): VikingsEventView {
-        const characterMap = new Map<string, string>();
+        const characterMap = new Map<string, CharacterAssignment>();
         if (event.characters) {
-            event.characters.forEach(c => characterMap.set(c.characterId, c.characterName));
+            event.characters.forEach(c => characterMap.set(c.characterId, c));
         }
 
         return {
             ...event,
             characters: (event.characters || []).map(c => ({
                 ...c,
-                reinforce: (c.reinforce || []).map(r => ({
-                    ...r,
-                    characterName: characterMap.get(r.characterId) || 'Unknown'
-                }))
+                reinforce: (c.reinforce || []).map(r => {
+                    const target = characterMap.get(r.characterId);
+                    return {
+                        characterId: r.characterId,
+                        marchType: r.marchType,
+                        characterName: target?.characterName || 'Unknown',
+                        powerLevel: target?.powerLevel
+                    };
+                })
             }))
         };
     }

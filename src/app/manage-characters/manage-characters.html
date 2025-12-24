@@ -21,20 +21,51 @@
         } @else {
         <div class="character-list">
             @for (char of characters(); track char.id) {
-            <div class="character-card" [class.verified]="char.verified">
-                <div class="char-info">
-                    <span class="char-id">ID: {{ char.id }}</span>
-                    <span class="status" [class.verified]="char.verified">
-                        {{ char.verified ? 'Verified' : 'Pending Verification' }}
-                    </span>
+            <div class="character-card" [class.verified]="char.verified"
+                [class.active-char]="activeCharacterId() === char.id">
+                <div class="char-header">
+                    <div class="char-info">
+                        <span class="char-id">ID: {{ char.id }}</span>
+                        <span class="status" [class.verified]="char.verified">
+                            {{ char.verified ? 'Verified' : 'Pending Verification' }}
+                        </span>
+                    </div>
+                    @if (char.verified) {
+                    @if (activeCharacterId() === char.id) {
+                    <span class="active-badge">Active</span>
+                    } @else {
+                    <button class="set-active-btn" (click)="setActive(char)">Make Active</button>
+                    }
+                    }
                 </div>
+
                 @if (!char.verified) {
                 <div class="verification-info">
                     <p>Send this code in-game to [SKY]Doriath (Server #150) (30310711) to verify:</p>
                     <code class="verification-code">{{ char.verificationCode }}</code>
                 </div>
+                } @else {
+                <div class="details-form">
+                    <div class="form-group">
+                        <label>Name:</label>
+                        <input #nameInput type="text" [value]="char.name || ''" placeholder="Character Name">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Server:</label>
+                            <input #serverInput type="text" [value]="char.server || ''" placeholder="e.g. 150">
+                        </div>
+                        <div class="form-group">
+                            <label>Alliance:</label>
+                            <input #allianceInput type="text" [value]="char.alliance || ''" placeholder="e.g. SKY">
+                        </div>
+                    </div>
+                    <button class="save-btn"
+                        (click)="saveDetails(char, nameInput.value, serverInput.value, allianceInput.value)">Save
+                        Details</button>
+                </div>
                 }
-                <button class="remove-btn" (click)="removeCharacter(char)">Remove</button>
+                <button class="remove-btn" (click)="removeCharacter(char)">Remove Character</button>
             </div>
             }
         </div>

@@ -5,6 +5,15 @@
     </button>
     @if (isDropdownOpen) {
     <div class="dropdown-menu">
+        @if (activeCharacter(); as char) {
+        <div class="active-character-info">
+            <span class="label">Active Character</span>
+            <span class="value">{{ char.name || char.id }}</span>
+            @if (char.server) {
+            <span class="server">#{{ char.server }}</span>
+            }
+        </div>
+        }
         <a routerLink="/manage-characters" (click)="isDropdownOpen = false">Manage Characters</a>
         <a (click)="signOut()">Sign Out</a>
     </div>

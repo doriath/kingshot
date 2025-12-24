@@ -61,6 +61,9 @@ service cloud.firestore {
       // Create is restricted to admins
       allow create: if isGlobalAdmin(); 
       
+      // Allow update if the character belongs to the user (e.g. name, server, alliance)
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+
       // Allow delete if the character belongs to the user (they can remove it)
       allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     }

@@ -35,6 +35,9 @@
                         @for (target of character.reinforce; track target.characterId) {
                         <li>
                             <span class="target-name">{{ target.characterName }}</span>
+                            @if (target.powerLevel != null) {
+                            <small class="power-level">(Power: {{ target.powerLevel | number }})</small>
+                            }
                             @if (target.marchType) {
                             <span class="march-type">({{ target.marchType }})</span>
                             }
