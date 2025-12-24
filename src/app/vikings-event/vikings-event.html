@@ -12,8 +12,66 @@
     <div class="event-details">
         <h2>Date: {{ event.date?.toDate() | date:'medium' }}</h2>
 
+        <div class="controls">
+            <input type="text" placeholder="Search players..." [value]="searchQuery()"
+                (input)="setSearch($any($event.target).value)" class="search-input" />
+            <div class="sort-controls">
+                <button (click)="setSort('name')" [class.active]="sortBy() === 'name'">
+                    Name
+                    @if (sortBy() === 'name') { {{ sortOrder() === 'asc' ? '↑' : '↓' }} }
+                </button>
+                <button (click)="setSort('power')" [class.active]="sortBy() === 'power'">
+                    Power
+                    @if (sortBy() === 'power') { {{ sortOrder() === 'asc' ? '↑' : '↓' }} }
+                </button>
+            </div>
+        </div>
+
         <div class="assignments-list">
-            @for (character of event.characters; track character.characterId) {
+            @if (myCharacters().length > 0) {
+            <h3 class="section-header">Your Characters</h3>
+            @for (character of myCharacters(); track character.characterId) {
+            <div class="player-card active-user-card" [class.expanded]="expandedPlayerId() === character.characterId"
+                (click)="toggleCharacter(character.characterId)">
+                <div class="player-header">
+                    <span class="player-name">{{ character.characterName }} <small>(Power: {{ character.powerLevel |
+                            number }}, Marches: {{ character.marchesCount }})</small></span>
+                    <span class="expand-icon">
+                        @if (expandedPlayerId() === character.characterId) {
+                        ▼
+                        } @else {
+                        ▶
+                        }
+                    </span>
+                </div>
+
+                @if (expandedPlayerId() === character.characterId) {
+                <div class="assignments-details">
+                    <h3>Reinforce Priorities:</h3>
+                    <ul>
+                        @for (target of character.reinforce; track target.characterId) {
+                        <li>
+                            <span class="target-name">{{ target.characterName }}</span>
+                            @if (target.powerLevel != null) {
+                            <small class="power-level">(Power: {{ target.powerLevel | number }})</small>
+                            }
+                            @if (target.marchType) {
+                            <span class="march-type">({{ target.marchType }})</span>
+                            }
+                        </li>
+                        } @empty {
+                        <li>No reinforcements assigned.</li>
+                        }
+                    </ul>
+                </div>
+                }
+            </div>
+            }
+
+            <h3 class="section-header">Other Players</h3>
+            }
+
+            @for (character of otherCharacters(); track character.characterId) {
             <div class="player-card" [class.expanded]="expandedPlayerId() === character.characterId"
                 (click)="toggleCharacter(character.characterId)">
                 <div class="player-header">
@@ -50,7 +108,9 @@
                 }
             </div>
             } @empty {
+            @if (myCharacters().length === 0) {
             <div class="no-data">No assignments found for this event.</div>
+            }
             }
         </div>
     </div>
