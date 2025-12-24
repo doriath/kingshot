@@ -31,6 +31,11 @@ export const routes: Routes = [
         loadComponent: () => import('./admin-characters/admin-characters').then(m => m.AdminCharactersComponent),
         title: 'Admin: Character Approvals'
     },
+    {
+        path: 'vikings',
+        loadComponent: () => import('./vikings-event/vikings-event').then(m => m.VikingsEventComponent),
+        title: 'Vikings Event'
+    },
     ...BEAR_ROUTES,
     ...MISC_ROUTES,
 ];

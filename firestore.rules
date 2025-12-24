@@ -79,5 +79,13 @@ service cloud.firestore {
     match /global_admins/{userId} {
       allow read: if isAuthenticated();
     }
+
+    match /alliances/{allianceId} {
+      allow read: if true;
+    }
+
+    match /vikingsEvents/{eventId} {
+      allow read: if true;
+    }
   }
 }

@@ -1,0 +1,61 @@
+<div class="vikings-container">
+    <header class="header">
+        <h1>Vikings Event</h1>
+        <div class="selection-info">
+            <!-- Simplified selection for MVP -->
+            <div class="pill">Server: {{ selectedServer() }}</div>
+            <div class="pill">Alliance: SKY</div>
+        </div>
+    </header>
+
+    @if (eventData(); as event) {
+    <div class="event-details">
+        <h2>Date: {{ event.date?.toDate() | date:'medium' }}</h2>
+
+        <div class="assignments-list">
+            @for (character of event.characters; track character.characterId) {
+            <div class="player-card" [class.expanded]="expandedPlayerId() === character.characterId"
+                (click)="toggleCharacter(character.characterId)">
+                <div class="player-header">
+                    <span class="player-name">{{ character.characterName }} <small>(Power: {{ character.powerLevel |
+                            number }}, Marches: {{ character.marchesCount }})</small></span>
+                    <span class="expand-icon">
+                        @if (expandedPlayerId() === character.characterId) {
+                        ▼
+                        } @else {
+                        ▶
+                        }
+                    </span>
+                </div>
+
+                @if (expandedPlayerId() === character.characterId) {
+                <div class="assignments-details">
+                    <h3>Reinforce Priorities:</h3>
+                    <ul>
+                        @for (target of character.reinforce; track target.characterId) {
+                        <li>
+                            <span class="target-name">{{ target.characterName }}</span>
+                            @if (target.marchType) {
+                            <span class="march-type">({{ target.marchType }})</span>
+                            }
+                        </li>
+                        } @empty {
+                        <li>No reinforcements assigned.</li>
+                        }
+                    </ul>
+                </div>
+                }
+            </div>
+            } @empty {
+            <div class="no-data">No assignments found for this event.</div>
+            }
+        </div>
+    </div>
+    } @else {
+    <div class="loading-state">
+        <p>Loading event data or no active event found...</p>
+        <p class="hint">Ensure you have 'vikingsEvents' collection populated with 'allianceId' == '{{
+            selectedAllianceId() }}'.</p>
+    </div>
+    }
+</div>
