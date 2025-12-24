@@ -11,7 +11,7 @@ export class AdminService {
 
     // Get all pending registrations
     getPendingRegistrations(): Observable<Character[]> {
-        const registrationsRef = collection(this.firestore, 'character-registrations');
+        const registrationsRef = collection(this.firestore, 'characterRegistrations');
         return collectionData(registrationsRef, { idField: 'id' }) as Observable<Character[]>;
     }
 
@@ -25,13 +25,13 @@ export class AdminService {
         await setDoc(charDocRef, verifiedCharacter);
 
         // 2. Delete from registrations
-        const regDocRef = doc(this.firestore, `character-registrations/${registration.id}`);
+        const regDocRef = doc(this.firestore, `characterRegistrations/${registration.id}`);
         await deleteDoc(regDocRef);
     }
 
     // Reject a character: Delete from registrations
     async rejectCharacter(registration: Character) {
-        const regDocRef = doc(this.firestore, `character-registrations/${registration.id}`);
+        const regDocRef = doc(this.firestore, `characterRegistrations/${registration.id}`);
         await deleteDoc(regDocRef);
     }
 }

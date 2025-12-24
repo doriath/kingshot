@@ -35,7 +35,7 @@ export class UserDataService {
             const verified$ = collectionData(verifiedQuery, { idField: 'id' }) as Observable<Character[]>;
 
             // Query pending registrations
-            const registrationsRef = collection(this.firestore, 'character-registrations');
+            const registrationsRef = collection(this.firestore, 'characterRegistrations');
             const registrationsQuery = query(registrationsRef, where('userId', '==', user.uid));
             const registrations$ = collectionData(registrationsQuery, { idField: 'id' }) as Observable<Character[]>;
 
@@ -65,7 +65,7 @@ export class UserDataService {
         };
 
         // Add to character-registrations
-        const regDocRef = doc(this.firestore, `character-registrations/${characterId}`);
+        const regDocRef = doc(this.firestore, `characterRegistrations/${characterId}`);
         await setDoc(regDocRef, newRegistration);
     }
 
@@ -77,7 +77,7 @@ export class UserDataService {
             throw new Error('Cannot remove character that does not belong to you');
         }
 
-        const collectionName = character.verified ? 'characters' : 'character-registrations';
+        const collectionName = character.verified ? 'characters' : 'characterRegistrations';
         const charDocRef = doc(this.firestore, `${collectionName}/${character.id}`);
         await deleteDoc(charDocRef);
     }

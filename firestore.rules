@@ -15,7 +15,7 @@ service cloud.firestore {
 
     // Helper function to check if user is a global admin
     function isGlobalAdmin() {
-      return isAuthenticated() && exists(/databases/$(database)/documents/global_admins/$(request.auth.uid));
+      return isAuthenticated() && exists(/databases/$(database)/documents/globalAdmins/$(request.auth.uid));
     }
 
     match /spaces/{spaceId} {
@@ -65,7 +65,7 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     }
 
-    match /character-registrations/{characterId} {
+    match /characterRegistrations/{characterId} {
       // Allow read if the registration belongs to the user OR is admin
       allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isGlobalAdmin();
       
@@ -76,7 +76,7 @@ service cloud.firestore {
       allow delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isGlobalAdmin();
     }
     
-    match /global_admins/{userId} {
+    match /globalAdmins/{userId} {
       allow read: if isAuthenticated();
     }
 
