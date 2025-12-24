@@ -150,6 +150,12 @@ export class DataService {
 - Implement lazy loading for feature routes
 - Use `NgOptimizedImage` for all static images.
 
+## Naming Conventions
+
+- **User**: Represents a signed-in user (authentication context).
+- **Character**: Represents a game character/entity in the game logic (e.g. Vikings event assignments).
+- **Firestore**: All collection names and document field names **MUST** use `camelCase`.
+
 ## Components
 
 - Keep components small and focused on a single responsibility
