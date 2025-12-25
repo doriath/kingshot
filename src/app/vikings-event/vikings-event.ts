@@ -149,6 +149,9 @@ export class VikingsEventComponent {
     }
 
     public toggleCharacter(characterId: string) {
+        // Disable expansion if in voting mode
+        if (this.eventData()?.status === 'voting') return;
+
         if (this.expandedPlayerId() === characterId) {
             this.expandedPlayerId.set(null);
         } else {

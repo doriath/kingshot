@@ -120,7 +120,8 @@ export class AllianceVikingsEventsComponent {
 
     public async createEvent() {
         if (!this.newEventDate) return;
-        const date = new Date(this.newEventDate);
+        // datetime-local gives "YYYY-MM-DDTHH:mm", appending "Z" treats it as UTC
+        const date = new Date(this.newEventDate + ':00Z');
 
         try {
             await this.vikingsService.createVikingsEvent(this.alliance(), date);

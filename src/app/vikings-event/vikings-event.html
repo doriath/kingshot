@@ -81,15 +81,19 @@
             <div class="player-card active-user-card" [class.expanded]="expandedPlayerId() === character.characterId"
                 (click)="toggleCharacter(character.characterId)">
                 <div class="player-header">
-                    <span class="player-name">{{ character.characterName }} <small>(Power: {{ character.powerLevel |
-                            number }}, Marches: {{ character.marchesCount }})</small></span>
-                    <span class="expand-icon">
-                        @if (expandedPlayerId() === character.characterId) {
-                        ▼
-                        } @else {
-                        ▶
-                        }
-                    </span>
+                    <span class="player-name">{{ character.characterName }}</span>
+                    <div class="header-right">
+                        <span class="player-power">Power: {{ character.powerLevel | number }}</span>
+                        <span class="expand-icon">
+                            @if (event.status !== 'voting') {
+                            @if (expandedPlayerId() === character.characterId) {
+                            ▼
+                            } @else {
+                            ▶
+                            }
+                            }
+                        </span>
+                    </div>
                 </div>
 
                 @if (expandedPlayerId() === character.characterId) {
@@ -122,15 +126,19 @@
             <div class="player-card" [class.expanded]="expandedPlayerId() === character.characterId"
                 (click)="toggleCharacter(character.characterId)">
                 <div class="player-header">
-                    <span class="player-name">{{ character.characterName }} <small>(Power: {{ character.powerLevel |
-                            number }}, Marches: {{ character.marchesCount }})</small></span>
-                    <span class="expand-icon">
-                        @if (expandedPlayerId() === character.characterId) {
-                        ▼
-                        } @else {
-                        ▶
-                        }
-                    </span>
+                    <span class="player-name">{{ character.characterName }}</span>
+                    <div class="header-right">
+                        <span class="player-power">Power: {{ character.powerLevel | number }}</span>
+                        <span class="expand-icon">
+                            @if (event.status !== 'voting') {
+                            @if (expandedPlayerId() === character.characterId) {
+                            ▼
+                            } @else {
+                            ▶
+                            }
+                            }
+                        </span>
+                    </div>
                 </div>
 
                 @if (expandedPlayerId() === character.characterId) {

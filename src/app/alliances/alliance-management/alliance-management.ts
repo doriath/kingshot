@@ -50,14 +50,16 @@ import { AllianceVikingsEventsComponent } from '../alliance-vikings-events/allia
                     <h3>Members ({{ members().length || 0 }})</h3>
                     
                     <div class="list-header">
+                        <span>#</span>
                         <span>Name</span>
                         <span>ID</span>
                         <span>Power</span>
                         <span>Actions</span>
                     </div>
                     
-                    @for (member of members(); track member.characterId) {
+                    @for (member of members(); track member.characterId; let i = $index) {
                     <div class="member-row">
+                        <span class="member-pos">{{ i + 1 }}</span>
                         <span class="member-name">{{ member.name }}</span>
                         <span class="member-id">{{ member.characterId }}</span>
                         <span class="member-power">{{ member.power | number }}</span>
@@ -117,15 +119,16 @@ import { AllianceVikingsEventsComponent } from '../alliance-vikings-events/allia
         .members-list h3 { padding: 1rem; margin: 0; background: #333; font-size: 1rem; }
 
         .list-header { 
-            display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; 
+            display: grid; grid-template-columns: 50px 2fr 1fr 1fr 1fr; 
             padding: 0.8rem 1rem; background: #2a2a2a; color: #aaa; font-size: 0.85rem; font-weight: bold;
         }
         .member-row {
-            display: grid; grid-template-columns: 2fr 1fr 1fr 1fr;
+            display: grid; grid-template-columns: 50px 2fr 1fr 1fr 1fr;
             padding: 0.8rem 1rem; border-bottom: 1px solid #333; align-items: center;
         }
         .member-row:last-child { border-bottom: none; }
         .member-name { font-weight: 500; color: white; }
+        .member-pos { color: #888; font-weight: bold; }
         .member-id { font-family: monospace; color: #aaa; }
         .member-power { color: #ffb74d; }
         
@@ -167,7 +170,9 @@ export class AllianceManagementComponent {
             map(params => params.get('id')),
             switchMap(id => {
                 if (!id) return of([]);
-                return this.alliancesService.getAllianceMembers(id);
+                return this.alliancesService.getAllianceMembers(id).pipe(
+                    map(members => [...members].sort((a, b) => b.power - a.power))
+                );
             })
         ),
         { initialValue: [] }

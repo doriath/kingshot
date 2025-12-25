@@ -57,8 +57,14 @@ export class VikingsService {
 
     getAllVikingsEvents(): Observable<VikingsEvent[]> {
         const eventsCollection = collection(this.firestore, 'vikingsEvents');
-        const q = query(eventsCollection, orderBy('date', 'desc'));
-        return collectionData(q, { idField: 'id' }) as Observable<VikingsEvent[]>;
+        const q = query(eventsCollection);
+        return (collectionData(q, { idField: 'id' }) as Observable<VikingsEvent[]>).pipe(
+            map(events => events.sort((a, b) => {
+                const tA = a.date?.seconds || 0;
+                const tB = b.date?.seconds || 0;
+                return tA - tB;
+            }))
+        );
     }
 
     getVikingsEventById(id: string): Observable<VikingsEventView | null> {
@@ -73,12 +79,17 @@ export class VikingsService {
         const eventsCollection = collection(this.firestore, 'vikingsEvents');
         const q = query(
             eventsCollection,
-            where('allianceId', '==', allianceId),
-            orderBy('date', 'desc'),
-            limit(1)
+            where('allianceId', '==', allianceId)
         );
         return (collectionData(q, { idField: 'id' }) as Observable<VikingsEvent[]>).pipe(
-            map(events => events.map(event => this.transformEventToView(event)))
+            map(events => events
+                .map(event => this.transformEventToView(event))
+                .sort((a, b) => {
+                    const tA = a.date?.seconds || 0;
+                    const tB = b.date?.seconds || 0;
+                    return tA - tB;
+                })
+            )
         );
     }
 
@@ -139,7 +150,53 @@ export class VikingsService {
 
     async finalizeEvent(eventId: string): Promise<void> {
         const docRef = doc(this.firestore, `vikingsEvents/${eventId}`);
-        await import('@angular/fire/firestore').then(mod => mod.updateDoc(docRef, { status: 'finalized' }));
+        const firestore = await import('@angular/fire/firestore');
+        const snap = await firestore.getDoc(docRef);
+
+        if (!snap.exists()) {
+            throw new Error('Event not found');
+        }
+
+        const event = snap.data() as VikingsEvent;
+        const allCharacters = event.characters || [];
+
+        // Simple Random Assignment Logic
+        const updatedCharacters = allCharacters.map(char => {
+            // 1. Determine marches count
+            let count = char.marchesCount;
+            if (count === 0) {
+                count = 6;
+            } else {
+                // Clamp between 1 and 6
+                count = Math.max(1, Math.min(6, count));
+            }
+
+            // 2. Pick random targets (excluding self)
+            const potentialTargets = allCharacters.filter(t => t.characterId !== char.characterId);
+            const assignments: { characterId: string; marchType?: string }[] = [];
+
+            // Allow duplicates? Usually reinforcement is unique target per march? 
+            // Assuming unique targets for now as it makes more sense for "reinforcing different players".
+            // If count > potentialTargets.length, we can only assign to all available.
+
+            const shuffled = [...potentialTargets].sort(() => 0.5 - Math.random());
+            const selected = shuffled.slice(0, count);
+
+            assignments.push(...selected.map(t => ({
+                characterId: t.characterId
+                // marchType: undefined for now
+            })));
+
+            return {
+                ...char,
+                reinforce: assignments
+            };
+        });
+
+        await firestore.updateDoc(docRef, {
+            status: 'finalized',
+            characters: updatedCharacters
+        });
     }
 
     async updateEventCharacters(eventId: string, characters: CharacterAssignment[]): Promise<void> {

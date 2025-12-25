@@ -26,6 +26,7 @@
                     </div>
                     <div class="event-date">
                         {{ event.date?.toDate() | date:'EEEE HH:mm':'UTC' }} UTC
+                        <div class="full-date">{{ event.date?.toDate() | date:'longDate':'UTC' }}</div>
                     </div>
                 </a>
                 }

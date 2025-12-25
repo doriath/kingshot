@@ -228,6 +228,18 @@ h1 {
     color: #888;
 }
 
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.player-power {
+    font-size: 0.9rem;
+    color: #ffb74d;
+    font-weight: normal;
+}
+
 .assignments-details {
     background: #1f1f1f;
     padding: 16px;

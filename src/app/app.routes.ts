@@ -37,14 +37,14 @@ export const routes: Routes = [
         title: 'Vikings Events List'
     },
     {
-        path: 'vikings/:id',
-        loadComponent: () => import('./vikings-event/vikings-event').then(m => m.VikingsEventComponent),
-        title: 'Vikings Event Details'
-    },
-    {
         path: 'vikings/guide',
         loadComponent: () => import('./vikings-event/vikings-guide/vikings-guide').then(m => m.VikingsGuideComponent),
         title: 'Vikings Event Guide'
+    },
+    {
+        path: 'vikings/:id',
+        loadComponent: () => import('./vikings-event/vikings-event').then(m => m.VikingsEventComponent),
+        title: 'Vikings Event Details'
     },
 
     // Alliance Admin Routes
