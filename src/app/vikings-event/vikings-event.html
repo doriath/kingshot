@@ -103,12 +103,14 @@
                         @for (target of character.reinforce; track target.characterId) {
                         <li>
                             <span class="target-name">{{ target.characterName }}</span>
-                            @if (target.powerLevel != null) {
-                            <small class="power-level">(Power: {{ target.powerLevel | number }})</small>
-                            }
-                            @if (target.marchType) {
-                            <span class="march-type">({{ target.marchType }})</span>
-                            }
+                            <div class="target-info">
+                                @if (target.marchType) {
+                                <span class="march-type">{{ target.marchType }}</span>
+                                }
+                                @if (target.powerLevel != null) {
+                                <span class="target-power" title="Power">{{ target.powerLevel | number }}</span>
+                                }
+                            </div>
                         </li>
                         } @empty {
                         <li>No reinforcements assigned.</li>
@@ -148,12 +150,14 @@
                         @for (target of character.reinforce; track target.characterId) {
                         <li>
                             <span class="target-name">{{ target.characterName }}</span>
-                            @if (target.powerLevel != null) {
-                            <small class="power-level">(Power: {{ target.powerLevel | number }})</small>
-                            }
-                            @if (target.marchType) {
-                            <span class="march-type">({{ target.marchType }})</span>
-                            }
+                            <div class="target-info">
+                                @if (target.marchType) {
+                                <span class="march-type">{{ target.marchType }}</span>
+                                }
+                                @if (target.powerLevel != null) {
+                                <span class="target-power" title="Power">{{ target.powerLevel | number }}</span>
+                                }
+                            </div>
                         </li>
                         } @empty {
                         <li>No reinforcements assigned.</li>
