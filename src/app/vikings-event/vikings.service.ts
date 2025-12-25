@@ -37,6 +37,17 @@ export interface VikingsEventView extends Omit<VikingsEvent, 'characters'> {
     characters: CharacterAssignmentView[];
 }
 
+export interface VikingsRegistration {
+    id?: string;
+    eventId: string;
+    characterId: string;
+    userId: string;
+    status: 'online' | 'offline_empty' | 'not_available';
+    marchesCount: number;
+    verified?: boolean; // Snapshot of verification status at time of registration
+    updatedAt?: any; // Timestamp
+}
+
 @Injectable({
     providedIn: 'root'
 })
@@ -68,6 +79,30 @@ export class VikingsService {
         return (collectionData(q, { idField: 'id' }) as Observable<VikingsEvent[]>).pipe(
             map(events => events.map(event => this.transformEventToView(event)))
         );
+    }
+
+    // Registrations
+
+    getUserRegistrations(eventId: string, userId: string): Observable<VikingsRegistration[]> {
+        const regsCollection = collection(this.firestore, 'vikingsRegistrations');
+        const q = query(
+            regsCollection,
+            where('eventId', '==', eventId),
+            where('userId', '==', userId)
+        );
+        return collectionData(q, { idField: 'id' }) as Observable<VikingsRegistration[]>;
+    }
+
+    async saveRegistration(registration: VikingsRegistration): Promise<void> {
+        // Use a deterministic ID so we don't create duplicates: eventId_characterId
+        const docId = `${registration.eventId}_${registration.characterId}`;
+        const regDoc = doc(this.firestore, `vikingsRegistrations/${docId}`);
+        // data to save
+        const data = {
+            ...registration,
+            updatedAt: new Date()
+        };
+        await import('@angular/fire/firestore').then(mod => mod.setDoc(regDoc, data, { merge: true }));
     }
 
     private transformEventToView(event: VikingsEvent): VikingsEventView {

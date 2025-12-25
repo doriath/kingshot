@@ -46,6 +46,17 @@ export const routes: Routes = [
         loadComponent: () => import('./vikings-event/vikings-guide/vikings-guide').then(m => m.VikingsGuideComponent),
         title: 'Vikings Event Guide'
     },
+
+    // Alliance Admin Routes
+    {
+        path: 'admin/alliances',
+        loadComponent: () => import('./alliances/alliance-admin-list/alliance-admin-list').then(m => m.AllianceAdminListComponent),
+        // canActivate: [AuthGuard] // In future
+    },
+    {
+        path: 'admin/alliances/:id',
+        loadComponent: () => import('./alliances/alliance-management/alliance-management').then(m => m.AllianceManagementComponent)
+    },
     ...BEAR_ROUTES,
     ...MISC_ROUTES,
 ];

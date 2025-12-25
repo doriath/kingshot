@@ -85,10 +85,22 @@ service cloud.firestore {
 
     match /alliances/{allianceId} {
       allow read: if true;
+      allow update: if isAuthenticated() && request.auth.uid in resource.data.admins;
     }
 
     match /vikingsEvents/{eventId} {
       allow read: if true;
+    }
+
+    match /vikingsRegistrations/{docId} {
+      // Allow read if authenticated
+      allow read: if isAuthenticated();
+      
+      // Allow write if authenticated and the registration belongs to the user
+      allow write: if isAuthenticated() && (
+        (request.resource.data.userId == request.auth.uid) || 
+        (resource.data.userId == request.auth.uid)
+      );
     }
   }
 }

@@ -18,6 +18,45 @@
 
     @if (eventData(); as event) {
     <div class="event-details">
+
+        @if (event.status === 'voting' && eligibleCharacters().length > 0) {
+        <section class="registration-section">
+            <h2>📝 Register Your Availability</h2>
+            <p class="hint-text">Help the alliance admins plan assignments by registering your active characters.</p>
+
+            <div class="registration-grid">
+                @for (char of eligibleCharacters(); track char.id) {
+                <div class="registration-card">
+                    <h3>{{ char.name }}</h3>
+
+                    @let existingReg = getRegistration(char.id);
+                    <form
+                        (submit)="$event.preventDefault(); saveRegistration(char.id, statusSelect.value, marchesInput.value)">
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select #statusSelect [value]="existingReg?.status || 'online'">
+                                <option value="online">Online</option>
+                                <option value="offline_empty">Offline (Empty)</option>
+                                <option value="not_available">Not Available</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Marches</label>
+                            <input #marchesInput type="number" [value]="existingReg?.marchesCount || 4" min="0"
+                                max="10">
+                        </div>
+
+                        <button type="submit" class="save-btn">
+                            {{ existingReg ? 'Update' : 'Register' }}
+                        </button>
+                    </form>
+                </div>
+                }
+            </div>
+        </section>
+        }
+
         <h2>Date: {{ event.date?.toDate() | date:'medium' }}</h2>
 
         <div class="controls">
