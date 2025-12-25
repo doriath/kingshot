@@ -98,7 +98,11 @@
 
                 @if (expandedPlayerId() === character.characterId) {
                 <div class="assignments-details">
-                    <h3>Reinforce Priorities:</h3>
+                    <div class="details-header">
+                        <h3>Reinforce Priorities:</h3>
+                        <button class="copy-btn" (click)="copyAssignments(character, $event)"
+                            title="Copy to clipboard">📋</button>
+                    </div>
                     <ul>
                         @for (target of character.reinforce; track target.characterId) {
                         <li>
@@ -145,7 +149,11 @@
 
                 @if (expandedPlayerId() === character.characterId) {
                 <div class="assignments-details">
-                    <h3>Reinforce Priorities:</h3>
+                    <div class="details-header">
+                        <h3>Reinforce Priorities:</h3>
+                        <button class="copy-btn" (click)="copyAssignments(character, $event)"
+                            title="Copy to clipboard">📋</button>
+                    </div>
                     <ul>
                         @for (target of character.reinforce; track target.characterId) {
                         <li>

@@ -159,6 +159,44 @@ export class VikingsEventComponent {
         }
     }
 
+    // Notification state
+    public notificationMessage = signal<string | null>(null);
+
+    public async copyAssignments(character: CharacterAssignmentView, event: Event) {
+        event.stopPropagation(); // Prevent toggling the card when clicking copy
+
+        const lines = [`Player ${character.characterName} reinforces:`];
+
+        if (!character.reinforce || character.reinforce.length === 0) {
+            lines.push('No assignments.');
+        } else {
+            character.reinforce.forEach((target, index) => {
+                let line = `${index + 1}. ${target.characterName}`;
+                if (target.powerLevel != null) {
+                    // Format power with commas/spaces if needed, but user just said <power level>
+                    // Using toLocaleString() for readability
+                    line += `: ${target.powerLevel.toLocaleString()}`;
+                }
+                lines.push(line);
+            });
+        }
+
+        const text = lines.join('\n');
+
+        try {
+            await navigator.clipboard.writeText(text);
+            this.showNotification('Assignments copied to clipboard!');
+        } catch (err) {
+            console.error('Failed to copy: ', err);
+            this.showNotification('Failed to copy assignments.', true);
+        }
+    }
+
+    private showNotification(msg: string, isError = false) {
+        this.notificationMessage.set(msg); // You might want to handle error styling too if needed
+        setTimeout(() => this.notificationMessage.set(null), 3000);
+    }
+
     // Registration Methods
 
     public getRegistration(characterId: string): VikingsRegistration | undefined {

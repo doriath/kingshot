@@ -263,8 +263,30 @@ h1 {
     font-size: 0.9rem;
     text-transform: uppercase;
     color: #888;
-    margin-bottom: 12px;
+    margin: 0;
+    /* Remove bottom margin as details-header handles gap */
     letter-spacing: 1px;
+}
+
+.details-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.copy-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.copy-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
 }
 
 ul {
