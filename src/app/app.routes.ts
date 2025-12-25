@@ -57,6 +57,10 @@ export const routes: Routes = [
         path: 'admin/alliances/:id',
         loadComponent: () => import('./alliances/alliance-management/alliance-management').then(m => m.AllianceManagementComponent)
     },
+    {
+        path: 'admin/vikingsEvents/:id/manage',
+        loadComponent: () => import('./alliances/vikings-event-management/vikings-event-management').then(m => m.VikingsEventManagementComponent)
+    },
     ...BEAR_ROUTES,
     ...MISC_ROUTES,
 ];

@@ -8,6 +8,7 @@ export interface CharacterAssignment {
     characterName: string; // Used for display of the character itself
     powerLevel: number;
     marchesCount: number;
+    status: 'online' | 'offline_empty' | 'not_available' | 'unknown';
     reinforce: {
         characterId: string;
         marchType?: string;
@@ -103,6 +104,53 @@ export class VikingsService {
             updatedAt: new Date()
         };
         await import('@angular/fire/firestore').then(mod => mod.setDoc(regDoc, data, { merge: true }));
+    }
+
+    async createVikingsEvent(alliance: any, date: Date): Promise<void> {
+        // Need to import Alliance interface properly if we want strict typing, 
+        // but for now relying on the structure being passed.
+        // Mapped from AllianceMember to CharacterAssignment
+        const characters: CharacterAssignment[] = (alliance.members || []).map((m: any) => ({
+            characterId: m.characterId,
+            characterName: m.name,
+            powerLevel: m.power,
+            marchesCount: 0, // Default to 0, user will register explicit count
+            status: 'unknown',
+            reinforce: []
+        }));
+
+        const event: VikingsEvent = {
+            allianceId: alliance.uuid,
+            allianceTag: alliance.tag,
+            server: alliance.server,
+            date: date,
+            status: 'voting',
+            characters: characters
+        };
+
+        const eventsCollection = collection(this.firestore, 'vikingsEvents');
+        await import('@angular/fire/firestore').then(mod => mod.addDoc(eventsCollection, event));
+    }
+
+    async deleteVikingsEvent(eventId: string): Promise<void> {
+        const docRef = doc(this.firestore, `vikingsEvents/${eventId}`);
+        await import('@angular/fire/firestore').then(mod => mod.deleteDoc(docRef));
+    }
+
+    async finalizeEvent(eventId: string): Promise<void> {
+        const docRef = doc(this.firestore, `vikingsEvents/${eventId}`);
+        await import('@angular/fire/firestore').then(mod => mod.updateDoc(docRef, { status: 'finalized' }));
+    }
+
+    async updateEventCharacters(eventId: string, characters: CharacterAssignment[]): Promise<void> {
+        const docRef = doc(this.firestore, `vikingsEvents/${eventId}`);
+        await import('@angular/fire/firestore').then(mod => mod.updateDoc(docRef, { characters }));
+    }
+
+    getEventRegistrations(eventId: string): Observable<VikingsRegistration[]> {
+        const regsCollection = collection(this.firestore, 'vikingsRegistrations');
+        const q = query(regsCollection, where('eventId', '==', eventId));
+        return collectionData(q, { idField: 'id' }) as Observable<VikingsRegistration[]>;
     }
 
     private transformEventToView(event: VikingsEvent): VikingsEventView {

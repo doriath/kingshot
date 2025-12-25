@@ -6,6 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { switchMap, map, tap } from 'rxjs/operators';
 import { of } from 'rxjs';
+import { AllianceVikingsEventsComponent } from '../alliance-vikings-events/alliance-vikings-events';
 
 @Component({
     selector: 'app-alliance-management',
@@ -17,13 +18,13 @@ import { of } from 'rxjs';
             </header>
 
             <div class="tabs">
-                <button class="tab-btn active">Members</button>
-                <!-- Potential future tabs: Settings, Events, etc. -->
+                <button class="tab-btn" [class.active]="activeTab === 'members'" (click)="activeTab = 'members'">Members</button>
+                <button class="tab-btn" [class.active]="activeTab === 'events'" (click)="activeTab = 'events'">Vikings Events</button>
             </div>
 
-            <section class="members-section">
+            <section class="members-section" *ngIf="activeTab === 'members'">
                 <div class="add-member-card">
-                    <h3>Add New Member</h3>
+                    <h3>{{ newMemberId ? 'Edit' : 'Add New' }} Member</h3>
                     <form (submit)="$event.preventDefault(); addMember()">
                         <div class="form-row">
                             <div class="form-group">
@@ -39,7 +40,7 @@ import { of } from 'rxjs';
                                 <input [(ngModel)]="newMemberPower" name="power" type="number" placeholder="e.g. 1000000" required>
                             </div>
                             <div class="form-group btn-container">
-                                <button type="submit" [disabled]="!isValidMember()" class="add-btn">Add Member</button>
+                                <button type="submit" [disabled]="!isValidMember()" class="add-btn">{{ newMemberId ? 'Update' : 'Add' }} Member</button>
                             </div>
                         </div>
                     </form>
@@ -70,11 +71,17 @@ import { of } from 'rxjs';
                     }
                 </div>
             </section>
+
+            <section class="events-section" *ngIf="activeTab === 'events'">
+                <app-alliance-vikings-events [alliance]="ally"></app-alliance-vikings-events>
+            </section>
         </div>
         <div *ngIf="!alliance()" class="loading">Loading...</div>
     `,
+    // Styles ... (truncating for brevity in tool call, will use original styles and append/modify)
     styles: [`
         .manage-container { max-width: 900px; margin: 0 auto; padding: 2rem; color: #eee; }
+        /* Existing styles... */
         .back-link { color: #aaa; text-decoration: none; font-size: 0.9rem; }
         .back-link:hover { color: white; }
         
@@ -93,30 +100,18 @@ import { of } from 'rxjs';
         }
         .tab-btn.active { color: white; border-bottom-color: #2196f3; }
 
-        .add-member-card {
-            background: #2a2a2a;
-            border: 1px solid #444;
-            padding: 1.5rem;
-            border-radius: 8px;
-            margin-bottom: 2rem;
-        }
+        /* ... Include original form/list styles ... */
+        .add-member-card { background: #2a2a2a; border: 1px solid #444; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; }
         .add-member-card h3 { margin-top: 0; color: #81c784; }
 
         .form-row { display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap; }
         .form-group { flex: 1; min-width: 150px; }
         .form-group label { display: block; color: #ccc; margin-bottom: 0.3rem; font-size: 0.85rem; }
-        .form-group input { 
-            width: 100%; padding: 0.5rem; background: #1a1a1a; border: 1px solid #555; 
-            border-radius: 4px; color: white; 
-        }
+        .form-group input { width: 100%; padding: 0.5rem; background: #1a1a1a; border: 1px solid #555; border-radius: 4px; color: white; }
         .btn-container { flex: 0; }
         
-        .add-btn {
-            background: #4caf50; color: white; border: none; padding: 0.6rem 1.2rem;
-            border-radius: 4px; cursor: pointer; font-weight: bold; white-space: nowrap;
-        }
+        .add-btn { background: #4caf50; color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 4px; cursor: pointer; font-weight: bold; white-space: nowrap; }
         .add-btn:disabled { background: #555; cursor: not-allowed; color: #888; }
-        .add-btn:not(:disabled):hover { background: #43a047; }
 
         .members-list { background: #222; border-radius: 8px; overflow: hidden; }
         .members-list h3 { padding: 1rem; margin: 0; background: #333; font-size: 1rem; }
@@ -140,11 +135,13 @@ import { of } from 'rxjs';
         .empty-list { padding: 2rem; text-align: center; color: #666; font-style: italic; }
         .loading { text-align: center; margin-top: 3rem; color: #888; }
     `],
-    imports: [CommonModule, RouterLink, FormsModule]
+    imports: [CommonModule, RouterLink, FormsModule, AllianceVikingsEventsComponent]
 })
 export class AllianceManagementComponent {
     private route = inject(ActivatedRoute);
     private alliancesService = inject(AlliancesService);
+
+    public activeTab: 'members' | 'events' = 'members';
 
     public newMemberName = '';
     public newMemberId = '';
