@@ -16,7 +16,7 @@
 </header>
 
 @if (isSideNavOpen()) {
-  <div class="sidenav-overlay" (click)="toggleSideNav()"></div>
+<div class="sidenav-overlay" (click)="toggleSideNav()"></div>
 }
 
 <aside class="sidenav" [class.open]="isSideNavOpen()">
@@ -34,5 +34,11 @@
 </aside>
 
 <main class="main-content">
+  @if (showRegistrationHint()) {
+  <div class="registration-hint">
+    ⚠️ <strong>Tip:</strong> <span class="hint-text">Sign in and register a character to see your personal event
+      assignments!</span>
+  </div>
+  }
   <router-outlet />
 </main>

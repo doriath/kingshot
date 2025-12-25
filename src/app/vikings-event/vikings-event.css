@@ -29,10 +29,11 @@ h1 {
     font-weight: 800;
 }
 
-.selection-info {
+.header-actions {
     display: flex;
     justify-content: center;
     gap: 12px;
+    align-items: center;
 }
 
 .pill {
@@ -42,6 +43,50 @@ h1 {
     font-size: 0.9rem;
     color: #ccc;
     border: 1px solid #444;
+}
+
+.back-link {
+    color: #888;
+    text-decoration: none;
+    font-size: 0.9rem;
+    display: inline-block;
+    margin-bottom: 8px;
+    transition: color 0.2s;
+}
+
+.back-link:hover {
+    color: #ffcc00;
+}
+
+.status-pill {
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.status-pill.voting {
+    border-color: #4fce4f;
+    color: #4fce4f;
+}
+
+.status-pill.final {
+    border-color: #ffaa00;
+    color: #ffaa00;
+}
+
+.guide-link {
+    background: linear-gradient(45deg, #ffcc00, #ffaa00);
+    color: #1a1a1a;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    text-decoration: none;
+    font-weight: 600;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.guide-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 204, 0, 0.3);
 }
 
 .event-details h2 {

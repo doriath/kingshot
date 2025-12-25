@@ -1,8 +1,11 @@
-import { ChangeDetectionStrategy, Component, signal, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, signal, inject, computed } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
 import { UserProfileComponent } from './user-profile/user-profile';
-import { SolverService } from './solver.service'; // Import the service
+import { SolverService } from './solver.service';
+import { AuthService } from './auth.service';
+import { UserDataService } from './user-data.service';
+import { toSignal } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-root',
@@ -18,7 +21,20 @@ export class App {
 
   private router = inject(Router);
   private activatedRoute = inject(ActivatedRoute);
-  private solverService = inject(SolverService); // Inject the service
+  private solverService = inject(SolverService);
+  private authService = inject(AuthService);
+  private userDataService = inject(UserDataService);
+
+  private user = toSignal(this.authService.user$);
+
+  public showRegistrationHint = computed(() => {
+    const user = this.user();
+    // Hint if: Not logged in OR (Logged in AND No characters)
+    if (!user) return true;
+
+    const chars = this.userDataService.characters();
+    return chars.length === 0;
+  });
 
   constructor() {
     this.router.events.pipe(

@@ -33,8 +33,18 @@ export const routes: Routes = [
     },
     {
         path: 'vikings',
+        loadComponent: () => import('./vikings-event/vikings-list/vikings-list').then(m => m.VikingsListComponent),
+        title: 'Vikings Events List'
+    },
+    {
+        path: 'vikings/:id',
         loadComponent: () => import('./vikings-event/vikings-event').then(m => m.VikingsEventComponent),
-        title: 'Vikings Event'
+        title: 'Vikings Event Details'
+    },
+    {
+        path: 'vikings/guide',
+        loadComponent: () => import('./vikings-event/vikings-guide/vikings-guide').then(m => m.VikingsGuideComponent),
+        title: 'Vikings Event Guide'
     },
     ...BEAR_ROUTES,
     ...MISC_ROUTES,

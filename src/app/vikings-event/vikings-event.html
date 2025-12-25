@@ -1,11 +1,19 @@
 <div class="vikings-container">
     <header class="header">
-        <h1>Vikings Event</h1>
-        <div class="selection-info">
-            <!-- Simplified selection for MVP -->
-            <div class="pill">Server: {{ selectedServer() }}</div>
-            <div class="pill">Alliance: SKY</div>
+        <a routerLink="/vikings" class="back-link">← All Events</a>
+        <h1>Vikings Event Details</h1>
+
+        @if (eventData(); as event) {
+        <div class="header-actions">
+            <div class="pill">Server: {{ event.server }}</div>
+            <div class="pill">Alliance: {{ event.allianceTag ? '[' + event.allianceTag + ']' : event.allianceId }}</div>
+            <div class="pill status-pill" [class.voting]="event.status === 'voting'"
+                [class.final]="event.status === 'finalized'">
+                {{ event.status === 'voting' ? 'Voting' : 'Finalized' }}
+            </div>
+            <a routerLink="/vikings/guide" class="guide-link">📖 Read Guide</a>
         </div>
+        }
     </header>
 
     @if (eventData(); as event) {
@@ -117,8 +125,7 @@
     } @else {
     <div class="loading-state">
         <p>Loading event data or no active event found...</p>
-        <p class="hint">Ensure you have 'vikingsEvents' collection populated with 'allianceId' == '{{
-            selectedAllianceId() }}'.</p>
+        <p class="hint">Ensure the event ID is correct and the event exists.</p>
     </div>
     }
 </div>

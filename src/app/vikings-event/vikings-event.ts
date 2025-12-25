@@ -6,42 +6,38 @@ import { UserDataService } from '../user-data.service';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { switchMap, map, tap } from 'rxjs/operators';
 import { of } from 'rxjs';
+import { RouterLink, ActivatedRoute } from '@angular/router';
 
 @Component({
     selector: 'app-vikings-event',
     templateUrl: './vikings-event.html',
     styleUrl: './vikings-event.css',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [CommonModule]
+    imports: [CommonModule, RouterLink]
 })
 export class VikingsEventComponent {
     private alliancesService = inject(AlliancesService);
     private vikingsService = inject(VikingsService);
     private userDataService = inject(UserDataService);
+    private route = inject(ActivatedRoute);
 
-    // Signals for state
-    public selectedServer = signal<number>(150);
-    public selectedAllianceId = signal<string>('SKY150_UUID_PLACEHOLDER'); // Hardcoded for MVP as requested, would be dynamic later
-
-    // Expanded player ID tracking
-    public expandedPlayerId = signal<string | null>(null);
-
-    // Fetch alliance details
-    public alliance = toSignal(
-        toObservable(this.selectedAllianceId).pipe(
+    // Fetch event data by ID from route
+    public eventData = toSignal(
+        this.route.paramMap.pipe(
+            map(params => params.get('id')),
             switchMap(id => {
-                return this.alliancesService.getAlliance(id);
+                if (!id) return of(null);
+                return this.vikingsService.getVikingsEventById(id);
             })
         )
     );
 
-    // Fetch event data
-    public eventData = toSignal(
-        toObservable(this.selectedAllianceId).pipe(
-            switchMap(id => this.vikingsService.getVikingsEvent(id)),
-            map(events => events.length ? events[0] : null)
-        )
-    );
+    // Signals for state - now derived or static if needed
+    // Assuming event has allianceId, we can fetch alliance details if needed, 
+    // but simplified MVP might just show event.allianceId from the event object.
+
+    // Expanded player ID tracking
+    public expandedPlayerId = signal<string | null>(null);
 
     // Search and Sort
     public searchQuery = signal<string>('');

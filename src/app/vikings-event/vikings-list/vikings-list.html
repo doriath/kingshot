@@ -1,0 +1,42 @@
+<div class="vikings-list-container">
+    <header class="header">
+        <h1>Active Vikings Events</h1>
+        <div class="header-actions">
+            <a routerLink="/vikings/guide" class="guide-link">📖 Read Guide</a>
+        </div>
+    </header>
+
+    @if (groupedEvents().length > 0) {
+    <div class="groups-list">
+        @for (group of groupedEvents(); track group.label) {
+        <div class="group-section" [class.user-alliance]="group.isUserAlliance">
+            <h2 class="group-label">
+                {{ group.label }}
+                @if (group.isUserAlliance) {
+                <span class="my-alliance-tag">YOUR ALLIANCE</span>
+                }
+            </h2>
+
+            <div class="events-grid">
+                @for (event of group.events; track event.id) {
+                <a [routerLink]="['/vikings', event.id]" class="event-card" [class.voting]="event.status === 'voting'">
+                    <div class="event-status" [class.voting-badge]="event.status === 'voting'"
+                        [class.final-badge]="event.status === 'finalized'">
+                        {{ event.status === 'voting' ? 'Voting active' : 'ASSIGNMENTS FINALIZED' }}
+                    </div>
+                    <div class="event-date">
+                        {{ event.date?.toDate() | date:'EEEE HH:mm':'UTC' }} UTC
+                    </div>
+                </a>
+                }
+            </div>
+        </div>
+        }
+    </div>
+    } @else {
+    <div class="no-events">
+        <p>No active events found.</p>
+        <p class="sub-text">Events will appear here when they are started by alliance leaders.</p>
+    </div>
+    }
+</div>

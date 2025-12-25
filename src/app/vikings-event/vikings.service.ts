@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Firestore, collection, collectionData, query, where, orderBy, limit } from '@angular/fire/firestore';
+import { Firestore, collection, collectionData, query, where, orderBy, limit, doc, docData } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
@@ -26,7 +26,10 @@ export interface CharacterAssignmentView extends Omit<CharacterAssignment, 'rein
 export interface VikingsEvent {
     id?: string;
     allianceId: string;
+    allianceTag?: string; // Optional for now to support old data if any
+    server: number;
     date: any; // Timestamp
+    status: 'voting' | 'finalized' | 'past';
     characters: CharacterAssignment[];
 }
 
@@ -40,6 +43,20 @@ export interface VikingsEventView extends Omit<VikingsEvent, 'characters'> {
 export class VikingsService {
     private firestore = inject(Firestore);
 
+    getAllVikingsEvents(): Observable<VikingsEvent[]> {
+        const eventsCollection = collection(this.firestore, 'vikingsEvents');
+        const q = query(eventsCollection, orderBy('date', 'desc'));
+        return collectionData(q, { idField: 'id' }) as Observable<VikingsEvent[]>;
+    }
+
+    getVikingsEventById(id: string): Observable<VikingsEventView | null> {
+        const eventDoc = doc(this.firestore, `vikingsEvents/${id}`);
+        return docData(eventDoc, { idField: 'id' }).pipe(
+            map(event => event ? this.transformEventToView(event as VikingsEvent) : null)
+        );
+    }
+
+    // specific method for backwards compatibility or specific query if needed
     getVikingsEvent(allianceId: string): Observable<VikingsEventView[]> {
         const eventsCollection = collection(this.firestore, 'vikingsEvents');
         const q = query(
