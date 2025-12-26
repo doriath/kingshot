@@ -14,7 +14,12 @@
         <h3>Attackers ({{ attackers().length }})</h3>
         <ul>
             @for (p of attackers(); track p.characterId) {
-            <li>{{ p.characterName }}</li>
+            <li>
+                {{ p.characterName }}
+                @if (p.building) {
+                <span class="building-badge">({{ p.building }})</span>
+                }
+            </li>
             } @empty {
             <li>No attackers assigned</li>
             }
@@ -25,7 +30,12 @@
         <h3>Defenders ({{ defenders().length }})</h3>
         <ul>
             @for (p of defenders(); track p.characterId) {
-            <li>{{ p.characterName }}</li>
+            <li>
+                {{ p.characterName }}
+                @if (p.building) {
+                <span class="building-badge">({{ p.building }})</span>
+                }
+            </li>
             } @empty {
             <li>No defenders assigned</li>
             }

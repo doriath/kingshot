@@ -2,7 +2,7 @@ import { Component, inject, computed, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { SwordlandService, SwordlandParticipant, SwordlandEvent } from '../../swordland-event/swordland.service';
+import { SwordlandService, SwordlandParticipant, SwordlandEvent, SwordlandBuilding } from '../../swordland-event/swordland.service';
 import { AlliancesService, AllianceMember } from '../alliances.service';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { switchMap, map } from 'rxjs/operators';
@@ -29,8 +29,11 @@ import { of } from 'rxjs';
             <div class="form-group search-group">
                 <label>Alliance Member</label>
                 <div class="search-wrapper">
-                    <input [(ngModel)]="searchTerm" placeholder="Search name..." class="search-input" (input)="onSearchInput()">
-                    <div class="search-results" *ngIf="searchTerm && !selectedMember">
+                    <input [(ngModel)]="searchTerm" placeholder="Search name..." class="search-input" 
+                           (input)="onSearchInput()" 
+                           (focus)="onInputFocus()" 
+                           (blur)="onInputBlur()">
+                    <div class="search-results" *ngIf="(searchTerm || inputFocused()) && !selectedMember" (mousedown)="$event.preventDefault()">
                         @for (member of filteredMembers(); track member.characterId) {
                         <div class="search-item" (click)="selectMember(member)">
                             {{ member.name }} ({{ member.power | number }})
@@ -51,6 +54,16 @@ import { of } from 'rxjs';
                     <option value="unassigned">Unassigned</option>
                     <option value="attacker">Attacker</option>
                     <option value="defender">Defender</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Building (Optional)</label>
+                <select [(ngModel)]="formBuilding">
+                    <option [ngValue]="undefined">None</option>
+                    @for (b of buildings; track b) {
+                        <option [value]="b">{{ b }}</option>
+                    }
                 </select>
             </div>
 
@@ -77,6 +90,7 @@ import { of } from 'rxjs';
               </td>
               <td>
                 <span class="role-badge" [class]="row.role">{{ row.role | uppercase }}</span>
+                <div class="building-badge" *ngIf="row.building">{{ row.building }}</div>
               </td>
               <td>
                 <span class="score">{{ row.squadScore | number }}</span>
@@ -106,6 +120,16 @@ import { of } from 'rxjs';
               <option value="unassigned">Unassigned</option>
               <option value="attacker">Attacker</option>
               <option value="defender">Defender</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Building (Optional)</label>
+            <select [(ngModel)]="formBuilding">
+                <option [ngValue]="undefined">None</option>
+                @for (b of buildings; track b) {
+                    <option [value]="b">{{ b }}</option>
+                }
             </select>
           </div>
   
@@ -165,6 +189,10 @@ import { of } from 'rxjs';
     .role-badge { padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.75rem; font-weight: bold; }
     .role-badge.attacker { background: rgba(244, 67, 54, 0.2); color: #e57373; }
     .role-badge.defender { background: rgba(33, 150, 243, 0.2); color: #64b5f6; }
+    .building-badge {
+        margin-top: 0.3rem; font-size: 0.75rem; color: #81c784; background: rgba(129, 199, 132, 0.1);
+        display: inline-block; padding: 0.1rem 0.4rem; border-radius: 4px;
+    }
     
     .score { font-family: monospace; color: #ffb74d; font-size: 1.1rem; }
 
@@ -234,7 +262,10 @@ export class SwordlandEventManagementComponent {
     { initialValue: [] as AllianceMember[] }
   );
 
-  public participants = computed(() => this.event()?.participants || []);
+  public participants = computed(() => {
+    const p = this.event()?.participants || [];
+    return [...p].sort((a, b) => (b.squadScore || 0) - (a.squadScore || 0));
+  });
 
   // State
   public showEditModal = false;
@@ -245,20 +276,35 @@ export class SwordlandEventManagementComponent {
   public selectedMember: AllianceMember | null = null;
   public formRole: 'attacker' | 'defender' | 'unassigned' = 'unassigned';
   public formSquadScore: number = 0;
+  public formBuilding: SwordlandBuilding | undefined = undefined;
+
+  public buildings: SwordlandBuilding[] = [
+    'Sanctum', 'Abbey Top', 'Abbey Bottom', 'Abbey Left', 'Abbey Right', 'Belltower', 'Royal Stables'
+  ];
+
+  public inputFocused = signal(false);
 
   public filteredMembers = computed(() => {
     const term = this.searchTerm.toLowerCase();
-    if (!term) return [];
+
     // Already participating members
     const currentIds = new Set(this.participants().map(p => p.characterId));
     return this.allianceMembers().filter(m =>
       !currentIds.has(m.characterId) &&
-      (m.name.toLowerCase().includes(term) || m.characterId.includes(term))
+      (!term || m.name.toLowerCase().includes(term) || m.characterId.includes(term))
     ).slice(0, 10);
   });
 
   public onSearchInput() {
     this.selectedMember = null; // Clear selection on type
+  }
+
+  public onInputFocus() {
+    this.inputFocused.set(true);
+  }
+
+  public onInputBlur() {
+    this.inputFocused.set(false);
   }
 
   public selectMember(m: AllianceMember) {
@@ -271,11 +317,12 @@ export class SwordlandEventManagementComponent {
     const evt = this.event();
     if (!evt || !evt.id) return;
 
-    const newParticipants = [...evt.participants, {
+    const newParticipants: SwordlandParticipant[] = [...evt.participants, {
       characterId: this.selectedMember.characterId,
       characterName: this.selectedMember.name,
       role: this.formRole,
-      squadScore: this.formSquadScore
+      squadScore: this.formSquadScore,
+      building: this.formBuilding
     }];
 
     try {
@@ -285,6 +332,7 @@ export class SwordlandEventManagementComponent {
       this.selectedMember = null;
       this.formRole = 'unassigned';
       this.formSquadScore = 0;
+      this.formBuilding = undefined;
     } catch (err) {
       console.error(err);
       alert('Failed to add participant.');
@@ -296,6 +344,7 @@ export class SwordlandEventManagementComponent {
     this.editingParticipant = p;
     this.formRole = p.role;
     this.formSquadScore = p.squadScore || 0;
+    this.formBuilding = p.building;
     this.showEditModal = true;
   }
 
@@ -311,7 +360,12 @@ export class SwordlandEventManagementComponent {
 
     const newParticipants = evt.participants.map(p => {
       if (p.characterId === this.editingParticipant!.characterId) {
-        return { ...p, role: this.formRole, squadScore: this.formSquadScore };
+        return {
+          ...p,
+          role: this.formRole,
+          squadScore: this.formSquadScore,
+          building: this.formBuilding
+        };
       }
       return p;
     });

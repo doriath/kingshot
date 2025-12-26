@@ -1,60 +1,98 @@
 .detail-header {
+    background: #2a2a2a;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid #444;
+    position: relative;
     margin-bottom: 2rem;
-    border-bottom: 1px solid var(--border-color, #ccc);
-    padding-bottom: 1rem;
 }
 
 .back-button {
-    background-color: transparent;
-    border: 1px solid var(--primary-color, #007bff);
-    color: var(--primary-color, #007bff);
-    padding: 0.5rem 1rem;
-    cursor: pointer;
-    margin-bottom: 1rem;
+    background: transparent;
+    border: 1px solid #666;
+    color: #ccc;
+    padding: 0.4rem 0.8rem;
     border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
 }
 
 .back-button:hover {
-    background-color: var(--primary-color-light, #e6f0ff);
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border-color: #888;
+}
+
+.detail-header h2 {
+    margin: 0 0 1rem 0;
+    color: #ffca28;
 }
 
 .event-info p {
-    margin: 0.5rem 0;
+    margin: 0.3rem 0;
+    color: #bbb;
+}
+
+.event-info strong {
+    color: white;
 }
 
 .participants-container {
     display: flex;
     gap: 2rem;
-    flex-wrap: wrap;
 }
 
 .participant-group {
     flex: 1;
-    min-width: 300px;
-    background-color: var(--card-bg, #fff);
-    padding: 1rem;
+    background: #222;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.participant-group h3 {
+    margin: 0;
+    padding: 1rem;
+    text-align: center;
+    color: white;
+    font-size: 1.1rem;
 }
 
 .attackers h3 {
-    color: var(--danger-color, #dc3545);
-    border-bottom: 2px solid var(--danger-color, #dc3545);
-    padding-bottom: 0.5rem;
+    background: rgba(244, 67, 54, 0.2);
+    border-bottom: 2px solid #e57373;
 }
 
 .defenders h3 {
-    color: var(--success-color, #28a745);
-    border-bottom: 2px solid var(--success-color, #28a745);
-    padding-bottom: 0.5rem;
+    background: rgba(33, 150, 243, 0.2);
+    border-bottom: 2px solid #64b5f6;
 }
 
 ul {
-    list-style-type: none;
+    list-style: none;
+    margin: 0;
     padding: 0;
 }
 
 li {
-    padding: 0.5rem 0;
-    border-bottom: 1px solid var(--border-color-light, #eee);
+    padding: 0.8rem 1rem;
+    border-bottom: 1px solid #333;
+    color: #ccc;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+li:last-child {
+    border-bottom: none;
+}
+
+.building-badge {
+    font-size: 0.8rem;
+    color: #81c784;
+    background: rgba(129, 199, 132, 0.1);
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
 }

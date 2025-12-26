@@ -3,11 +3,14 @@ import { Firestore, collection, collectionData, doc, docData, query, where, addD
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
+export type SwordlandBuilding = 'Sanctum' | 'Abbey Top' | 'Abbey Bottom' | 'Abbey Left' | 'Abbey Right' | 'Belltower' | 'Royal Stables';
+
 export interface SwordlandParticipant {
     characterId: string;
     characterName: string;
     role: 'attacker' | 'defender' | 'unassigned';
     squadScore: number;
+    building?: SwordlandBuilding;
 }
 
 export interface SwordlandEvent {
