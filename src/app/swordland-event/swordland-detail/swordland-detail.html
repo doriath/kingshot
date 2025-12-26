@@ -9,36 +9,39 @@
     </div>
 </div>
 
-<div class="participants-container">
-    <div class="participant-group attackers">
-        <h3>Attackers ({{ attackers().length }})</h3>
+<div class="groups-container">
+    @for (group of groupedParticipants(); track group.name) {
+    <div class="building-section">
+        <h3>{{ group.name }}</h3>
         <ul>
-            @for (p of attackers(); track p.characterId) {
-            <li>
-                {{ p.characterName }}
-                @if (p.building) {
-                <span class="building-badge">({{ p.building }})</span>
-                }
-            </li>
-            } @empty {
-            <li>No attackers assigned</li>
-            }
-        </ul>
-    </div>
+            @for (p of group.participants; track p.characterId) {
+            <li [class.attacker]="p.role === 'attacker'" [class.defender]="p.role === 'defender'"
+                [class.expanded]="expandedSet().has(p.characterId)" (click)="toggleParticipant(p.characterId)">
+                <div class="participant-header">
+                    <div class="participant-info">
+                        @if (p.role === 'attacker') {
+                        <span class="icon attacker-icon" title="Attacker">⚔️</span>
+                        } @else if (p.role === 'defender') {
+                        <span class="icon defender-icon" title="Defender">🛡️</span>
+                        } @else {
+                        <span class="icon unassigned-icon">?</span>
+                        }
 
-    <div class="participant-group defenders">
-        <h3>Defenders ({{ defenders().length }})</h3>
-        <ul>
-            @for (p of defenders(); track p.characterId) {
-            <li>
-                {{ p.characterName }}
-                @if (p.building) {
-                <span class="building-badge">({{ p.building }})</span>
+                        <span class="name">{{ p.characterName }}</span>
+                        <span class="score">{{ p.squadScore | number }}</span>
+                    </div>
+                    <span class="chevron">▼</span>
+                </div>
+                @if (expandedSet().has(p.characterId)) {
+                <div class="instructions" (click)="$event.stopPropagation()">
+                    <strong>Instructions:</strong> {{ getInstructions(p) }}
+                </div>
                 }
             </li>
-            } @empty {
-            <li>No defenders assigned</li>
             }
         </ul>
     </div>
+    } @empty {
+    <div class="empty-state">No participants assigned yet.</div>
+    }
 </div>

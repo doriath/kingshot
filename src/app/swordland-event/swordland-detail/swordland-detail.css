@@ -40,34 +40,28 @@
     color: white;
 }
 
-.participants-container {
+.groups-container {
     display: flex;
-    gap: 2rem;
+    flex-wrap: wrap;
+    gap: 1.5rem;
 }
 
-.participant-group {
-    flex: 1;
+.building-section {
     background: #222;
     border-radius: 8px;
     overflow: hidden;
+    flex: 1 1 300px;
+    /* Responsive grid basis */
+    border: 1px solid #333;
 }
 
-.participant-group h3 {
+.building-section h3 {
     margin: 0;
-    padding: 1rem;
-    text-align: center;
-    color: white;
-    font-size: 1.1rem;
-}
-
-.attackers h3 {
-    background: rgba(244, 67, 54, 0.2);
-    border-bottom: 2px solid #e57373;
-}
-
-.defenders h3 {
-    background: rgba(33, 150, 243, 0.2);
-    border-bottom: 2px solid #64b5f6;
+    padding: 0.8rem 1rem;
+    background: #333;
+    color: #ffca28;
+    font-size: 1rem;
+    border-bottom: 1px solid #444;
 }
 
 ul {
@@ -77,22 +71,121 @@ ul {
 }
 
 li {
-    padding: 0.8rem 1rem;
-    border-bottom: 1px solid #333;
-    color: #ccc;
+    border-bottom: 1px solid #2a2a2a;
+    transition: background 0.2s;
+    cursor: pointer;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
 }
 
 li:last-child {
     border-bottom: none;
 }
 
-.building-badge {
+li:hover {
+    background: #2a2a2a;
+}
+
+/* Subtle background tint based on role */
+li.attacker {
+    background: linear-gradient(90deg, rgba(244, 67, 54, 0.05) 0%, transparent 100%);
+}
+
+li.defender {
+    background: linear-gradient(90deg, rgba(33, 150, 243, 0.05) 0%, transparent 100%);
+}
+
+.participant-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 1rem;
+    width: 100%;
+}
+
+.participant-info {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    flex-grow: 1;
+}
+
+.chevron {
     font-size: 0.8rem;
-    color: #81c784;
-    background: rgba(129, 199, 132, 0.1);
-    padding: 0.1rem 0.4rem;
-    border-radius: 4px;
+    color: #666;
+    transition: transform 0.3s;
+}
+
+li.expanded .chevron {
+    transform: rotate(180deg);
+}
+
+.instructions {
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.3);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    color: #ccc;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    animation: fadeIn 0.3s ease;
+}
+
+.instructions strong {
+    color: #ffca28;
+    margin-right: 0.5rem;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.icon {
+    font-size: 1.1rem;
+    width: 24px;
+    text-align: center;
+}
+
+.attacker-icon {
+    filter: drop-shadow(0 0 2px rgba(244, 67, 54, 0.5));
+}
+
+/* Make swords red */
+.attacker-icon {
+    color: #e57373;
+}
+
+/* Make shield blue */
+.defender-icon {
+    color: #64b5f6;
+    filter: drop-shadow(0 0 2px rgba(33, 150, 243, 0.5));
+}
+
+.name {
+    flex-grow: 1;
+    color: #eee;
+    font-weight: 500;
+}
+
+.score {
+    color: #888;
+    font-family: monospace;
+    font-size: 0.9rem;
+}
+
+.empty-state {
+    width: 100%;
+    text-align: center;
+    padding: 3rem;
+    color: #666;
+    font-style: italic;
+    background: #222;
+    border-radius: 8px;
 }
