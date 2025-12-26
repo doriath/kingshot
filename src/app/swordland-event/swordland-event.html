@@ -1,62 +1,40 @@
 <div class="container">
-  <div class="page-header">
+  @if (selectedEvent()) {
+  <app-swordland-detail [event]="selectedEvent()!" (back)="clearSelection()"></app-swordland-detail>
+  } @else {
+  <div class="header">
     <h1>Kingshot Swordland</h1>
-    <p>A guide to mastering the Swordland event.</p>
+    <div class="header-actions">
+      <a routerLink="/swordland/guide" class="guide-link">📖 Read Guide</a>
+    </div>
   </div>
 
-  <div class="card">
-    <h2>Core Strategy</h2>
-    <ul>
-      <li><strong>Hit 180k Personal Points ASAP:</strong> Get this done in the first 5-10 minutes. After that, all hands on deck for the alliance win! Your personal rewards are capped at 180k anyway.</li>
-      <li><strong>Best Rewards:</strong> You get the absolute best stuff if you hit 180k points AND your alliance wins.</li>
-    </ul>
+  <div class="event-list-container">
+    <h2>Active Swordland Events</h2>
+
+    @for (serverGroup of groupedEvents(); track serverGroup.server) {
+    <div class="server-group" [class.highlight]="isUserServer(serverGroup.server)">
+      <h3>Server {{ serverGroup.server }}</h3>
+
+      @for (allianceGroup of serverGroup.alliances; track allianceGroup.allianceId) {
+      <div class="alliance-group" [class.highlight]="isUserAlliance(allianceGroup.allianceName)">
+        <h4>{{ allianceGroup.allianceName }}</h4>
+
+        <div class="events-grid">
+          @for (event of allianceGroup.events; track event.id) {
+          <div class="event-card clickable" (click)="selectEvent(event)">
+            <p><strong>Legion:</strong> {{ event.legion }}</p>
+            <p><strong>Date:</strong> {{ event.date?.seconds * 1000 | date:'short' }}</p>
+          </div>
+          }
+        </div>
+      </div>
+      }
+    </div>
+    } @empty {
+    <p>No active events found.</p>
+    }
   </div>
 
-  <div class="card">
-    <h2>Gaining Personal Points</h2>
-    <ul>
-      <li><strong>Attack, Attack, Attack!</strong> It's the fastest way. Wait for enemies to TP, then if you see a weaker one, TP next to them and hit 'em.</li>
-      <li><strong>Heal Trick:</strong> You can leave for 12 minutes and come back fully healed without using speedups. If you're trading troops evenly, it's worth it for points.</li>
-    </ul>
-  </div>
-
-  <div class="card">
-    <h2>If You Can't Attack (Lower Level)</h2>
-    <ul>
-      <li><strong>Defend/Garrison:</strong> You'll get points slower, but still possible to hit 180k. Garrison allies and our own buildings.</li>
-      <li><strong>Baiting:</strong> Ask a stronger ally to reinforce you and draw enemy attacks.</li>
-      <li><strong>1-Troop Bait:</strong> Send just 1 troop with no heroes at an enemy. They might assume your main army is out and attack your castle (where your full army and best heroes should be).</li>
-      <li><strong>Mine Undercellars:</strong> TP close and send 1 troop to each. (Mining speed might be the same regardless of troop count, but needs verification).</li>
-    </ul>
-  </div>
-
-  <div class="card">
-    <h2>Securing the Alliance Win</h2>
-    <ul>
-      <li><strong>Coordinate on Discord.</strong></li>
-      <li><strong>Collect Scattered Points:</strong> Again, super important! If an enemy takes our building, grab those scattered points first. If no one's around, call it out on Discord.</li>
-      <li><strong>Mine Undercellars:</strong> These are grab-able points for the alliance too.</li>
-      <li><strong>Garrison from the Red Zone:</strong> Send your best heroes (and defensive ones like Gordon, Quinn, Howard, Fahd) to our buildings from the red zone where you can't be attacked. Makes it tough for enemies to just swoop in.</li>
-      <li><strong>Late Game Target:</strong> Near the end, look for enemy buildings with lots of gathered points and try to snatch them.</li>
-    </ul>
-  </div>
-
-  <div class="card">
-    <h2>Random Tactics</h2>
-    <ul>
-      <li><strong>Empty Castle Attack:</strong> If an enemy has no troops in their castle (e.g., all reinforcing), hit them with multiple 1-troop marches (stagger them!). It'll burn them and force them back to the red zone or to spend gems.</li>
-      <li><strong>Defend Allies:</strong> When you TP with allies, reinforce the weakest ones first before they get attacked.</li>
-      <li><strong>Reinforce with Heroes:</strong> Send 2k cavalry and a strong defensive hero (Gordon > Quinn > Howard > Fahd). The hero's the real boost, and you keep troops for your own castle.</li>
-      <li><strong>More Troops:</strong> If you can spare them, try a 60/20/20 troop ratio for reinforcements.</li>
-      <li><strong>Stronger Ally:</strong> If you're way stronger, you could send your best/second march, but be careful not to leave yourself vulnerable.</li>
-    </ul>
-  </div>
-
-  <div class="card">
-    <h2>Whale Attacking You?!</h2>
-    <ul>
-      <li><strong>Run!</strong> Teleport somewhere else on the map. Always have a backup spot in mind.</li>
-      <li><strong>Hide Troops in Tents:</strong> Click anywhere on the map, occupy with one march, and repeat for all your marches to get them out of your castle.</li>
-    </ul>
-  </div>
+  }
 </div>

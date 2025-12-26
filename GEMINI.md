@@ -65,7 +65,7 @@ export class ExampleComponent {}
 
 
 
-4. **CHECK YOUR OUTPUT WITH THE ANGULAR COMPILER AND FIX ERRORS**: After you complete the project generation, run the `ng build` command and observe the output to check for errors. Fix any errors you find.
+4. **CHECK YOUR OUTPUT WITH THE ANGULAR COMPILER AND FIX ERRORS**: After you complete the project generation, run the `npm run build` command and observe the output to check for errors. Fix any errors you find.
 
 5. **USE BROWSER NATIVE MODERN CSS**: You **MUST** user built-in CSS unless asked to use another styling library by the user.
 
@@ -202,7 +202,7 @@ Here are some links to the essentials for building Angular applications. Use the
 A critical function of the AI is to continuously monitor for and automatically resolve errors.
 
 * **Post-Modification Checks:** After every code modification, the AI will:
-  1. Run `ng build` to catch and fix linting issues.
+  1. Run `npm run build` to catch and fix linting issues.
   2. Monitor the IDE's diagnostics (problem pane).
   3. Check the output of the running dev server for compilation and runtime errors.
 * **Automatic Error Correction:** The AI will attempt to fix common Angular errors.

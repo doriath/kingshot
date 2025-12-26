@@ -10,6 +10,11 @@ export const routes: Routes = [
     { path: '', redirectTo: 'home', pathMatch: 'full' },
     { path: 'home', component: HomeComponent, title: 'Home' },
     { path: 'swordland', component: SwordlandEventComponent, title: 'Swordland Event' },
+    {
+        path: 'swordland/guide',
+        loadComponent: () => import('./swordland-event/swordland-guide/swordland-guide').then(m => m.SwordlandGuideComponent),
+        title: 'Swordland Event Guide'
+    },
     { path: 'mystic-trial', component: MysticTrialEventComponent, title: 'Mystic Trial Event' },
     {
         path: 'castle-event',
@@ -59,7 +64,13 @@ export const routes: Routes = [
     },
     {
         path: 'admin/vikingsEvents/:id/manage',
-        loadComponent: () => import('./alliances/vikings-event-management/vikings-event-management').then(m => m.VikingsEventManagementComponent)
+        loadComponent: () => import('./alliances/vikings-event-management/vikings-event-management').then(m => m.VikingsEventManagementComponent),
+        title: 'Manage Vikings Event'
+    },
+    {
+        path: 'admin/swordlandEvents/:id/manage',
+        loadComponent: () => import('./alliances/swordland-event-management/swordland-event-management').then(m => m.SwordlandEventManagementComponent),
+        title: 'Manage Swordland Event'
     },
     ...BEAR_ROUTES,
     ...MISC_ROUTES,

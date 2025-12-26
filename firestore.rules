@@ -94,6 +94,12 @@ service cloud.firestore {
       allow update, delete: if isAuthenticated() && request.auth.uid in get(/databases/$(database)/documents/alliances/$(resource.data.allianceId)).data.admins;
     }
 
+    match /swordlandEvents/{eventId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && request.auth.uid in get(/databases/$(database)/documents/alliances/$(request.resource.data.allianceId)).data.admins;
+      allow update, delete: if isAuthenticated() && request.auth.uid in get(/databases/$(database)/documents/alliances/$(resource.data.allianceId)).data.admins;
+    }
+
     match /vikingsRegistrations/{docId} {
       // Allow read if authenticated
       allow read: if isAuthenticated();

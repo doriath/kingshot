@@ -1,162 +1,102 @@
-/* === GLOBAL STYLES (from theme) === */
-:root {
-  --primary-color: #4a90e2;
-  --secondary-color: #50e3c2;
-  --accent-color: #f5a623;
-  --background-color: #1a1a1a;
-  --surface-color: #2c2c2c;
-  --text-color: #e0e0e0;
-  --text-muted-color: #888888;
-  --danger-color: #e94f37;
-
-  --font-family-sans: 'Inter', sans-serif;
-  --font-family-serif: 'Roboto Slab', serif;
-
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
-  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.4);
-
-  --border-radius: 12px;
-}
-
-/* === GENERAL COMPONENT STYLING === */
-:host {
-  display: block;
-  padding: 2rem;
-  animation: fadeIn 0.5s ease-in-out;
-  background-color: var(--background-color);
-  color: var(--text-color);
-  font-family: var(--font-family-sans);
-}
-
-.container {
-  max-width: 900px;
-  margin: 0 auto;
-}
-
-/* === PAGE HEADER === */
-.page-header {
-  text-align: center;
-  margin-bottom: 3rem;
-  padding: 2.5rem;
-  background-color: var(--surface-color);
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow-lg);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.page-header h1 {
-  font-family: var(--font-family-serif);
-  font-size: 2.8rem;
-  color: var(--secondary-color);
-  margin-bottom: 0.75rem;
-  text-shadow: 0 2px 4px rgba(80, 227, 194, 0.2);
-}
-
-.page-header p {
-  font-size: 1.1rem;
-  color: var(--text-muted-color);
-  margin-bottom: 1rem;
-}
-
-.page-header a {
-  font-size: 1rem;
-  color: var(--primary-color);
-  text-decoration: none;
-  transition: color 0.3s ease;
-}
-
-.page-header a:hover {
-  filter: brightness(1.2);
-}
-
-/* === CARDS === */
-.card {
-  background-color: var(--surface-color);
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow-md);
+.event-list-container {
   margin-bottom: 2rem;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.card:hover {
-  transform: translateY(-5px);
-  box-shadow: var(--shadow-lg);
+.server-group {
+  margin-bottom: 2rem;
+  padding: 1rem;
+  border-left: 4px solid transparent;
 }
 
-.card h2 {
-  font-family: var(--font-family-serif);
-  font-size: 1.6rem;
+.server-group.highlight {
+  border-left-color: var(--primary-color, #007bff);
+  background-color: var(--bg-color-light, #f8f9fa);
+}
+
+.alliance-group {
+  margin-left: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 0.5rem;
+  border-left: 2px solid transparent;
+}
+
+.alliance-group.highlight {
+  border-left-color: var(--success-color, #28a745);
+}
+
+.events-grid {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.event-card {
+  background-color: var(--card-bg, #fff);
+  padding: 1rem;
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 8px;
+  cursor: pointer;
+  width: 200px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.event-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.section-divider {
+  margin: 3rem 0;
+  border: 0;
+  border-top: 1px solid var(--border-color, #ccc);
+}
+
+/* Include original guide styles if they were here, assuming they were coming from global app.css or similar, 
+   but since this file replaced existing without copying, I need to make sure basic card styles are present if defined here.
+   However, previous file didn't seem to have explicit styles in the snippet I saw (just used .card).
+   I'll assume .card is global or I should preserve it.
+   I'll add .card styles just in case they were local, although I didn't see a local css file content earlier.
+   Wait, I saw `swordland-event.css` in the file list but I didn't read it. I should have read it.
+   I'll append these styles to the file assuming it might be empty or I replace it if I want.
+   Let's replace/create it.
+*/
+
+.card {
+  background: var(--card-bg, #fff);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Ensure global variables are used or fallback */
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+h1 {
+  margin: 0;
+}
+
+.guide-link {
+  background: linear-gradient(45deg, #ffcc00, #ffaa00);
+  color: #1a1a1a;
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  text-decoration: none;
   font-weight: 600;
-  color: var(--text-color);
-  margin: 0;
-  padding: 1.5rem;
-  background-color: rgba(0,0,0,0.2);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s;
+  display: inline-block;
 }
 
-.card ul {
-  list-style-type: none;
-  padding: 1.5rem;
-  margin: 0;
-}
-
-.card li {
-  font-size: 1rem;
-  line-height: 1.7;
-  color: var(--text-muted-color);
-  margin-bottom: 1rem;
-  padding-left: 2rem;
-  position: relative;
-}
-
-.card li:last-child {
-  margin-bottom: 0;
-}
-
-.card li::before {
-  content: "\2728"; /* Sparkle emoji */
-  color: var(--accent-color);
-  font-size: 1.2rem;
-  position: absolute;
-  left: 0;
-  top: 0;
-}
-
-.card li strong {
-  font-weight: 700;
-  color: var(--text-color);
-}
-
-/* === RESPONSIVE DESIGN === */
-@media (max-width: 768px) {
-  :host {
-    padding: 1rem;
-  }
-
-  .page-header {
-    padding: 2rem;
-  }
-
-  .page-header h1 {
-    font-size: 2.2rem;
-  }
-
-  .card h2, .card ul {
-    padding: 1rem;
-  }
-}
-
-/* === ANIMATIONS === */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(15px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.guide-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 204, 0, 0.3);
+  color: #1a1a1a;
+  /* Ensure text color stays dark on hover */
 }

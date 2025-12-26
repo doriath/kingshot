@@ -1,0 +1,34 @@
+<div class="detail-header">
+    <button class="back-button" (click)="back.emit()">Back to List</button>
+    <h2>Swordland Event Details</h2>
+    <div class="event-info">
+        <p><strong>Alliance:</strong> {{ event().allianceName }}</p>
+        <p><strong>Server:</strong> {{ event().server }}</p>
+        <p><strong>Date:</strong> {{ event().date?.seconds * 1000 | date:'medium' }}</p>
+        <p><strong>Legion:</strong> {{ event().legion }}</p>
+    </div>
+</div>
+
+<div class="participants-container">
+    <div class="participant-group attackers">
+        <h3>Attackers ({{ attackers().length }})</h3>
+        <ul>
+            @for (p of attackers(); track p.characterId) {
+            <li>{{ p.characterName }}</li>
+            } @empty {
+            <li>No attackers assigned</li>
+            }
+        </ul>
+    </div>
+
+    <div class="participant-group defenders">
+        <h3>Defenders ({{ defenders().length }})</h3>
+        <ul>
+            @for (p of defenders(); track p.characterId) {
+            <li>{{ p.characterName }}</li>
+            } @empty {
+            <li>No defenders assigned</li>
+            }
+        </ul>
+    </div>
+</div>

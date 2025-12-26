@@ -7,6 +7,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { switchMap, map, tap } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { AllianceVikingsEventsComponent } from '../alliance-vikings-events/alliance-vikings-events';
+import { AllianceSwordlandEventsComponent } from '../alliance-swordland-events/alliance-swordland-events';
 
 @Component({
     selector: 'app-alliance-management',
@@ -20,6 +21,7 @@ import { AllianceVikingsEventsComponent } from '../alliance-vikings-events/allia
             <div class="tabs">
                 <button class="tab-btn" [class.active]="activeTab === 'members'" (click)="activeTab = 'members'">Members</button>
                 <button class="tab-btn" [class.active]="activeTab === 'events'" (click)="activeTab = 'events'">Vikings Events</button>
+                <button class="tab-btn" [class.active]="activeTab === 'swordland'" (click)="activeTab = 'swordland'">Swordland Events</button>
             </div>
 
             <section class="members-section" *ngIf="activeTab === 'members'">
@@ -76,6 +78,10 @@ import { AllianceVikingsEventsComponent } from '../alliance-vikings-events/allia
 
             <section class="events-section" *ngIf="activeTab === 'events'">
                 <app-alliance-vikings-events [alliance]="ally"></app-alliance-vikings-events>
+            </section>
+
+            <section class="events-section" *ngIf="activeTab === 'swordland'">
+                <app-alliance-swordland-events [alliance]="ally"></app-alliance-swordland-events>
             </section>
         </div>
         <div *ngIf="!alliance()" class="loading">Loading...</div>
@@ -138,13 +144,13 @@ import { AllianceVikingsEventsComponent } from '../alliance-vikings-events/allia
         .empty-list { padding: 2rem; text-align: center; color: #666; font-style: italic; }
         .loading { text-align: center; margin-top: 3rem; color: #888; }
     `],
-    imports: [CommonModule, RouterLink, FormsModule, AllianceVikingsEventsComponent]
+    imports: [CommonModule, RouterLink, FormsModule, AllianceVikingsEventsComponent, AllianceSwordlandEventsComponent]
 })
 export class AllianceManagementComponent {
     private route = inject(ActivatedRoute);
     private alliancesService = inject(AlliancesService);
 
-    public activeTab: 'members' | 'events' = 'members';
+    public activeTab: 'members' | 'events' | 'swordland' = 'members';
 
     public newMemberName = '';
     public newMemberId = '';
