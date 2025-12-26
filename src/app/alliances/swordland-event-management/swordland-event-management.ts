@@ -29,11 +29,12 @@ import { of } from 'rxjs';
             <div class="form-group search-group">
                 <label>Alliance Member</label>
                 <div class="search-wrapper">
-                    <input [(ngModel)]="searchTerm" placeholder="Search name..." class="search-input" 
-                           (input)="onSearchInput()" 
+                    <input [ngModel]="searchTerm()" 
+                           (ngModelChange)="searchTerm.set($event); onSearchInput()"
+                           placeholder="Search name..." class="search-input" 
                            (focus)="onInputFocus()" 
                            (blur)="onInputBlur()">
-                    <div class="search-results" *ngIf="(searchTerm || inputFocused()) && !selectedMember" (mousedown)="$event.preventDefault()">
+                    <div class="search-results" *ngIf="(searchTerm() || inputFocused()) && !selectedMember" (mousedown)="$event.preventDefault()">
                         @for (member of filteredMembers(); track member.characterId) {
                         <div class="search-item" (click)="selectMember(member)">
                             {{ member.name }} ({{ member.power | number }})
@@ -272,7 +273,7 @@ export class SwordlandEventManagementComponent {
   public editingParticipant: SwordlandParticipant | null = null;
 
   // Add Form State
-  public searchTerm = '';
+  public searchTerm = signal('');
   public selectedMember: AllianceMember | null = null;
   public formRole: 'attacker' | 'defender' | 'unassigned' = 'unassigned';
   public formSquadScore: number = 0;
@@ -285,7 +286,7 @@ export class SwordlandEventManagementComponent {
   public inputFocused = signal(false);
 
   public filteredMembers = computed(() => {
-    const term = this.searchTerm.toLowerCase();
+    const term = this.searchTerm().toLowerCase();
 
     // Already participating members
     const currentIds = new Set(this.participants().map(p => p.characterId));
@@ -309,7 +310,7 @@ export class SwordlandEventManagementComponent {
 
   public selectMember(m: AllianceMember) {
     this.selectedMember = m;
-    this.searchTerm = m.name; // Show name in input
+    this.searchTerm.set(m.name); // Show name in input
   }
 
   public async addParticipant() {
@@ -328,7 +329,7 @@ export class SwordlandEventManagementComponent {
     try {
       await this.swordlandService.updateEventParticipants(evt.id, newParticipants);
       // Reset form
-      this.searchTerm = '';
+      this.searchTerm.set('');
       this.selectedMember = null;
       this.formRole = 'unassigned';
       this.formSquadScore = 0;

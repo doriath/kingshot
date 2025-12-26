@@ -9,8 +9,8 @@
 }
 
 .server-group.highlight {
-  border-left-color: var(--primary-color, #007bff);
-  background-color: var(--bg-color-light, #f8f9fa);
+  border-left-color: var(--primary-color, #ffca28);
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 .alliance-group {
@@ -21,7 +21,7 @@
 }
 
 .alliance-group.highlight {
-  border-left-color: var(--success-color, #28a745);
+  border-left-color: var(--success-color, #4caf50);
 }
 
 .events-grid {
@@ -31,24 +31,26 @@
 }
 
 .event-card {
-  background-color: var(--card-bg, #fff);
+  background-color: #2a2a2a;
   padding: 1rem;
-  border: 1px solid var(--border-color, #ddd);
+  border: 1px solid #444;
   border-radius: 8px;
   cursor: pointer;
   width: 200px;
   transition: transform 0.2s, box-shadow 0.2s;
+  color: #eee;
 }
 
 .event-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  background-color: #333;
 }
 
 .section-divider {
   margin: 3rem 0;
   border: 0;
-  border-top: 1px solid var(--border-color, #ccc);
+  border-top: 1px solid #444;
 }
 
 /* Include original guide styles if they were here, assuming they were coming from global app.css or similar, 
@@ -62,7 +64,7 @@
 */
 
 .card {
-  background: var(--card-bg, #fff);
+  background: #2a2a2a;
   border-radius: 8px;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
