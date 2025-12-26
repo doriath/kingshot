@@ -273,9 +273,10 @@ export class SwordlandEventManagementComponent {
   public editingParticipant: SwordlandParticipant | null = null;
 
   // Add Form State
+  // Add Form State
   public searchTerm = signal('');
   public selectedMember: AllianceMember | null = null;
-  public formRole: 'attacker' | 'defender' | 'unassigned' = 'unassigned';
+  public formRole: 'attacker' | 'defender' | 'unassigned' = 'defender'; // Default to defender
   public formSquadScore: number = 0;
   public formBuilding: SwordlandBuilding | undefined = undefined;
 
@@ -318,20 +319,25 @@ export class SwordlandEventManagementComponent {
     const evt = this.event();
     if (!evt || !evt.id) return;
 
-    const newParticipants: SwordlandParticipant[] = [...evt.participants, {
+    const newParticipant: SwordlandParticipant = {
       characterId: this.selectedMember.characterId,
       characterName: this.selectedMember.name,
       role: this.formRole,
       squadScore: this.formSquadScore,
-      building: this.formBuilding
-    }];
+    };
+
+    if (this.formBuilding) {
+      newParticipant.building = this.formBuilding;
+    }
+
+    const newParticipants: SwordlandParticipant[] = [...evt.participants, newParticipant];
 
     try {
       await this.swordlandService.updateEventParticipants(evt.id, newParticipants);
       // Reset form
       this.searchTerm.set('');
       this.selectedMember = null;
-      this.formRole = 'unassigned';
+      this.formRole = 'defender'; // Reset to default
       this.formSquadScore = 0;
       this.formBuilding = undefined;
     } catch (err) {
@@ -361,12 +367,20 @@ export class SwordlandEventManagementComponent {
 
     const newParticipants = evt.participants.map(p => {
       if (p.characterId === this.editingParticipant!.characterId) {
-        return {
+        const updated: SwordlandParticipant = {
           ...p,
           role: this.formRole,
           squadScore: this.formSquadScore,
-          building: this.formBuilding
         };
+        // Explicitly handle building: if defined add it, else ensure it's removed (by not adding it to this new object if we were building from scratch, but since we spread ...p, we need to delete or override)
+        // Actually, since ...p might have 'building', and if formBuilding is undefined, we want to remove it.
+
+        if (this.formBuilding) {
+          updated.building = this.formBuilding;
+        } else {
+          delete updated.building;
+        }
+        return updated;
       }
       return p;
     });

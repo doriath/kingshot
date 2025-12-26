@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output, signal, inject } from '@angular/core';
 import { SwordlandEvent, SwordlandParticipant } from '../swordland.service';
+import { UserDataService } from '../../user-data.service';
 import { DatePipe, DecimalPipe } from '@angular/common';
 
 @Component({
@@ -12,6 +13,9 @@ import { DatePipe, DecimalPipe } from '@angular/common';
 export class SwordlandDetailComponent {
     event = input.required<SwordlandEvent>();
     back = output<void>();
+
+    private userDataService = inject(UserDataService);
+    activeCharacterId = this.userDataService.activeCharacterId;
 
     // Order of display as implicit priority
     private buildingOrder = ['Sanctum', 'Abbey Top', 'Abbey Bottom', 'Abbey Left', 'Abbey Right', 'Belltower', 'Royal Stables'];
