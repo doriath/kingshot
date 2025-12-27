@@ -9,6 +9,8 @@
                 {{ isLoading() ? 'Registering...' : 'Register' }}
             </button>
         </div>
+        <p class="help-text">ID is a number that can be found on the Governor Profile page, just below the character
+            name.</p>
         @if (error()) {
         <p class="error">{{ error() }}</p>
         }

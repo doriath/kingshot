@@ -20,7 +20,14 @@ export class ManageCharactersComponent {
   error = signal<string | null>(null);
 
   async addCharacter() {
-    if (!this.newCharacterId()) return;
+    const id = this.newCharacterId();
+    if (!id) return;
+
+    // Validate that ID is a number
+    if (!/^\d+$/.test(id)) {
+      this.error.set('Character ID must be a number.');
+      return;
+    }
 
     this.isLoading.set(true);
     this.error.set(null);
@@ -56,6 +63,18 @@ export class ManageCharactersComponent {
       const marches = marchesStr === '' ? null : Number(marchesStr);
       if (marches !== null && (isNaN(marches) || marches < 1 || marches > 6)) {
         alert('Marches must be between 1 and 6, or empty.');
+        return;
+      }
+
+      // Validate Server
+      if (!server || !/^\d+$/.test(server)) {
+        alert('Server must be a number.');
+        return;
+      }
+
+      // Validate Alliance
+      if (!alliance || alliance.length !== 3) {
+        alert('Alliance tag must be exactly 3 characters.');
         return;
       }
 
