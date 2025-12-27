@@ -13,6 +13,7 @@ export interface Character {
     name?: string;
     server?: string;
     alliance?: string;
+    marches?: number | null;
 }
 
 export interface CharacterUI extends Character {

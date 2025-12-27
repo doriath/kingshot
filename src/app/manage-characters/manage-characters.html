@@ -59,9 +59,14 @@
                             <label>Alliance:</label>
                             <input #allianceInput type="text" [value]="char.alliance || ''" placeholder="e.g. SKY">
                         </div>
+                        <div class="form-group">
+                            <label>Marches:</label>
+                            <input #marchesInput type="number" [value]="char.marches ?? ''"
+                                placeholder="Default: Unset">
+                        </div>
                     </div>
                     <button class="save-btn"
-                        (click)="saveDetails(char, nameInput.value, serverInput.value, allianceInput.value)">Save
+                        (click)="saveDetails(char, nameInput.value, serverInput.value, allianceInput.value, marchesInput.value)">Save
                         Details</button>
                 </div>
                 }

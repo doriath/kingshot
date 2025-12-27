@@ -51,12 +51,14 @@ export class ManageCharactersComponent {
     this.userDataService.setActiveCharacter(char.id);
   }
 
-  async saveDetails(char: CharacterUI, name: string, server: string, alliance: string) {
+  async saveDetails(char: CharacterUI, name: string, server: string, alliance: string, marchesStr: string) {
     try {
+      const marches = marchesStr === '' ? null : Number(marchesStr);
       await this.userDataService.updateCharacterDetails(char.id, {
         name,
         server,
-        alliance
+        alliance,
+        marches
       });
       alert('Saved!');
     } catch (e: any) {
