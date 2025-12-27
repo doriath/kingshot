@@ -41,6 +41,17 @@ import { AllianceSwordlandEventsComponent } from '../alliance-swordland-events/a
                                 <label>Power</label>
                                 <input [(ngModel)]="newMemberPower" name="power" type="number" placeholder="e.g. 1000000" required>
                             </div>
+                            <div class="form-group">
+                                <label>Main Character (Optional)</label>
+                                <select [(ngModel)]="newMemberMainId" name="mainId">
+                                    <option [ngValue]="null">-- None (Regular Account) --</option>
+                                    @for (m of members(); track m.characterId) {
+                                        @if (m.characterId !== newMemberId) {
+                                            <option [value]="m.characterId">{{ m.name }} ({{ m.power | number }})</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
                             <div class="form-group btn-container">
                                 <button type="submit" [disabled]="!isValidMember()" class="add-btn">{{ newMemberId ? 'Update' : 'Add' }} Member</button>
                             </div>
@@ -62,7 +73,12 @@ import { AllianceSwordlandEventsComponent } from '../alliance-swordland-events/a
                     @for (member of members(); track member.characterId; let i = $index) {
                     <div class="member-row">
                         <span class="member-pos">{{ i + 1 }}</span>
-                        <span class="member-name">{{ member.name }}</span>
+                        <span class="member-name">
+                            {{ member.name }}
+                            @if (member.mainCharacterId) {
+                                <span class="alt-badge" title="Alt Account">Alt of {{ getMemberName(member.mainCharacterId) }}</span>
+                            }
+                        </span>
                         <span class="member-id">{{ member.characterId }}</span>
                         <span class="member-power">{{ member.power | number }}</span>
                         <span class="member-actions">
@@ -141,6 +157,16 @@ import { AllianceSwordlandEventsComponent } from '../alliance-swordland-events/a
         .icon-btn { background: none; border: none; cursor: pointer; font-size: 1rem; opacity: 0.7; }
         .icon-btn:hover { opacity: 1; }
 
+        .alt-badge {
+            background-color: #5d4037;
+            color: #d7ccc8;
+            font-size: 0.75rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
         .empty-list { padding: 2rem; text-align: center; color: #666; font-style: italic; }
         .loading { text-align: center; margin-top: 3rem; color: #888; }
     `],
@@ -155,6 +181,7 @@ export class AllianceManagementComponent {
     public newMemberName = '';
     public newMemberId = '';
     public newMemberPower: number | null = null;
+    public newMemberMainId: string | null = null;
 
     public allianceData = toSignal(
         this.route.paramMap.pipe(
@@ -195,7 +222,8 @@ export class AllianceManagementComponent {
         const newMember: AllianceMember = {
             characterId: this.newMemberId,
             name: this.newMemberName,
-            power: Number(this.newMemberPower)
+            power: Number(this.newMemberPower),
+            mainCharacterId: this.newMemberMainId || undefined
         };
 
         try {
@@ -205,6 +233,7 @@ export class AllianceManagementComponent {
             this.newMemberName = '';
             this.newMemberId = '';
             this.newMemberPower = null;
+            this.newMemberMainId = null;
 
             // Optional: Show toast
         } catch (err) {
@@ -217,6 +246,7 @@ export class AllianceManagementComponent {
         this.newMemberName = member.name;
         this.newMemberId = member.characterId;
         this.newMemberPower = member.power;
+        this.newMemberMainId = member.mainCharacterId || null;
     }
 
     public async removeMember(member: AllianceMember) {
@@ -231,5 +261,10 @@ export class AllianceManagementComponent {
             console.error(err);
             alert('Failed to remove member.');
         }
+    }
+
+    public getMemberName(id: string): string {
+        const m = this.members().find(m => m.characterId === id);
+        return m ? m.name : id;
     }
 }

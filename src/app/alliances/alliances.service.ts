@@ -16,6 +16,7 @@ export interface AllianceMember {
     characterId: string;
     name: string;
     power: number;
+    mainCharacterId?: string;
 }
 
 @Injectable({
