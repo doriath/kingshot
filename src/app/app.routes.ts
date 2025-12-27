@@ -72,6 +72,17 @@ export const routes: Routes = [
         loadComponent: () => import('./alliances/swordland-event-management/swordland-event-management').then(m => m.SwordlandEventManagementComponent),
         title: 'Manage Swordland Event'
     },
+    // SvS Prep Routes
+    {
+        path: 'svs-prep',
+        loadComponent: () => import('./svs-prep-event/svs-prep/svs-prep').then(m => m.SvsPrepComponent),
+        title: 'SvS Preparation'
+    },
+    {
+        path: 'admin/svs-prep',
+        loadComponent: () => import('./svs-prep-event/admin-svs-prep/admin-svs-prep').then(m => m.AdminSvsPrepComponent),
+        title: 'Admin: SvS Preparation'
+    },
     ...BEAR_ROUTES,
     ...MISC_ROUTES,
 ];

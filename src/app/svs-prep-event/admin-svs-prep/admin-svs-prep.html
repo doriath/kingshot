@@ -1,0 +1,75 @@
+<div class="container">
+    <h1>SvS Prep Admin</h1>
+
+    <div class="card create-event-card">
+        <h2>Create New Event</h2>
+        <form [formGroup]="form" (ngSubmit)="createEvent()">
+            <div class="form-group">
+                <label for="server">Server</label>
+                <input id="server" type="number" formControlName="server" />
+            </div>
+
+            <div class="form-group">
+                <label for="date">Battle Date (Saturday)</label>
+                <input id="date" type="date" formControlName="date" />
+            </div>
+
+            <div class="form-group">
+                <label>Boost Schedule</label>
+                <div class="boost-row">
+                    <label>Construction</label>
+                    <select formControlName="constructionDay">
+                        <option value="monday">Monday</option>
+                        <option value="tuesday">Tuesday</option>
+                        <option value="wednesday">Wednesday</option>
+                        <option value="thursday">Thursday</option>
+                        <option value="friday">Friday</option>
+                    </select>
+                </div>
+                <div class="boost-row">
+                    <label>Research</label>
+                    <select formControlName="researchDay">
+                        <option value="monday">Monday</option>
+                        <option value="tuesday">Tuesday</option>
+                        <option value="wednesday">Wednesday</option>
+                        <option value="thursday">Thursday</option>
+                        <option value="friday">Friday</option>
+                    </select>
+                </div>
+                <div class="boost-row">
+                    <label>Troops</label>
+                    <select formControlName="troopsDay">
+                        <option value="monday">Monday</option>
+                        <option value="tuesday">Tuesday</option>
+                        <option value="wednesday">Wednesday</option>
+                        <option value="thursday">Thursday</option>
+                        <option value="friday">Friday</option>
+                    </select>
+                </div>
+            </div>
+
+            <button type="submit" [disabled]="form.invalid || submitting()">
+                @if (submitting()) { Creating... } @else { Create Event }
+            </button>
+        </form>
+    </div>
+
+    <div class="event-list">
+        <h2>Existing Events</h2>
+        @for (event of events | async; track event.id) {
+        <div class="event-item">
+            <div class="event-header">
+                <span class="server">Server {{ event.server }}</span> |
+                <span class="date">{{ formatDate(event.date) }}</span>
+            </div>
+            <div class="schedule">
+                <div>Const: {{ event.constructionDay }}</div>
+                <div>Res: {{ event.researchDay }}</div>
+                <div>Troops: {{ event.troopsDay }}</div>
+            </div>
+        </div>
+        } @empty {
+        <p>No events found.</p>
+        }
+    </div>
+</div>

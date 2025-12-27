@@ -1,0 +1,49 @@
+<div class="container">
+    @if (loading()) {
+    <div class="loading">Loading events...</div>
+    } @else {
+    @if (currentEvent(); as evt) {
+    <div class="header">
+        <h1>SvS Prep: Server {{ evt.server }}</h1>
+        <p class="subtitle">Battle Date: {{ evt.date.seconds * 1000 | date:'longDate' }}</p>
+    </div>
+
+    <div class="tabs">
+        <button [class.active]="selectedBoostTab() === 'construction'" (click)="selectedBoostTab.set('construction')">
+            Construction ({{ evt.constructionDay | titlecase }})
+        </button>
+        <button [class.active]="selectedBoostTab() === 'research'" (click)="selectedBoostTab.set('research')">
+            Research ({{ evt.researchDay | titlecase }})
+        </button>
+        <button [class.active]="selectedBoostTab() === 'troops'" (click)="selectedBoostTab.set('troops')">
+            Troops ({{ evt.troopsDay | titlecase }})
+        </button>
+    </div>
+
+    <div class="content">
+        <div class="instructions">
+            <p>Select the time slots (UTC) when you want to use the {{ selectedBoostTab() | titlecase }} boost.</p>
+            <p>Each slot is 30 minutes. You can select multiple slots.</p>
+        </div>
+
+        <div class="time-grid">
+            @for (time of timeSlots(); track time) {
+            <button class="time-slot" [class.selected]="isSelected(time)" (click)="toggleSlot(time)">
+                {{ time }}
+            </button>
+            }
+        </div>
+
+        <div class="actions">
+            <button class="save-btn" (click)="save()" [disabled]="saving()">
+                {{ saving() ? 'Saving...' : 'Save Preferences' }}
+            </button>
+        </div>
+    </div>
+    } @else {
+    <div class="no-events">
+        <h2>No active SvS Prep events found.</h2>
+    </div>
+    }
+    }
+</div>

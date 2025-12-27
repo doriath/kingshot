@@ -1,0 +1,117 @@
+:host {
+    display: block;
+    padding: 20px;
+    min-height: 80vh;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.subtitle {
+    color: var(--text-secondary);
+}
+
+.tabs {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.tabs button {
+    padding: 12px 24px;
+    background: var(--surface-card);
+    border: 1px solid var(--border-default);
+    color: var(--text-secondary);
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.tabs button.active {
+    background: var(--primary-default);
+    color: white;
+    border-color: var(--primary-default);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.content {
+    background: var(--surface-card);
+    padding: 24px;
+    border-radius: 12px;
+    border: 1px solid var(--border-default);
+}
+
+.instructions {
+    text-align: center;
+    margin-bottom: 24px;
+    color: var(--text-secondary);
+}
+
+.time-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 8px;
+    margin-bottom: 32px;
+}
+
+.time-slot {
+    padding: 10px;
+    border-radius: 6px;
+    background: var(--surface-input);
+    border: 1px solid var(--border-default);
+    text-align: center;
+    cursor: pointer;
+    font-size: 0.9em;
+    color: var(--text-primary);
+    transition: background-color 0.1s;
+}
+
+.time-slot:hover {
+    background: var(--surface-hover);
+}
+
+.time-slot.selected {
+    background: var(--secondary-default);
+    /* Use secondary color for selection to differentiate from tabs */
+    color: white;
+    /* Ensure good contrast */
+    border-color: var(--secondary-default);
+    font-weight: bold;
+}
+
+.actions {
+    display: flex;
+    justify-content: center;
+}
+
+.save-btn {
+    padding: 16px 48px;
+    background: var(--primary-default);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1em;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.save-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.loading,
+.no-events {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-secondary);
+}
