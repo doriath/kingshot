@@ -160,8 +160,17 @@ export class VikingsService {
         const event = snap.data() as VikingsEvent;
         const allCharacters = event.characters || [];
 
+        const updatedCharacters = this.calculateAssignments(allCharacters);
+
+        await firestore.updateDoc(docRef, {
+            status: 'finalized',
+            characters: updatedCharacters
+        });
+    }
+
+    calculateAssignments(allCharacters: CharacterAssignment[]): CharacterAssignment[] {
         // Simple Random Assignment Logic
-        const updatedCharacters = allCharacters.map(char => {
+        return allCharacters.map(char => {
             // 1. Determine marches count
             let count = char.marchesCount;
             if (count === 0) {
@@ -191,11 +200,6 @@ export class VikingsService {
                 ...char,
                 reinforce: assignments
             };
-        });
-
-        await firestore.updateDoc(docRef, {
-            status: 'finalized',
-            characters: updatedCharacters
         });
     }
 

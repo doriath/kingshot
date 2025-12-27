@@ -61,8 +61,8 @@
                         </div>
                         <div class="form-group">
                             <label>Marches:</label>
-                            <input #marchesInput type="number" [value]="char.marches ?? ''"
-                                placeholder="Default: Unset">
+                            <input #marchesInput type="number" [value]="char.marches ?? ''" placeholder="Default: Unset"
+                                min="1" max="6">
                         </div>
                     </div>
                     <button class="save-btn"

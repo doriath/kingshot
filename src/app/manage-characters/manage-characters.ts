@@ -54,6 +54,11 @@ export class ManageCharactersComponent {
   async saveDetails(char: CharacterUI, name: string, server: string, alliance: string, marchesStr: string) {
     try {
       const marches = marchesStr === '' ? null : Number(marchesStr);
+      if (marches !== null && (isNaN(marches) || marches < 1 || marches > 6)) {
+        alert('Marches must be between 1 and 6, or empty.');
+        return;
+      }
+
       await this.userDataService.updateCharacterDetails(char.id, {
         name,
         server,

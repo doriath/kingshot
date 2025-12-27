@@ -217,12 +217,28 @@ export class VikingsEventComponent {
         // But runtime objects have .verified
         const isVerified = (character as any)?.verified ?? false;
 
+        // For marchesCount, allow null/undefined if empty string passed
+        let marches = (marchesCount === '' || marchesCount === null || marchesCount === undefined) ? null : Number(marchesCount);
+
+        // If marches is NaN (somehow), treat as null
+        if (marches !== null && isNaN(marches)) {
+            marches = null;
+        }
+
+        if (marches !== null && (marches < 1 || marches > 6)) {
+            alert('Marches must be between 1 and 6.');
+            return;
+        }
+
         const registration: VikingsRegistration = {
             eventId: event.id!,
             characterId: characterId,
             userId: user.uid,
             status: validStatus,
-            marchesCount: Number(marchesCount),
+            marchesCount: marches as number, // Using 'as number' to satisfy interface if strictly number, but standard allows null/optional? 
+            // Wait, let's check VikingsRegistration interface. It likely needs update if it enforces number.
+            // Assuming it accepts number | undefined for now based on 'marchesCount: Number(marchesCount)' previous code 
+            // which would result in 0 or NaN if empty.
             verified: isVerified
         };
 

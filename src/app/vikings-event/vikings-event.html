@@ -43,8 +43,9 @@
 
                         <div class="form-group">
                             <label>Marches</label>
-                            <input #marchesInput type="number" [value]="existingReg?.marchesCount || 4" min="0"
-                                max="10">
+                            <input #marchesInput type="number"
+                                [value]="existingReg ? existingReg.marchesCount : (char.marches ?? '')"
+                                placeholder="Unset" min="1" max="6">
                         </div>
 
                         <button type="submit" class="save-btn">

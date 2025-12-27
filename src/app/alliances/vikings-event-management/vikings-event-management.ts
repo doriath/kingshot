@@ -63,6 +63,9 @@ interface ManagementRow {
                                         <div class="status-pill" [class]="row.registration.status">
                                             {{ row.registration.status | uppercase }}
                                         </div>
+                                        <div class="verification-badge" [class.verified]="row.registration.verified">
+                                            {{ row.registration.verified ? '✓ Verified' : '⚠ Unverified' }}
+                                        </div>
                                         <div class="marches">Marches: {{ row.registration.marchesCount }}</div>
                                         <div class="timestamp">
                                             {{ row.registration.updatedAt.toDate() | date:'short' }}
@@ -167,6 +170,9 @@ interface ManagementRow {
         .status-pill.offline_empty { background: rgba(255, 152, 0, 0.2); color: #ffb74d; }
         .status-pill.not_available { background: rgba(244, 67, 54, 0.2); color: #e57373; }
         .status-pill.unknown { background: #444; color: #aaa; }
+
+        .verification-badge { display: inline-block; font-size: 0.75rem; padding: 0.1rem 0.4rem; border-radius: 4px; margin-left: 0.5rem; background: #3d2b2b; color: #e57373; border: 1px solid #e57373; }
+        .verification-badge.verified { background: #2b3d2b; color: #81c784; border: 1px solid #81c784; }
 
         .marches { font-size: 0.85rem; color: #ddd; }
         .timestamp { font-size: 0.75rem; color: #888; margin-top: 0.2rem; }

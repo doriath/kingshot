@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { MysticTrialEvent } from './mystic-trial-event';
+import { MysticTrialEventComponent } from './mystic-trial-event';
 
-describe('MysticTrialEvent', () => {
-  let component: MysticTrialEvent;
-  let fixture: ComponentFixture<MysticTrialEvent>;
+describe('MysticTrialEventComponent', () => {
+  let component: MysticTrialEventComponent;
+  let fixture: ComponentFixture<MysticTrialEventComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [MysticTrialEvent]
+      imports: [MysticTrialEventComponent]
     })
-    .compileComponents();
+      .compileComponents();
 
-    fixture = TestBed.createComponent(MysticTrialEvent);
+    fixture = TestBed.createComponent(MysticTrialEventComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

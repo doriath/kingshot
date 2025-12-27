@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { BearEvent } from './bear-event';
+import { BearEventComponent } from './bear-event';
 
-describe('BearEvent', () => {
-  let component: BearEvent;
-  let fixture: ComponentFixture<BearEvent>;
+describe('BearEventComponent', () => {
+  let component: BearEventComponent;
+  let fixture: ComponentFixture<BearEventComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [BearEvent]
+      imports: [BearEventComponent]
     })
-    .compileComponents();
+      .compileComponents();
 
-    fixture = TestBed.createComponent(BearEvent);
+    fixture = TestBed.createComponent(BearEventComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
