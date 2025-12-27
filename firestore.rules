@@ -134,10 +134,25 @@ service cloud.firestore {
             isGlobalAdmin() ||
             isSvsEventAdmin(resource.data.eventId)
         );
-        // Users can create/update their own registration
-        allow write: if isAuthenticated() && (
-            request.resource.data.userId == request.auth.uid &&
-            (!exists(/databases/$(database)/documents/svsPrepRegistrations/$(regId)) || resource.data.userId == request.auth.uid)
+        // Create: Owner or Admin
+        allow create: if isAuthenticated() && (
+            request.resource.data.userId == request.auth.uid ||
+            isGlobalAdmin() ||
+            isSvsEventAdmin(request.resource.data.eventId)
+        );
+        
+        // Update: Owner (must stay owner) or Admin
+        allow update: if isAuthenticated() && (
+            (resource.data.userId == request.auth.uid && request.resource.data.userId == request.auth.uid) ||
+            isGlobalAdmin() ||
+            isSvsEventAdmin(resource.data.eventId)
+        );
+
+        // Delete: Owner or Admin
+        allow delete: if isAuthenticated() && (
+            resource.data.userId == request.auth.uid ||
+            isGlobalAdmin() ||
+            isSvsEventAdmin(resource.data.eventId)
         );
     }
   }

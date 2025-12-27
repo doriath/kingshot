@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Firestore, collection, collectionData, query, where, doc, docData, setDoc, addDoc } from '@angular/fire/firestore';
+import { Firestore, collection, collectionData, query, where, doc, docData, setDoc, addDoc, deleteDoc } from '@angular/fire/firestore';
 import { Observable } from 'rxjs'; // Removed 'from', not used yet
 import { map } from 'rxjs/operators';
 
@@ -28,20 +28,14 @@ export interface SvSPrepRegistration {
     id?: string;
     eventId: string;
     userId: string;
-    characterId?: string; // Optional if we link by userId, but good to have
+    characterId: string; // Required for key
     characterName?: string; // For display
     characterVerified?: boolean; // Whether the character is verified
+    isManual?: boolean; // If true, created manually by admin
 
     // User preferences
-    // We can store a list of requested slots.
-    // Each slot could be represented as a start time ISO string or a simplified 'Day-Hour-Minute' token.
-    // Let's use a structured approach:
     preferences: {
         boostType: BoostType;
-        // Array of 30-min slot start times (in UTC).
-        // e.g. ["2024-05-20T13:00:00Z", "2024-05-20T13:30:00Z"]
-        // Or maybe just storing the chosen slots as strings is enough 
-        // if we validate them against the Event's configured days.
         slots: string[];
     }[];
 
@@ -95,6 +89,12 @@ export class SvSPrepService {
             updatedAt: new Date()
         };
         await setDoc(docRef, data, { merge: true });
+    }
+
+    async deleteRegistration(eventId: string, characterId: string): Promise<void> {
+        const docId = `${eventId}_${characterId}`;
+        const docRef = doc(this.firestore, `svsPrepRegistrations/${docId}`);
+        await deleteDoc(docRef);
     }
 
     // New plural method

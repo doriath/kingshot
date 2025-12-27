@@ -91,6 +91,99 @@ th {
     border: 1px solid var(--border-default);
 }
 
+/* Manual Registration Styles */
+.manual-add-section {
+    background: var(--surface-card);
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 24px;
+    border: 1px solid var(--border-default);
+}
+
+.add-form {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.add-form input {
+    padding: 8px;
+    border: 1px solid var(--border-default);
+    border-radius: 4px;
+    flex: 1;
+    max-width: 300px;
+}
+
+.add-form button {
+    padding: 8px 16px;
+    background: var(--primary-default);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.manual-badge {
+    font-size: 0.8em;
+    color: var(--primary-default);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.manual-row {
+    background: rgba(var(--primary-rgb), 0.05);
+}
+
+.action-btn {
+    padding: 4px 8px;
+    margin-right: 4px;
+    border: 1px solid var(--border-default);
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+    font-size: 0.85em;
+}
+
+.action-btn.delete {
+    color: var(--error-default);
+    border-color: var(--error-default);
+}
+
+/* Edit Panel */
+.edit-row td {
+    padding: 0;
+    border-bottom: 1px solid var(--border-default);
+}
+
+.edit-panel {
+    background: var(--surface-default);
+    padding: 16px;
+    border-top: 1px solid var(--border-default);
+}
+
+.edit-grids {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin: 16px 0;
+}
+
+.edit-group h5 {
+    margin: 0 0 8px 0;
+    font-size: 0.9em;
+    color: var(--text-secondary);
+}
+
+.close-edit {
+    margin-top: 16px;
+    padding: 6px 12px;
+    background: var(--surface-hover);
+    border: 1px solid var(--border-default);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
 .empty-state {
     text-align: center;
     padding: 32px;

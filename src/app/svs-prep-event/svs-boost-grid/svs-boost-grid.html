@@ -1,0 +1,9 @@
+<div class="time-grid" (mouseleave)="stopDrag()" (touchmove)="handleTouchMove($event)">
+    @for (time of slots(); track time) {
+    <button class="time-slot" [attr.data-time]="time" [class.selected]="isSelected(time)"
+        (mousedown)="startDrag($event, time)" (mouseenter)="onMouseEnter(time)" (mouseup)="stopDrag()"
+        (touchstart)="startDrag($event, time)" (touchend)="stopDrag()">
+        {{ time }}
+    </button>
+    }
+</div>

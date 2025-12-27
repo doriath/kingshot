@@ -9,6 +9,15 @@
         }
     </div>
 
+    <div class="manual-add-section">
+        <h3>Manual Registration</h3>
+        <div class="add-form">
+            <input type="text" placeholder="Character Name" [ngModel]="newManualName()"
+                (ngModelChange)="newManualName.set($event)" />
+            <button (click)="addManualRegistration()" [disabled]="!newManualName() || isAdding()">Add</button>
+        </div>
+    </div>
+
     <div class="registrations-section">
         <h2>Registrations ({{ registrations().length }})</h2>
 
@@ -21,18 +30,23 @@
                         <th>Research Slots</th>
                         <th>Troops Slots</th>
                         <th>Updated</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     @for (reg of registrations(); track reg.id) {
-                    <tr>
+                    <tr [class.manual-row]="reg.isManual">
                         <td>
                             <div class="user-info">
                                 <span class="char-name">{{ reg.characterName || 'Unknown Character' }}</span>
                                 @if (reg.characterVerified) {
                                 <span class="verified-badge" title="Verified Character">✓ Verified</span>
                                 } @else {
+                                @if (reg.isManual) {
+                                <span class="manual-badge" title="Manual Entry">✎ Manual</span>
+                                } @else {
                                 <span class="unverified-badge" title="Unverified Character">⚠ Unverified</span>
+                                }
                                 }
                             </div>
                         </td>
@@ -70,10 +84,51 @@
                             }
                         </td>
                         <td>{{ reg.updatedAt.seconds * 1000 | date:'short' }}</td>
+                        <td>
+                            @if (reg.isManual) {
+                            <button class="action-btn edit" (click)="toggleEdit(reg.id!)">Edit</button>
+                            <button class="action-btn delete" (click)="deleteReg(reg)">Del</button>
+                            }
+                        </td>
                     </tr>
+                    @if (editingRegId() === reg.id && reg.isManual) {
+                    <tr class="edit-row">
+                        <td colspan="6">
+                            <div class="edit-panel">
+                                <h4>Edit Slots for {{ reg.characterName }}</h4>
+                                @if (event(); as evt) {
+                                <div class="edit-grids">
+                                    <div class="edit-group">
+                                        <h5>Construction ({{ evt.constructionDay }})</h5>
+                                        <app-svs-boost-grid [boostType]="'construction'" [slots]="timeSlots()"
+                                            [selectedMs]="getSlotsFor(reg, 'construction')"
+                                            (selectionChange)="updateSlots(reg, 'construction', $event)">
+                                        </app-svs-boost-grid>
+                                    </div>
+                                    <div class="edit-group">
+                                        <h5>Research ({{ evt.researchDay }})</h5>
+                                        <app-svs-boost-grid [boostType]="'research'" [slots]="timeSlots()"
+                                            [selectedMs]="getSlotsFor(reg, 'research')"
+                                            (selectionChange)="updateSlots(reg, 'research', $event)">
+                                        </app-svs-boost-grid>
+                                    </div>
+                                    <div class="edit-group">
+                                        <h5>Troops ({{ evt.troopsDay }})</h5>
+                                        <app-svs-boost-grid [boostType]="'troops'" [slots]="timeSlots()"
+                                            [selectedMs]="getSlotsFor(reg, 'troops')"
+                                            (selectionChange)="updateSlots(reg, 'troops', $event)">
+                                        </app-svs-boost-grid>
+                                    </div>
+                                </div>
+                                }
+                                <button class="close-edit" (click)="toggleEdit(reg.id!)">Done</button>
+                            </div>
+                        </td>
+                    </tr>
+                    }
                     } @empty {
                     <tr>
-                        <td colspan="5" class="empty-state">No registrations yet.</td>
+                        <td colspan="6" class="empty-state">No registrations yet.</td>
                     </tr>
                     }
                 </tbody>
