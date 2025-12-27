@@ -5,6 +5,7 @@
 }
 
 .container {
+    padding: 24px;
     max-width: 900px;
     margin: 0 auto;
 }
@@ -18,100 +19,148 @@
     color: var(--text-secondary);
 }
 
-.tabs {
+.character-list {
     display: flex;
-    justify-content: center;
-    gap: 12px;
-    margin-bottom: 24px;
+    flex-direction: column;
+    gap: 16px;
 }
 
-.tabs button {
-    padding: 12px 24px;
+.character-card {
     background: var(--surface-card);
-    border: 1px solid var(--border-default);
-    color: var(--text-secondary);
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 500;
-    transition: all 0.2s;
-}
-
-.tabs button.active {
-    background: var(--primary-default);
-    color: white;
-    border-color: var(--primary-default);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-.content {
-    background: var(--surface-card);
-    padding: 24px;
     border-radius: 12px;
     border: 1px solid var(--border-default);
+    overflow: hidden;
 }
 
-.instructions {
-    text-align: center;
-    margin-bottom: 24px;
+.character-header {
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.02);
+    transition: background 0.2s;
+}
+
+.character-header:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.char-info h3 {
+    margin: 0;
+    font-size: 1.1em;
+}
+
+.server-badge {
+    font-size: 0.85em;
     color: var(--text-secondary);
+}
+
+.status {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    font-weight: 500;
+}
+
+.badge.registered {
+    background: rgba(var(--success-rgb), 0.2);
+    color: var(--success);
+}
+
+.badge.not-registered {
+    background: rgba(var(--text-secondary-rgb), 0.1);
+    color: var(--text-secondary);
+}
+
+.arrow {
+    transition: transform 0.2s;
+}
+
+.arrow.expanded {
+    transform: rotate(180deg);
+}
+
+.character-content {
+    padding: 24px;
+    border-top: 1px solid var(--border-default);
+    background: var(--surface-dim);
+}
+
+.boost-section {
+    margin-bottom: 24px;
+}
+
+.boost-section h4 {
+    margin: 0 0 12px 0;
+    color: var(--primary-default);
+    font-size: 1em;
 }
 
 .time-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
     gap: 8px;
-    margin-bottom: 32px;
+    touch-action: none;
+    /* Prevent scroll on mobile while dragging */
 }
 
 .time-slot {
-    padding: 10px;
+    padding: 6px;
     border-radius: 6px;
-    background: var(--surface-input);
+    background: var(--surface-card);
     border: 1px solid var(--border-default);
-    text-align: center;
-    cursor: pointer;
-    font-size: 0.9em;
     color: var(--text-primary);
-    transition: background-color 0.1s;
+    cursor: pointer;
+    text-align: center;
+    font-size: 0.9em;
+    transition: all 0.2s;
+    user-select: none;
+    /* Prevent text selection */
+    -webkit-user-select: none;
 }
 
 .time-slot:hover {
-    background: var(--surface-hover);
+    border-color: var(--primary-default);
 }
 
 .time-slot.selected {
-    background: var(--secondary-default);
-    /* Use secondary color for selection to differentiate from tabs */
+    background: var(--primary-default, #007bff);
+    /* Fallback to blue */
     color: white;
-    /* Ensure good contrast */
-    border-color: var(--secondary-default);
-    font-weight: bold;
+    border-color: var(--primary-default, #007bff);
 }
 
 .actions {
     display: flex;
-    justify-content: center;
+    justify-content: flex-end;
+    margin-top: 16px;
 }
 
 .save-btn {
-    padding: 16px 48px;
+    padding: 10px 24px;
     background: var(--primary-default);
     color: white;
     border: none;
-    border-radius: 8px;
-    font-size: 1.1em;
-    font-weight: 600;
+    border-radius: 6px;
     cursor: pointer;
+    font-weight: 600;
 }
 
 .save-btn:disabled {
-    opacity: 0.7;
+    opacity: 0.5;
     cursor: not-allowed;
 }
 
 .loading,
 .no-events {
     text-align: center;
-    padding: 40px;
+    padding: 48px;
     color: var(--text-secondary);
 }

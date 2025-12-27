@@ -110,5 +110,35 @@ service cloud.firestore {
         (resource.data.userId == request.auth.uid)
       );
     }
+
+    // Helper for SvS Event Admins
+    function isSvsEventAdmin(eventId) {
+      let evt = get(/databases/$(database)/documents/svsPrepEvents/$(eventId));
+      return isAuthenticated() && (request.auth.uid in evt.data.admins);
+    }
+
+    match /svsPrepEvents/{eventId} {
+      // Anyone can read events
+      allow read: if true;
+      // Global admins can do anything. Event admins can update their event.
+      allow create: if isGlobalAdmin();
+      allow update: if isGlobalAdmin() || (isAuthenticated() && request.auth.uid in resource.data.admins);
+      allow delete: if isGlobalAdmin();
+    }
+
+    match /svsPrepRegistrations/{regId} {
+        // Users can read their own. Global Admins can read all.
+        // Event Admins can read registrations for their event.
+        allow read: if isAuthenticated() && (
+            resource.data.userId == request.auth.uid || 
+            isGlobalAdmin() ||
+            isSvsEventAdmin(resource.data.eventId)
+        );
+        // Users can create/update their own registration
+        allow write: if isAuthenticated() && (
+            request.resource.data.userId == request.auth.uid &&
+            (!exists(/databases/$(database)/documents/svsPrepRegistrations/$(regId)) || resource.data.userId == request.auth.uid)
+        );
+    }
   }
 }

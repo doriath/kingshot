@@ -1,0 +1,83 @@
+<div class="container">
+    <div class="header">
+        <a routerLink="/admin/svs-prep" class="back-link">← Back to List</a>
+        @if (event(); as evt) {
+        <h1>Manage Event: Server {{ evt.server }}</h1>
+        <p>Battle Date: {{ evt.date.seconds * 1000 | date:'longDate' }}</p>
+        } @else {
+        <h1>Loading Event...</h1>
+        }
+    </div>
+
+    <div class="registrations-section">
+        <h2>Registrations ({{ registrations().length }})</h2>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Character</th>
+                        <th>Construction Slots</th>
+                        <th>Research Slots</th>
+                        <th>Troops Slots</th>
+                        <th>Updated</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (reg of registrations(); track reg.id) {
+                    <tr>
+                        <td>
+                            <div class="user-info">
+                                <span class="char-name">{{ reg.characterName || 'Unknown Character' }}</span>
+                                @if (reg.characterVerified) {
+                                <span class="verified-badge" title="Verified Character">✓ Verified</span>
+                                } @else {
+                                <span class="unverified-badge" title="Unverified Character">⚠ Unverified</span>
+                                }
+                            </div>
+                        </td>
+                        <td>
+                            @for (pref of reg.preferences; track pref.boostType) {
+                            @if (pref.boostType === 'construction') {
+                            <div class="slots-list">
+                                @for (slot of pref.slots; track slot) {
+                                <span class="slot-tag">{{ slot }}</span>
+                                }
+                            </div>
+                            }
+                            }
+                        </td>
+                        <td>
+                            @for (pref of reg.preferences; track pref.boostType) {
+                            @if (pref.boostType === 'research') {
+                            <div class="slots-list">
+                                @for (slot of pref.slots; track slot) {
+                                <span class="slot-tag">{{ slot }}</span>
+                                }
+                            </div>
+                            }
+                            }
+                        </td>
+                        <td>
+                            @for (pref of reg.preferences; track pref.boostType) {
+                            @if (pref.boostType === 'troops') {
+                            <div class="slots-list">
+                                @for (slot of pref.slots; track slot) {
+                                <span class="slot-tag">{{ slot }}</span>
+                                }
+                            </div>
+                            }
+                            }
+                        </td>
+                        <td>{{ reg.updatedAt.seconds * 1000 | date:'short' }}</td>
+                    </tr>
+                    } @empty {
+                    <tr>
+                        <td colspan="5" class="empty-state">No registrations yet.</td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

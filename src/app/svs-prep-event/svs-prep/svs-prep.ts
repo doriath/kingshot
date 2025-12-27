@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, inject, signal, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, computed, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { SvSPrepService, SvSPrepEvent, SvSPrepRegistration, BoostType } from '../svs-prep.service';
 import { Auth, user } from '@angular/fire/auth';
 import { firstValueFrom } from 'rxjs';
@@ -10,12 +11,13 @@ import { UserDataService } from '../../user-data.service';
     templateUrl: './svs-prep.html',
     styleUrl: './svs-prep.css',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [CommonModule]
+    imports: [CommonModule, FormsModule]
 })
 export class SvsPrepComponent {
     private svsService = inject(SvSPrepService);
     private auth = inject(Auth);
     private userDataService = inject(UserDataService);
+    private cdr = inject(ChangeDetectorRef);
 
     public user$ = user(this.auth);
     public events$ = this.svsService.getEvents();
@@ -23,22 +25,34 @@ export class SvsPrepComponent {
     // State
     public selectedEventIdx = signal<number>(0);
     public currentEvent = computed(() => {
-        // This assumes the events$ async pipe in template or we subscribe. 
-        // Actually better to use resource or signal, but standard rxjs integration is fine.
-        // We will just expose the raw list and let the template or a signal wrapper handle it.
-        // For simplicity, let's load events into a signal.
         return this.fetchedEvents()[this.selectedEventIdx()];
     });
 
     public fetchedEvents = signal<SvSPrepEvent[]>([]);
-    public activeRegistration = signal<SvSPrepRegistration | null>(null);
+    public registrations = signal<SvSPrepRegistration[]>([]); // All user registrations
     public loading = signal<boolean>(true);
     public saving = signal<boolean>(false);
 
-    // Selection State
-    public selectedBoostTab = signal<BoostType>('construction');
+    // Character View Models
+    public expandedCharacterId = signal<string | null>(null);
+    public characters = this.userDataService.characters;
 
-    // Storage for user selections before saving
+    // Combining Characters and Registrations
+    public characterViewModels = computed(() => {
+        const chars = this.characters();
+        const regs = this.registrations();
+
+        return chars.map(c => {
+            const reg = regs.find(r => r.characterId === c.id);
+            return {
+                ...c,
+                registration: reg,
+                isRegistered: !!reg
+            };
+        });
+    });
+
+    // Storage for user selections for the CURRENTLY expanded character
     // Map of BoostType -> Set of slot IDs (e.g. "13:00", "13:30")
     public selections = signal<Record<BoostType, Set<string>>>({
         construction: new Set(),
@@ -57,7 +71,7 @@ export class SvsPrepComponent {
             this.fetchedEvents.set(events);
 
             if (events.length > 0) {
-                await this.loadRegistration(events[0].id!);
+                await this.loadRegistrations(events[0].id!);
             }
         } catch (e) {
             console.error("Failed to load events", e);
@@ -66,50 +80,106 @@ export class SvsPrepComponent {
         }
     }
 
-    async loadRegistration(eventId: string) {
+    async loadRegistrations(eventId: string) {
         const user = this.auth.currentUser;
         if (!user) return;
 
-        const reg = await firstValueFrom(this.svsService.getUserRegistration(eventId, user.uid));
-        this.activeRegistration.set(reg || null);
+        const regs = await firstValueFrom(this.svsService.getUserRegistrations(eventId, user.uid));
+        this.registrations.set(regs);
+    }
 
-        if (reg) {
-            // Hydrate selections
-            const newSelections: Record<BoostType, Set<string>> = {
-                construction: new Set(),
-                research: new Set(),
-                troops: new Set()
-            };
-
-            reg.preferences.forEach(p => {
-                p.slots.forEach(s => newSelections[p.boostType].add(s));
-            });
-            this.selections.set(newSelections);
+    toggleExpand(characterId: string) {
+        if (this.expandedCharacterId() === characterId) {
+            this.expandedCharacterId.set(null);
         } else {
-            // Clear if new
-            this.selections.set({
-                construction: new Set(),
-                research: new Set(),
-                troops: new Set()
-            });
+            this.expandedCharacterId.set(characterId);
+            this.hydrateSelections(characterId);
         }
     }
 
-    toggleSlot(time: string) {
-        const type = this.selectedBoostTab();
-        const current = this.selections();
-        const set = new Set(current[type]);
+    hydrateSelections(characterId: string) {
+        const vm = this.characterViewModels().find(c => c.id === characterId);
+        const reg = vm?.registration;
 
-        if (set.has(time)) {
-            set.delete(time);
-        } else {
-            set.add(time);
+        const newSelections: Record<BoostType, Set<string>> = {
+            construction: new Set(),
+            research: new Set(),
+            troops: new Set()
+        };
+
+        if (reg) {
+            reg.preferences.forEach(p => {
+                p.slots.forEach(s => newSelections[p.boostType].add(s));
+            });
+        }
+        this.selections.set(newSelections);
+    }
+
+
+    // Drag Support
+    private isDragging = false;
+    private dragMode = true; // true = select, false = deselect
+
+    startDrag(event: Event, type: BoostType, time: string) {
+        // Prevent default text selection
+        if (event instanceof MouseEvent) {
+            event.preventDefault();
         }
 
-        this.selections.set({
-            ...current,
-            [type]: set
+        const currentSelected = this.isSelected(type, time);
+        this.dragMode = !currentSelected; // If currently selected, we want to deselect, and vice versa
+        this.isDragging = true;
+
+        this.setSlot(type, time, this.dragMode);
+    }
+
+    onMouseEnter(type: BoostType, time: string) {
+        if (this.isDragging) {
+            this.setSlot(type, time, this.dragMode);
+        }
+    }
+
+    stopDrag() {
+        this.isDragging = false;
+    }
+
+    handleTouchMove(event: TouchEvent, boostType: BoostType) {
+        if (!this.isDragging) return;
+        event.preventDefault(); // Prevent scrolling
+
+        const touch = event.touches[0];
+        const element = document.elementFromPoint(touch.clientX, touch.clientY);
+
+        if (element && element.hasAttribute('data-time')) {
+            const time = element.getAttribute('data-time');
+            if (time) {
+                this.setSlot(boostType, time, this.dragMode);
+            }
+        }
+    }
+
+    // Consolidated update method
+    setSlot(type: BoostType, time: string, shouldSelect: boolean) {
+        this.selections.update(current => {
+            const set = new Set(current[type]);
+            if (shouldSelect) {
+                set.add(time);
+            } else {
+                set.delete(time);
+            }
+            return {
+                ...current,
+                [type]: set
+            };
         });
+        this.cdr.markForCheck();
+    }
+
+    // Kept for simple toggle clicks if needed, though drag logic handles the initial click too
+    toggleSlot(type: BoostType, time: string) {
+        // We defer to setSlot based on current state
+        const current = this.isSelected(type, time);
+        this.setSlot(type, time, !current);
     }
 
     // Helpers to generate time slots (00:00 to 23:30)
@@ -123,7 +193,7 @@ export class SvsPrepComponent {
         return slots;
     });
 
-    async save() {
+    async save(characterId: string) {
         const evt = this.currentEvent();
         const user = this.auth.currentUser;
         if (!evt || !user || !evt.id) return;
@@ -137,17 +207,24 @@ export class SvsPrepComponent {
                 { boostType: 'troops' as BoostType, slots: Array.from(sels.troops).sort() }
             ].filter(p => p.slots.length > 0);
 
+            const character = this.characters().find(c => c.id === characterId);
+
             const reg: SvSPrepRegistration = {
                 eventId: evt.id,
                 userId: user.uid,
                 updatedAt: new Date(),
                 preferences,
-                // Ideally we fetch character name from UserDataService but for now partial is fine or we update logic
+                characterId: characterId,
+                characterName: character?.name || 'Unknown',
+                characterVerified: !!character?.verified
             };
 
             await this.svsService.saveRegistration(reg);
-            this.activeRegistration.set(reg);
+
+            // Reload registrations to update UI status
+            await this.loadRegistrations(evt.id);
             alert('Saved!');
+            this.expandedCharacterId.set(null); // Collapse on save
         } catch (e) {
             console.error(e);
             alert('Error saving');
@@ -156,16 +233,7 @@ export class SvsPrepComponent {
         }
     }
 
-    isSelected(time: string): boolean {
-        return this.selections()[this.selectedBoostTab()].has(time);
-    }
-
-    getBoostDay(type: BoostType): string {
-        const evt = this.currentEvent();
-        if (!evt) return '';
-        if (type === 'construction') return evt.constructionDay;
-        if (type === 'research') return evt.researchDay;
-        if (type === 'troops') return evt.troopsDay;
-        return '';
+    isSelected(type: BoostType, time: string): boolean {
+        return this.selections()[type].has(time);
     }
 }

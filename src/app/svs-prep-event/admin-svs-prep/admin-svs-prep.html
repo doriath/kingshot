@@ -15,6 +15,11 @@
             </div>
 
             <div class="form-group">
+                <label for="admins">Admin User IDs (comma separated)</label>
+                <input id="admins" type="text" formControlName="admins" placeholder="uid1, uid2" />
+            </div>
+
+            <div class="form-group">
                 <label>Boost Schedule</label>
                 <div class="boost-row">
                     <label>Construction</label>
@@ -66,6 +71,10 @@
                 <div>Const: {{ event.constructionDay }}</div>
                 <div>Res: {{ event.researchDay }}</div>
                 <div>Troops: {{ event.troopsDay }}</div>
+            </div>
+            <div class="actions" style="margin-top: 12px;">
+                <a [routerLink]="['/admin/svs-prep', event.id]"
+                    style="color: var(--primary-default); font-weight: 500;">Manage</a>
             </div>
         </div>
         } @empty {

@@ -8,38 +8,82 @@
         <p class="subtitle">Battle Date: {{ evt.date.seconds * 1000 | date:'longDate' }}</p>
     </div>
 
-    <div class="tabs">
-        <button [class.active]="selectedBoostTab() === 'construction'" (click)="selectedBoostTab.set('construction')">
-            Construction ({{ evt.constructionDay | titlecase }})
-        </button>
-        <button [class.active]="selectedBoostTab() === 'research'" (click)="selectedBoostTab.set('research')">
-            Research ({{ evt.researchDay | titlecase }})
-        </button>
-        <button [class.active]="selectedBoostTab() === 'troops'" (click)="selectedBoostTab.set('troops')">
-            Troops ({{ evt.troopsDay | titlecase }})
-        </button>
-    </div>
+    <div class="character-list">
+        @for (char of characterViewModels(); track char.id) {
+        <div class="character-card">
+            <div class="character-header" (click)="toggleExpand(char.id)">
+                <div class="char-info">
+                    <h3>{{ char.name }}</h3>
+                    <span class="server-badge">Server {{ char.server }}</span>
+                </div>
+                <div class="status">
+                    @if (char.isRegistered) {
+                    <span class="badge registered">Registered</span>
+                    } @else {
+                    <span class="badge not-registered">Not Registered</span>
+                    }
+                    <span class="arrow" [class.expanded]="expandedCharacterId() === char.id">▼</span>
+                </div>
+            </div>
 
-    <div class="content">
-        <div class="instructions">
-            <p>Select the time slots (UTC) when you want to use the {{ selectedBoostTab() | titlecase }} boost.</p>
-            <p>Each slot is 30 minutes. You can select multiple slots.</p>
-        </div>
+            @if (expandedCharacterId() === char.id) {
+            <div class="character-content">
+                <div class="boost-section">
+                    <h4>Construction ({{ evt.constructionDay | titlecase }})</h4>
+                    <div class="time-grid" (mouseleave)="stopDrag()"
+                        (touchmove)="handleTouchMove($event, 'construction')">
+                        @for (time of timeSlots(); track time) {
+                        <button class="time-slot" [attr.data-time]="time"
+                            [class.selected]="isSelected('construction', time)"
+                            (mousedown)="startDrag($event, 'construction', time)"
+                            (mouseenter)="onMouseEnter('construction', time)" (mouseup)="stopDrag()"
+                            (touchstart)="startDrag($event, 'construction', time)" (touchend)="stopDrag()">
+                            {{ time }}
+                        </button>
+                        }
+                    </div>
+                </div>
 
-        <div class="time-grid">
-            @for (time of timeSlots(); track time) {
-            <button class="time-slot" [class.selected]="isSelected(time)" (click)="toggleSlot(time)">
-                {{ time }}
-            </button>
+                <div class="boost-section">
+                    <h4>Research ({{ evt.researchDay | titlecase }})</h4>
+                    <div class="time-grid" (mouseleave)="stopDrag()" (touchmove)="handleTouchMove($event, 'research')">
+                        @for (time of timeSlots(); track time) {
+                        <button class="time-slot" [attr.data-time]="time"
+                            [class.selected]="isSelected('research', time)"
+                            (mousedown)="startDrag($event, 'research', time)"
+                            (mouseenter)="onMouseEnter('research', time)" (mouseup)="stopDrag()"
+                            (touchstart)="startDrag($event, 'research', time)" (touchend)="stopDrag()">
+                            {{ time }}
+                        </button>
+                        }
+                    </div>
+                </div>
+
+                <div class="boost-section">
+                    <h4>Troops ({{ evt.troopsDay | titlecase }})</h4>
+                    <div class="time-grid" (mouseleave)="stopDrag()" (touchmove)="handleTouchMove($event, 'troops')">
+                        @for (time of timeSlots(); track time) {
+                        <button class="time-slot" [attr.data-time]="time" [class.selected]="isSelected('troops', time)"
+                            (mousedown)="startDrag($event, 'troops', time)" (mouseenter)="onMouseEnter('troops', time)"
+                            (mouseup)="stopDrag()" (touchstart)="startDrag($event, 'troops', time)"
+                            (touchend)="stopDrag()">
+                            {{ time }}
+                        </button>
+                        }
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <button class="save-btn" (click)="save(char.id)" [disabled]="saving()">
+                        {{ saving() ? 'Saving...' : 'Save Registration' }}
+                    </button>
+                </div>
+            </div>
             }
         </div>
-
-        <div class="actions">
-            <button class="save-btn" (click)="save()" [disabled]="saving()">
-                {{ saving() ? 'Saving...' : 'Save Preferences' }}
-            </button>
-        </div>
+        }
     </div>
+
     } @else {
     <div class="no-events">
         <h2>No active SvS Prep events found.</h2>

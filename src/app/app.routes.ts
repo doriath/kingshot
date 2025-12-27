@@ -6,6 +6,7 @@ import { MISC_ROUTES } from './misc.routes';
 import { SwordlandEventComponent } from './swordland-event/swordland-event';
 import { MysticTrialEventComponent } from './mystic-trial-event/mystic-trial-event';
 
+
 export const routes: Routes = [
     { path: '', redirectTo: 'home', pathMatch: 'full' },
     { path: 'home', component: HomeComponent, title: 'Home' },
@@ -82,6 +83,11 @@ export const routes: Routes = [
         path: 'admin/svs-prep',
         loadComponent: () => import('./svs-prep-event/admin-svs-prep/admin-svs-prep').then(m => m.AdminSvsPrepComponent),
         title: 'Admin: SvS Preparation'
+    },
+    {
+        path: 'admin/svs-prep/:id',
+        loadComponent: () => import('./svs-prep-event/admin-svs-prep-management/admin-svs-prep-management').then(m => m.AdminSvsPrepManagementComponent),
+        title: 'Manage SvS Prep Event'
     },
     ...BEAR_ROUTES,
     ...MISC_ROUTES,

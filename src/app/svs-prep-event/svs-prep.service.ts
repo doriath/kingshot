@@ -21,6 +21,7 @@ export interface SvSPrepEvent {
     constructionDay: DayOfWeek;
     researchDay: DayOfWeek;
     troopsDay: DayOfWeek;
+    admins?: string[]; // List of user IDs who can manage this event
 }
 
 export interface SvSPrepRegistration {
@@ -29,6 +30,7 @@ export interface SvSPrepRegistration {
     userId: string;
     characterId?: string; // Optional if we link by userId, but good to have
     characterName?: string; // For display
+    characterVerified?: boolean; // Whether the character is verified
 
     // User preferences
     // We can store a list of requested slots.
@@ -84,8 +86,9 @@ export class SvSPrepService {
     // --- Registration / User ---
 
     async saveRegistration(registration: SvSPrepRegistration): Promise<void> {
-        // Deterministic ID: eventId_userId
-        const docId = `${registration.eventId}_${registration.userId}`;
+        // Deterministic ID: eventId_characterId
+        if (!registration.characterId) throw new Error('Character ID required');
+        const docId = `${registration.eventId}_${registration.characterId}`;
         const docRef = doc(this.firestore, `svsPrepRegistrations/${docId}`);
         const data = {
             ...registration,
@@ -94,9 +97,27 @@ export class SvSPrepService {
         await setDoc(docRef, data, { merge: true });
     }
 
+    // New plural method
+    getUserRegistrations(eventId: string, userId: string): Observable<SvSPrepRegistration[]> {
+        const regsCollection = collection(this.firestore, 'svsPrepRegistrations');
+        const q = query(
+            regsCollection,
+            where('eventId', '==', eventId),
+            where('userId', '==', userId)
+        );
+        return collectionData(q, { idField: 'id' }) as Observable<SvSPrepRegistration[]>;
+    }
+
+    // Kept for compatibility if needed, using generic ID assumption might break if we change key
+    // But getUserRegistration(eventId, userId) is now ambiguous if a user has multiple characters. 
+    // We should probably deprecate or update it to fetch ONE registration or return null.
+    // Let's assume for now we use the plural method primarily.
     getUserRegistration(eventId: string, userId: string): Observable<SvSPrepRegistration | undefined> {
-        const docRef = doc(this.firestore, `svsPrepRegistrations/${eventId}_${userId}`);
-        return docData(docRef, { idField: 'id' }) as Observable<SvSPrepRegistration | undefined>;
+        // This old method assumed 1 reg per user. With multi-char, this ID schema eventId_userId is invalid.
+        // We will return undefined or the first found via query if we wanted to support old logic, 
+        // but better to switch consumers to getUserRegistrations.
+        // For partial backward compat during migration (if any), we leave it or better:
+        return new Observable(obs => obs.next(undefined));
     }
 
     getEventRegistrations(eventId: string): Observable<SvSPrepRegistration[]> {
