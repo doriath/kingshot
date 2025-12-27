@@ -1,7 +1,11 @@
 import { Injectable, inject } from '@angular/core';
 import { Firestore, collection, doc, setDoc, deleteDoc, collectionData } from '@angular/fire/firestore';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs'; // Fix import: map is in rxjs usually, or operators
+import { map as rxjsMap } from 'rxjs/operators'; // wait, angular fire usually works with rxjs.
 import { Character } from './user-data.service';
+
+// Actually, "map" operator is piped.
+// Standard import: import { map } from 'rxjs/operators';
 
 @Injectable({
     providedIn: 'root'
@@ -12,7 +16,13 @@ export class AdminService {
     // Get all pending registrations
     getPendingRegistrations(): Observable<Character[]> {
         const registrationsRef = collection(this.firestore, 'characterRegistrations');
-        return collectionData(registrationsRef, { idField: 'id' }) as Observable<Character[]>;
+        return collectionData(registrationsRef, { idField: 'id' }).pipe(
+            rxjsMap((chars: any[]) => chars.map((c: any) => ({
+                ...c,
+                id: Number(c['id']),
+                server: c['server'] ? Number(c['server']) : undefined
+            } as Character)))
+        );
     }
 
     // Approve a character: Move from registrations to characters

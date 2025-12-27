@@ -71,7 +71,7 @@ export class SwordlandEventComponent {
   isUserServer(server: number): boolean {
     const char = this.activeCharacter();
     // Comparing as string approx (since server can be "123" or 123)
-    return !!char && char.server == String(server);
+    return !!char && Number(char.server) === Number(server);
   }
 
   isUserAlliance(allianceName: string): boolean {

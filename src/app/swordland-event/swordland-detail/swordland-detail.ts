@@ -16,6 +16,10 @@ export class SwordlandDetailComponent {
 
     private userDataService = inject(UserDataService);
     activeCharacterId = this.userDataService.activeCharacterId;
+    activeCharacterIdStr = computed(() => {
+        const id = this.activeCharacterId();
+        return id ? String(id) : null;
+    });
 
     // Order of display as implicit priority
     private buildingOrder = ['Sanctum', 'Abbey Top', 'Abbey Bottom', 'Abbey Left', 'Abbey Right', 'Belltower', 'Royal Stables'];

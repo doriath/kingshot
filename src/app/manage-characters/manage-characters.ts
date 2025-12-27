@@ -33,7 +33,7 @@ export class ManageCharactersComponent {
     this.error.set(null);
 
     try {
-      await this.userDataService.addCharacter(this.newCharacterId());
+      await this.userDataService.addCharacter(Number(id));
       this.newCharacterId.set('');
     } catch (e: any) {
       console.error(e);
@@ -80,7 +80,7 @@ export class ManageCharactersComponent {
 
       await this.userDataService.updateCharacterDetails(char.id, {
         name,
-        server,
+        server: Number(server),
         alliance,
         marches
       });

@@ -199,11 +199,11 @@ export class VikingsEventComponent {
 
     // Registration Methods
 
-    public getRegistration(characterId: string): VikingsRegistration | undefined {
-        return this.userRegistrations()?.find(r => r.characterId === characterId);
+    public getRegistration(characterId: string | number): VikingsRegistration | undefined {
+        return this.userRegistrations()?.find(r => r.characterId === String(characterId));
     }
 
-    public async saveRegistration(characterId: string, status: any, marchesCount: any) {
+    public async saveRegistration(characterId: string | number, status: any, marchesCount: any) {
         const event = this.eventData();
         const user = this.user();
         if (!event || !user) return;
@@ -212,7 +212,7 @@ export class VikingsEventComponent {
         const validStatus = status as 'online' | 'offline_empty' | 'not_available';
 
         // Find character to get verification status
-        const character = this.userDataService.characters().find(c => c.id === characterId);
+        const character = this.userDataService.characters().find(c => c.id === Number(characterId));
         // Cast to any/CharacterUI because UserDataService might infer base Character type depending on how it's typed
         // But runtime objects have .verified
         const isVerified = (character as any)?.verified ?? false;
@@ -232,7 +232,7 @@ export class VikingsEventComponent {
 
         const registration: VikingsRegistration = {
             eventId: event.id!,
-            characterId: characterId,
+            characterId: String(characterId),
             userId: user.uid,
             status: validStatus,
             marchesCount: marches as number, // Using 'as number' to satisfy interface if strictly number, but standard allows null/optional? 

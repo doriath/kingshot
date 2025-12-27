@@ -7,11 +7,11 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { StorageService } from './storage.service';
 
 export interface Character {
-    id: string;
+    id: number;
     userId: string;
     verificationCode: string;
     name?: string;
-    server?: string;
+    server?: number;
     alliance?: string;
     marches?: number | null;
 }
@@ -38,12 +38,25 @@ export class UserDataService {
             // Query verified characters
             const charactersRef = collection(this.firestore, 'characters');
             const verifiedQuery = query(charactersRef, where('userId', '==', user.uid));
-            const verified$ = collectionData(verifiedQuery, { idField: 'id' }) as Observable<Character[]>;
+            // Firestore returns IDs as strings, so we map them to numbers
+            const verified$ = collectionData(verifiedQuery, { idField: 'id' }).pipe(
+                map(chars => chars.map(c => ({
+                    ...c,
+                    id: Number(c['id']),
+                    server: c['server'] ? Number(c['server']) : undefined
+                } as Character)))
+            );
 
             // Query pending registrations
             const registrationsRef = collection(this.firestore, 'characterRegistrations');
             const registrationsQuery = query(registrationsRef, where('userId', '==', user.uid));
-            const registrations$ = collectionData(registrationsQuery, { idField: 'id' }) as Observable<Character[]>;
+            const registrations$ = collectionData(registrationsQuery, { idField: 'id' }).pipe(
+                map(chars => chars.map(c => ({
+                    ...c,
+                    id: Number(c['id']),
+                    server: c['server'] ? Number(c['server']) : undefined
+                } as Character)))
+            );
 
             return combineLatest([verified$, registrations$]).pipe(
                 map(([verified, registrations]) => {
@@ -59,7 +72,10 @@ export class UserDataService {
 
     public characters = toSignal(this.characters$, { initialValue: [] });
 
-    private activeCharacterIdSignal = signal<string | null>(this.storageService.getItem('activeCharacterId'));
+    // Store active ID as string in storage but expose as number in app
+    private activeCharacterIdSignal = signal<number | null>(
+        this.storageService.getItem('activeCharacterId') ? Number(this.storageService.getItem('activeCharacterId')) : null
+    );
     public activeCharacterId = this.activeCharacterIdSignal.asReadonly();
 
     public activeCharacter = computed(() => {
@@ -87,12 +103,12 @@ export class UserDataService {
         });
     }
 
-    setActiveCharacter(id: string) {
+    setActiveCharacter(id: number | null) {
         this.activeCharacterIdSignal.set(id);
-        this.storageService.setItem('activeCharacterId', id);
+        this.storageService.setItem('activeCharacterId', id ? String(id) : null);
     }
 
-    async addCharacter(characterId: string) {
+    async addCharacter(characterId: number) {
         const user = await firstValueFrom(this.authService.user$.pipe(filter(u => !!u)));
         if (!user) throw new Error('User not logged in');
 
@@ -121,12 +137,11 @@ export class UserDataService {
         await deleteDoc(charDocRef);
 
         if (this.activeCharacterId() === character.id) {
-            this.activeCharacterIdSignal.set(null);
-            this.storageService.setItem('activeCharacterId', null);
+            this.setActiveCharacter(null);
         }
     }
 
-    async updateCharacterDetails(characterId: string, data: Partial<Character>) {
+    async updateCharacterDetails(characterId: number, data: Partial<Character>) {
         const charRef = doc(this.firestore, `characters/${characterId}`);
         await updateDoc(charRef, data);
     }

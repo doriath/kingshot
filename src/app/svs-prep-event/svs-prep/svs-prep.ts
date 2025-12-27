@@ -34,7 +34,7 @@ export class SvsPrepComponent {
     public saving = signal<boolean>(false);
 
     // Character View Models
-    public expandedCharacterId = signal<string | null>(null);
+    public expandedCharacterId = signal<number | null>(null);
     public characters = this.userDataService.characters;
 
     // Combining Characters and Registrations
@@ -43,7 +43,7 @@ export class SvsPrepComponent {
         const regs = this.registrations();
 
         return chars.map(c => {
-            const reg = regs.find(r => r.characterId === c.id);
+            const reg = regs.find(r => r.characterId === String(c.id));
             return {
                 ...c,
                 registration: reg,
@@ -88,7 +88,7 @@ export class SvsPrepComponent {
         this.registrations.set(regs);
     }
 
-    toggleExpand(characterId: string) {
+    toggleExpand(characterId: number) {
         if (this.expandedCharacterId() === characterId) {
             this.expandedCharacterId.set(null);
         } else {
@@ -97,7 +97,7 @@ export class SvsPrepComponent {
         }
     }
 
-    hydrateSelections(characterId: string) {
+    hydrateSelections(characterId: number) {
         const vm = this.characterViewModels().find(c => c.id === characterId);
         const reg = vm?.registration;
 
@@ -193,7 +193,7 @@ export class SvsPrepComponent {
         return slots;
     });
 
-    async save(characterId: string) {
+    async save(characterId: number) {
         const evt = this.currentEvent();
         const user = this.auth.currentUser;
         if (!evt || !user || !evt.id) return;
@@ -214,7 +214,7 @@ export class SvsPrepComponent {
                 userId: user.uid,
                 updatedAt: new Date(),
                 preferences,
-                characterId: characterId,
+                characterId: String(characterId),
                 characterName: character?.name || 'Unknown',
                 characterVerified: !!character?.verified
             };

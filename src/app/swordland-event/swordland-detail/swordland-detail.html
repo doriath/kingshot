@@ -17,7 +17,7 @@
             @for (p of group.participants; track p.characterId) {
             <li [class.attacker]="p.role === 'attacker'" [class.defender]="p.role === 'defender'"
                 [class.expanded]="expandedSet().has(p.characterId)"
-                [class.highlight]="p.characterId === activeCharacterId()" (click)="toggleParticipant(p.characterId)">
+                [class.highlight]="p.characterId === activeCharacterIdStr()" (click)="toggleParticipant(p.characterId)">
                 <div class="participant-header">
                     <div class="participant-info">
                         @if (p.role === 'attacker') {
