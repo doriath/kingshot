@@ -38,3 +38,6 @@ Thumbs.db
 # Solver directories
 solver/pkg
 solver/target
+
+# Secrets
+src/app/secrets.ts

@@ -73,6 +73,35 @@
                     </div>
                 </div>
 
+                <div class="boost-section image-section">
+                    <h4>Backpack Screenshots (Required: 2)</h4>
+                    <p class="hint">Please upload 2 screenshots showing your backpack items for verification.</p>
+
+                    <div class="file-input-container">
+                        <input type="file" (change)="onFileSelected($event)" accept="image/*" multiple
+                            [disabled]="uploadedImageUrls().length + selectedFiles().length >= 2">
+                        <span class="file-count">{{ uploadedImageUrls().length + selectedFiles().length }} / 2</span>
+                    </div>
+
+                    <div class="images-preview">
+                        <!-- Existing Uploaded Images -->
+                        @for (url of uploadedImageUrls(); track url) {
+                        <div class="image-thumb">
+                            <img [src]="url" alt="Uploaded backpack" target="_blank">
+                            <button class="remove-btn" (click)="removeUploadedImage(url)">×</button>
+                        </div>
+                        }
+
+                        <!-- New Selected Files -->
+                        @for (file of selectedFiles(); track file.name; let i = $index) {
+                        <div class="file-item">
+                            <span>{{ file.name }}</span>
+                            <button class="remove-btn" (click)="removeFile(i)">×</button>
+                        </div>
+                        }
+                    </div>
+                </div>
+
                 <div class="actions">
                     <button class="save-btn" (click)="save(char.id)" [disabled]="saving()">
                         {{ saving() ? 'Saving...' : 'Save Registration' }}

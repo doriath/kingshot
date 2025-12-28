@@ -26,6 +26,7 @@
                 <thead>
                     <tr>
                         <th>Character</th>
+                        <th>Images</th>
                         <th>Construction Slots</th>
                         <th>Research Slots</th>
                         <th>Troops Slots</th>
@@ -47,6 +48,18 @@
                                 } @else {
                                 <span class="unverified-badge" title="Unverified Character">⚠ Unverified</span>
                                 }
+                                }
+                            </div>
+                        </td>
+
+                        <td>
+                            <div class="image-list">
+                                @for (img of reg.backpackImages; track img) {
+                                <a [href]="img" target="_blank">
+                                    <img [src]="img" class="table-thumb" alt="Backpack" loading="lazy">
+                                </a>
+                                } @empty {
+                                <span class="no-images">-</span>
                                 }
                             </div>
                         </td>

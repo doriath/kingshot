@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal, computed, ChangeDet
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SvSPrepService, SvSPrepEvent, SvSPrepRegistration, BoostType } from '../svs-prep.service';
+import { ImgbbService } from '../../services/imgbb.service';
 import { Auth, user } from '@angular/fire/auth';
 import { firstValueFrom } from 'rxjs';
 import { UserDataService } from '../../user-data.service';
@@ -15,6 +16,7 @@ import { UserDataService } from '../../user-data.service';
 })
 export class SvsPrepComponent {
     private svsService = inject(SvSPrepService);
+    private imgbbService = inject(ImgbbService);
     private auth = inject(Auth);
     private userDataService = inject(UserDataService);
     private cdr = inject(ChangeDetectorRef);
@@ -59,6 +61,11 @@ export class SvsPrepComponent {
         research: new Set(),
         troops: new Set()
     });
+
+    // Image Upload State
+    public selectedFiles = signal<File[]>([]);
+    public uploadedImageUrls = signal<string[]>([]);
+
 
     constructor() {
         this.init();
@@ -113,6 +120,8 @@ export class SvsPrepComponent {
             });
         }
         this.selections.set(newSelections);
+        this.uploadedImageUrls.set(reg?.backpackImages || []);
+        this.selectedFiles.set([]); // Reset new files on load
     }
 
 
@@ -193,6 +202,29 @@ export class SvsPrepComponent {
         return slots;
     });
 
+    onFileSelected(event: Event) {
+        const input = event.target as HTMLInputElement;
+        if (!input.files?.length) return;
+
+        const files = Array.from(input.files);
+        const currentFiles = this.selectedFiles();
+
+        // Limit to 2 files total (existing + new) - logic: just replace or append? 
+        // Let's simple append up to 2, or replace if user selects again. 
+        // Simpler: User selects files, we take up to 2.
+
+        const validFiles = files.slice(0, 2);
+        this.selectedFiles.set(validFiles);
+    }
+
+    removeFile(index: number) {
+        this.selectedFiles.update(files => files.filter((_, i) => i !== index));
+    }
+
+    removeUploadedImage(url: string) {
+        this.uploadedImageUrls.update(urls => urls.filter(u => u !== url));
+    }
+
     async save(characterId: number) {
         const evt = this.currentEvent();
         const user = this.auth.currentUser;
@@ -209,6 +241,16 @@ export class SvsPrepComponent {
 
             const character = this.characters().find(c => c.id === characterId);
 
+            // Upload new images
+            const newImageUrls: string[] = [];
+            for (const file of this.selectedFiles()) {
+                const url = await this.imgbbService.uploadImage(file);
+                newImageUrls.push(url);
+            }
+
+            // Combine with existing kept URLs
+            const finalImages = [...this.uploadedImageUrls(), ...newImageUrls];
+
             const reg: SvSPrepRegistration = {
                 eventId: evt.id,
                 userId: user.uid,
@@ -216,7 +258,8 @@ export class SvsPrepComponent {
                 preferences,
                 characterId: String(characterId),
                 characterName: character?.name || 'Unknown',
-                characterVerified: !!character?.verified
+                characterVerified: !!character?.verified,
+                backpackImages: finalImages
             };
 
             await this.svsService.saveRegistration(reg);

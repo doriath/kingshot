@@ -32,6 +32,7 @@ export interface SvSPrepRegistration {
     characterName?: string; // For display
     characterVerified?: boolean; // Whether the character is verified
     isManual?: boolean; // If true, created manually by admin
+    backpackImages?: string[]; // URLs of uploaded backpack screenshots
 
     // User preferences
     preferences: {
