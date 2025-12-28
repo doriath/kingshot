@@ -46,10 +46,28 @@ export class SvsPrepComponent {
 
         return chars.map(c => {
             const reg = regs.find(r => r.characterId === String(c.id));
+            const warnings: string[] = [];
+
+            if (reg) {
+                // Images
+                if ((reg.backpackImages?.length || 0) < 2) {
+                    warnings.push(`Missing backpack screenshots (${reg.backpackImages?.length || 0}/2)`);
+                }
+
+                // Slots
+                reg.preferences.forEach(p => {
+                    if (p.slots.length < 10) {
+                        const typeStr = p.boostType.charAt(0).toUpperCase() + p.boostType.slice(1);
+                        warnings.push(`${typeStr}: Less than 5h selected (${p.slots.length} slots)`);
+                    }
+                });
+            }
+
             return {
                 ...c,
                 registration: reg,
-                isRegistered: !!reg
+                isRegistered: !!reg,
+                warnings
             };
         });
     });
@@ -65,6 +83,31 @@ export class SvsPrepComponent {
     // Image Upload State
     public selectedFiles = signal<File[]>([]);
     public uploadedImageUrls = signal<string[]>([]);
+
+    public currentEditWarnings = computed(() => {
+        const charId = this.expandedCharacterId();
+        if (!charId) return [];
+
+        const warnings: string[] = [];
+
+        // Check images
+        const currentImagesCount = this.uploadedImageUrls().length + this.selectedFiles().length;
+        if (currentImagesCount < 2) {
+            warnings.push(`Missing backpack screenshots (${currentImagesCount}/2)`);
+        }
+
+        // Check slots
+        const sels = this.selections();
+        (['construction', 'research', 'troops'] as BoostType[]).forEach(type => {
+            const count = sels[type].size;
+            if (count > 0 && count < 10) {
+                const typeStr = type.charAt(0).toUpperCase() + type.slice(1);
+                warnings.push(`${typeStr}: Less than 5h selected (${count} slots)`);
+            }
+        });
+
+        return warnings;
+    });
 
 
     constructor() {

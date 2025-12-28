@@ -22,12 +22,28 @@
                     } @else {
                     <span class="badge not-registered">Not Registered</span>
                     }
+
+                    @if (char.warnings && char.warnings.length > 0) {
+                    <span class="badge warning" title="Action Required: Incomplete Registration">⚠ Action
+                        Required</span>
+                    }
                     <span class="arrow" [class.expanded]="expandedCharacterId() === char.id">▼</span>
                 </div>
             </div>
 
             @if (expandedCharacterId() === char.id) {
             <div class="character-content">
+                @if (currentEditWarnings().length > 0) {
+                <div class="warning-alert">
+                    <h4>⚠ Attention Needed</h4>
+                    <ul>
+                        @for (warn of currentEditWarnings(); track warn) {
+                        <li>{{ warn }}</li>
+                        }
+                    </ul>
+                </div>
+                }
+
                 <div class="boost-section">
                     <h4>Construction ({{ evt.constructionDay | titlecase }})</h4>
                     <div class="time-grid" (mouseleave)="stopDrag()"

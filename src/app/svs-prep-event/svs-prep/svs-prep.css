@@ -79,6 +79,39 @@
     color: var(--text-secondary);
 }
 
+.badge.warning {
+    background: rgba(255, 193, 7, 0.2);
+    color: #ffc107;
+    border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+.warning-alert {
+    background: rgba(255, 193, 7, 0.1);
+    border: 1px solid #ffc107;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 24px;
+}
+
+.warning-alert h4 {
+    color: #ffc107;
+    margin: 0 0 8px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.1em;
+}
+
+.warning-alert ul {
+    margin: 0;
+    padding-left: 24px;
+    color: var(--text-primary);
+}
+
+.warning-alert li {
+    margin-bottom: 4px;
+}
+
 .arrow {
     transition: transform 0.2s;
 }
