@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Firestore, collection, collectionData, query, where, doc, docData, setDoc, addDoc, deleteDoc } from '@angular/fire/firestore';
+import { Firestore, collection, collectionData, query, where, doc, docData, setDoc, addDoc, deleteDoc, updateDoc } from '@angular/fire/firestore';
 import { Observable } from 'rxjs'; // Removed 'from', not used yet
 import { map } from 'rxjs/operators';
 
@@ -22,6 +22,11 @@ export interface SvSPrepEvent {
     researchDay: DayOfWeek;
     troopsDay: DayOfWeek;
     admins?: string[]; // List of user IDs who can manage this event
+    assignments?: {
+        [boostType: string]: { // 'construction' | 'research' | 'troops'
+            [slotTime: string]: string // characterId - Only 1 per slot
+        }
+    };
 }
 
 export interface SvSPrepRegistration {
@@ -54,6 +59,11 @@ export class SvSPrepService {
     async createEvent(event: SvSPrepEvent): Promise<void> {
         const eventsCollection = collection(this.firestore, 'svsPrepEvents');
         await addDoc(eventsCollection, event);
+    }
+
+    async updateEvent(id: string, data: Partial<SvSPrepEvent>): Promise<void> {
+        const docRef = doc(this.firestore, `svsPrepEvents/${id}`);
+        await updateDoc(docRef, data);
     }
 
     getEvents(server?: number): Observable<SvSPrepEvent[]> {

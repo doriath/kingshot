@@ -9,7 +9,14 @@
         }
     </div>
 
+    <div class="view-tabs">
+        <button [class.active]="view() === 'registrations'" (click)="view.set('registrations')">Registrations</button>
+        <button [class.active]="view() === 'schedule'" (click)="view.set('schedule')">Schedule</button>
+    </div>
+
+    @if (view() === 'registrations') {
     <div class="manual-add-section">
+
         <h3>Manual Registration</h3>
         <div class="add-form">
             <input type="text" placeholder="Character Name" [ngModel]="newManualName()"
@@ -148,4 +155,152 @@
             </table>
         </div>
     </div>
+    }
+
+    @if (view() === 'schedule') {
+    <div class="schedule-section">
+        <div class="schedule-actions">
+            <button class="action-btn schedule-run" (click)="runSchedule()">Run Schedule (Greedy)</button>
+        </div>
+
+        <div class="schedule-grid" *ngIf="event() as evt">
+            <!-- Construction -->
+            <div class="schedule-column">
+                <div class="column-header">
+                    <h3>Construction ({{ evt.constructionDay }})</h3>
+                    <button class="clear-btn" (click)="clearDay('construction')"
+                        title="Clear all construction assignments">Clear</button>
+                </div>
+                <div class="slot-list">
+                    @for (slot of timeSlots(); track slot) {
+                    <div class="slot-row" [class.assigned]="getAssignedName('construction', slot)">
+                        <span class="slot-time">{{ slot }}</span>
+                        <div class="slot-assignment">
+                            @if (getAssignedName('construction', slot); as name) {
+                            <span class="assigned-name">{{ name }}</span>
+                            <button class="unassign-btn" (click)="unassign('construction', slot)">×</button>
+                            } @else {
+                            @if (assigningSlot()?.type === 'construction' && assigningSlot()?.slot === slot) {
+                            <div class="manual-assign-form" style="display: flex; gap: 4px;">
+                                <select [ngModel]="manualAssignmentId()"
+                                    (ngModelChange)="manualAssignmentId.set($event)">
+                                    <option [value]="null">Select Player</option>
+                                    @for (reg of unassignedConstruction(); track reg.characterId) {
+                                    <option [value]="reg.characterId">{{ reg.characterName }}</option>
+                                    }
+                                </select>
+                                <button (click)="saveManualAssignment()">✓</button>
+                                <button (click)="cancelAssigning()">✕</button>
+                            </div>
+                            } @else {
+                            <span class="empty-slot">-</span>
+                            <button class="manual-assign-btn" (click)="startAssigning('construction', slot)">+</button>
+                            }
+                            }
+                        </div>
+                    </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Research -->
+            <div class="schedule-column">
+                <div class="column-header">
+                    <h3>Research ({{ evt.researchDay }})</h3>
+                    <button class="clear-btn" (click)="clearDay('research')"
+                        title="Clear all research assignments">Clear</button>
+                </div>
+                <div class="slot-list">
+                    @for (slot of timeSlots(); track slot) {
+                    <div class="slot-row" [class.assigned]="getAssignedName('research', slot)">
+                        <span class="slot-time">{{ slot }}</span>
+                        <div class="slot-assignment">
+                            @if (getAssignedName('research', slot); as name) {
+                            <span class="assigned-name">{{ name }}</span>
+                            <button class="unassign-btn" (click)="unassign('research', slot)">×</button>
+                            } @else {
+                            @if (assigningSlot()?.type === 'research' && assigningSlot()?.slot === slot) {
+                            <div class="manual-assign-form" style="display: flex; gap: 4px;">
+                                <select [ngModel]="manualAssignmentId()"
+                                    (ngModelChange)="manualAssignmentId.set($event)">
+                                    <option [value]="null">Select Player</option>
+                                    @for (reg of unassignedResearch(); track reg.characterId) {
+                                    <option [value]="reg.characterId">{{ reg.characterName }}</option>
+                                    }
+                                </select>
+                                <button (click)="saveManualAssignment()">✓</button>
+                                <button (click)="cancelAssigning()">✕</button>
+                            </div>
+                            } @else {
+                            <span class="empty-slot">-</span>
+                            <button class="manual-assign-btn" (click)="startAssigning('research', slot)">+</button>
+                            }
+                            }
+                        </div>
+                    </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Troops -->
+            <div class="schedule-column">
+                <div class="column-header">
+                    <h3>Troops ({{ evt.troopsDay }})</h3>
+                    <button class="clear-btn" (click)="clearDay('troops')"
+                        title="Clear all troops assignments">Clear</button>
+                </div>
+                <div class="slot-list">
+                    @for (slot of timeSlots(); track slot) {
+                    <div class="slot-row" [class.assigned]="getAssignedName('troops', slot)">
+                        <span class="slot-time">{{ slot }}</span>
+                        <div class="slot-assignment">
+                            @if (getAssignedName('troops', slot); as name) {
+                            <span class="assigned-name">{{ name }}</span>
+                            <button class="unassign-btn" (click)="unassign('troops', slot)">×</button>
+                            } @else {
+                            @if (assigningSlot()?.type === 'troops' && assigningSlot()?.slot === slot) {
+                            <div class="manual-assign-form" style="display: flex; gap: 4px;">
+                                <select [ngModel]="manualAssignmentId()"
+                                    (ngModelChange)="manualAssignmentId.set($event)">
+                                    <option [value]="null">Select Player</option>
+                                    @for (reg of unassignedTroops(); track reg.characterId) {
+                                    <option [value]="reg.characterId">{{ reg.characterName }}</option>
+                                    }
+                                </select>
+                                <button (click)="saveManualAssignment()">✓</button>
+                                <button (click)="cancelAssigning()">✕</button>
+                            </div>
+                            } @else {
+                            <span class="empty-slot">-</span>
+                            <button class="manual-assign-btn" (click)="startAssigning('troops', slot)">+</button>
+                            }
+                            }
+                        </div>
+                    </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @if (unassignedRegistrations(); as unassigned) {
+        @if (unassigned.length > 0) {
+        <div class="unassigned-section"
+            style="margin-top: 32px; border-top: 1px solid var(--border-default); padding-top: 24px;">
+            <h3>Unassigned Players ({{ unassigned.length }})</h3>
+            <p style="color: var(--text-secondary); font-style: italic; margin-bottom: 16px;">
+                These players registered preferences but could not be fitted into any slot.
+            </p>
+            <div class="unassigned-list" style="display: flex; flex-wrap: wrap; gap: 8px;">
+                @for (reg of unassigned; track reg.id) {
+                <div class="unassigned-tag"
+                    style="background: var(--surface-hover); padding: 4px 12px; border-radius: 16px; border: 1px solid var(--border-default);">
+                    <span class="name">{{ reg.characterName }}</span>
+                </div>
+                }
+            </div>
+        </div>
+        }
+        }
+    </div>
+    }
 </div>

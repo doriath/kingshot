@@ -229,3 +229,197 @@ th {
     position: relative;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
+
+/* Schedule View */
+/* Schedule View */
+.view-tabs {
+    display: inline-flex;
+    background: var(--surface-card);
+    padding: 6px;
+    border-radius: 12px;
+    border: 1px solid var(--border-default);
+    margin-bottom: 32px;
+    gap: 4px;
+}
+
+.view-tabs button {
+    padding: 10px 24px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+}
+
+.view-tabs button:hover {
+    background: var(--surface-hover);
+    color: var(--text-primary);
+}
+
+.view-tabs button.active {
+    background: var(--primary-default);
+    color: white;
+    box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.25);
+}
+
+.schedule-actions {
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.action-btn.schedule-run {
+    background: var(--primary-default);
+    color: white;
+    border: none;
+    padding: 12px 28px;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3);
+    transition: transform 0.2s, box-shadow 0.2s;
+    background: linear-gradient(135deg, var(--primary-default), var(--primary-dark, #0056b3));
+}
+
+.action-btn.schedule-run:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(var(--primary-rgb), 0.4);
+}
+
+.action-btn.schedule-run:active {
+    transform: translateY(0);
+}
+
+.schedule-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+}
+
+.column-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--border-default);
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+}
+
+.schedule-column h3 {
+    margin: 0;
+    font-size: 1.1em;
+    color: var(--text-primary);
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.clear-btn {
+    background: transparent;
+    border: 1px solid var(--border-default);
+    color: var(--text-secondary);
+    font-size: 0.8em;
+    padding: 2px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.clear-btn:hover {
+    background: var(--surface-hover);
+    color: var(--error-default);
+    border-color: var(--error-default);
+}
+
+.slot-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.slot-row {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    border: 1px solid var(--border-default);
+    border-radius: 4px;
+    background: var(--surface-card);
+}
+
+.slot-row.assigned {
+    background: rgba(var(--primary-rgb), 0.05);
+    border-color: var(--primary-default);
+}
+
+.slot-time {
+    font-family: monospace;
+    font-weight: 600;
+    margin-right: 12px;
+    color: var(--text-secondary);
+    min-width: 50px;
+}
+
+.slot-assignment {
+    flex: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.assigned-name {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.manual-assign-btn {
+    background: transparent;
+    border: none;
+    color: var(--primary-default);
+    font-size: 1.2em;
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+}
+
+.manual-assign-btn:hover {
+    color: var(--primary-dark);
+}
+
+.manual-assign-form select {
+    padding: 2px 4px;
+    border: 1px solid var(--border-default);
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+.manual-assign-form button {
+    padding: 2px 6px;
+    background: var(--surface-hover);
+    border: 1px solid var(--border-default);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.manual-assign-form button:hover {
+    background: var(--primary-subtle);
+}
+
+.empty-slot {
+    color: var(--text-disabled);
+    font-style: italic;
+}
+
+.unassign-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 50%;
+    font-weight: bold;
+}
+
+.unassign-btn:hover {
+    background: var(--surface-hover);
+    color: var(--error-default);
+}
