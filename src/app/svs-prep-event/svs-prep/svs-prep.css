@@ -164,3 +164,64 @@
     padding: 48px;
     color: var(--text-secondary);
 }
+
+/* Image Upload Styles */
+.images-preview {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.image-thumb {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border-default);
+}
+
+.image-thumb img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.image-thumb .remove-btn {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.image-thumb .remove-btn:hover {
+    background: rgba(0, 0, 0, 0.8);
+}
+
+.file-item {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--surface-card);
+    border: 1px solid var(--border-default);
+    border-radius: 6px;
+}
+
+.file-item .remove-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.2em;
+    cursor: pointer;
+}

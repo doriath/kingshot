@@ -120,7 +120,7 @@ export class SvsPrepComponent {
             });
         }
         this.selections.set(newSelections);
-        this.uploadedImageUrls.set(reg?.backpackImages || []);
+        this.uploadedImageUrls.set(reg?.backpackImages ?? []);
         this.selectedFiles.set([]); // Reset new files on load
     }
 
@@ -191,13 +191,23 @@ export class SvsPrepComponent {
         this.setSlot(type, time, !current);
     }
 
-    // Helpers to generate time slots (00:00 to 23:30)
+    // Helpers to generate time slots (-23:45 to 23:45)
     public timeSlots = computed(() => {
         const slots: string[] = [];
-        for (let h = 0; h < 24; h++) {
-            const hStr = h.toString().padStart(2, '0');
-            slots.push(`${hStr}:00`);
-            slots.push(`${hStr}:30`);
+        // Start from -15 minutes (representing 23:45 of previous day)
+        // End at 1425 minutes (23:45 of current day)
+        // Step 30 minutes
+        for (let m = -15; m <= 1425; m += 30) {
+            if (m < 0) {
+                // Special case for previous day
+                slots.push("-23:45");
+            } else {
+                const h = Math.floor(m / 60);
+                const min = m % 60;
+                const hStr = h.toString().padStart(2, '0');
+                const mStr = min.toString().padStart(2, '0');
+                slots.push(`${hStr}:${mStr}`);
+            }
         }
         return slots;
     });
@@ -209,11 +219,11 @@ export class SvsPrepComponent {
         const files = Array.from(input.files);
         const currentFiles = this.selectedFiles();
 
-        // Limit to 2 files total (existing + new) - logic: just replace or append? 
-        // Let's simple append up to 2, or replace if user selects again. 
-        // Simpler: User selects files, we take up to 2.
+        // Limit total files (existing uploaded + new selection) to 2
+        const currentCount = this.uploadedImageUrls().length;
+        const maxNew = Math.max(0, 2 - currentCount);
 
-        const validFiles = files.slice(0, 2);
+        const validFiles = files.slice(0, maxNew);
         this.selectedFiles.set(validFiles);
     }
 
