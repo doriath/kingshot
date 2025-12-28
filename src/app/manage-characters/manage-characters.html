@@ -5,7 +5,10 @@
         <h2>Register New Character</h2>
         <div class="input-group">
             <input type="text" [(ngModel)]="newCharacterId" placeholder="Enter Character ID" [disabled]="isLoading()">
-            <button (click)="addCharacter()" [disabled]="!newCharacterId() || isLoading()">
+            <input type="text" [(ngModel)]="newCharacterName" placeholder="Character Name" [disabled]="isLoading()">
+            <input type="text" [(ngModel)]="newCharacterServer" placeholder="Server ID" [disabled]="isLoading()">
+            <button (click)="addCharacter()"
+                [disabled]="!newCharacterId() || !newCharacterName() || !newCharacterServer() || isLoading()">
                 {{ isLoading() ? 'Registering...' : 'Register' }}
             </button>
         </div>
@@ -46,7 +49,8 @@
                     <p>Send this code in-game to [SKY]Doriath (Server #150) (30310711) to verify:</p>
                     <code class="verification-code">{{ char.verificationCode }}</code>
                 </div>
-                } @else {
+                }
+
                 <div class="details-form">
                     <div class="form-group">
                         <label>Name:</label>
@@ -71,7 +75,6 @@
                         (click)="saveDetails(char, nameInput.value, serverInput.value, allianceInput.value, marchesInput.value)">Save
                         Details</button>
                 </div>
-                }
                 <button class="remove-btn" (click)="removeCharacter(char)">Remove Character</button>
             </div>
             }

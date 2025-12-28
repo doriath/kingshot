@@ -75,6 +75,9 @@ service cloud.firestore {
       // Allow create if authenticated and the userId matches the user
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
       
+      // Allow update if the registration belongs to the user (e.g. name, server)
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+
       // Allow delete if the registration belongs to the user (cancel request) OR is admin (reject/approve)
       allow delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isGlobalAdmin();
     }

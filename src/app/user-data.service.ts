@@ -116,7 +116,7 @@ export class UserDataService {
         this.storageService.setItem('activeCharacterId', id ? String(id) : null);
     }
 
-    async addCharacter(characterId: number) {
+    async addCharacter(characterId: number, name: string, server: number) {
         const user = await firstValueFrom(this.authService.user$.pipe(filter(u => !!u)));
         if (!user) throw new Error('User not logged in');
 
@@ -125,6 +125,8 @@ export class UserDataService {
             id: characterId,
             userId: user.uid,
             verificationCode,
+            name,
+            server
         };
 
         // Add to character-registrations
@@ -149,8 +151,9 @@ export class UserDataService {
         }
     }
 
-    async updateCharacterDetails(characterId: number, data: Partial<Character>) {
-        const charRef = doc(this.firestore, `characters/${characterId}`);
+    async updateCharacterDetails(characterId: number, data: Partial<Character>, isVerified: boolean) {
+        const collectionName = isVerified ? 'characters' : 'characterRegistrations';
+        const charRef = doc(this.firestore, `${collectionName}/${characterId}`);
         await updateDoc(charRef, data);
     }
 }

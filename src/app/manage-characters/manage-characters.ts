@@ -16,11 +16,16 @@ export class ManageCharactersComponent {
   characters = this.userDataService.characters;
   activeCharacterId = this.userDataService.activeCharacterId;
   newCharacterId = signal('');
+  newCharacterName = signal('');
+  newCharacterServer = signal('');
   isLoading = signal(false);
   error = signal<string | null>(null);
 
   async addCharacter() {
     const id = this.newCharacterId();
+    const name = this.newCharacterName();
+    const server = this.newCharacterServer();
+
     if (!id) return;
 
     // Validate that ID is a number
@@ -29,12 +34,26 @@ export class ManageCharactersComponent {
       return;
     }
 
+    // Validate Name
+    if (!name.trim()) {
+      this.error.set('Character Name is required.');
+      return;
+    }
+
+    // Validate Server
+    if (!server || !/^\d+$/.test(server)) {
+      this.error.set('Server must be a number.');
+      return;
+    }
+
     this.isLoading.set(true);
     this.error.set(null);
 
     try {
-      await this.userDataService.addCharacter(Number(id));
+      await this.userDataService.addCharacter(Number(id), name, Number(server));
       this.newCharacterId.set('');
+      this.newCharacterName.set('');
+      this.newCharacterServer.set('');
     } catch (e: any) {
       console.error(e);
       this.error.set(e.message || 'Failed to register character');
@@ -83,7 +102,7 @@ export class ManageCharactersComponent {
         server: Number(server),
         alliance,
         marches
-      });
+      }, char.verified);
       alert('Saved!');
     } catch (e: any) {
       console.error(e);
