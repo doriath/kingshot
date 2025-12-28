@@ -40,22 +40,30 @@ export class UserDataService {
             const verifiedQuery = query(charactersRef, where('userId', '==', user.uid));
             // Firestore returns IDs as strings, so we map them to numbers
             const verified$ = collectionData(verifiedQuery, { idField: 'id' }).pipe(
-                map(chars => chars.map(c => ({
-                    ...c,
-                    id: Number(c['id']),
-                    server: c['server'] ? Number(c['server']) : undefined
-                } as Character)))
+                map(chars => chars.map(c => {
+                    const char: Character = {
+                        ...c as Character,
+                        id: Number(c['id']),
+                    };
+                    if (c['server']) char.server = Number(c['server']);
+                    else delete char.server;
+                    return char;
+                }))
             );
 
             // Query pending registrations
             const registrationsRef = collection(this.firestore, 'characterRegistrations');
             const registrationsQuery = query(registrationsRef, where('userId', '==', user.uid));
             const registrations$ = collectionData(registrationsQuery, { idField: 'id' }).pipe(
-                map(chars => chars.map(c => ({
-                    ...c,
-                    id: Number(c['id']),
-                    server: c['server'] ? Number(c['server']) : undefined
-                } as Character)))
+                map(chars => chars.map(c => {
+                    const char: Character = {
+                        ...c as Character,
+                        id: Number(c['id']),
+                    };
+                    if (c['server']) char.server = Number(c['server']);
+                    else delete char.server;
+                    return char;
+                }))
             );
 
             return combineLatest([verified$, registrations$]).pipe(
