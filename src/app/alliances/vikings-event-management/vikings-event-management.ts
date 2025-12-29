@@ -13,6 +13,7 @@ interface ManagementRow {
     registration?: VikingsRegistration;
     hasDiff: boolean; // True if registration differs from assignment
     isRemovedFromAlliance: boolean; // True if member is no longer in the alliance
+    mainCharacterName?: string; // Resolved name of the main character
 }
 
 @Component({
@@ -33,6 +34,7 @@ interface ManagementRow {
             <div class="toolbar">
                 <button class="tool-btn add-btn" (click)="showAddModal = true">➕ Add Character</button>
                 <button class="tool-btn sync-btn" (click)="acceptAllRegs()">📥 Accept All Differences</button>
+                <button class="tool-btn meta-btn" (click)="syncAllianceMetadata()">🔄 Sync Alliance Metadata</button>
                 <button class="tool-btn simulate-btn" (click)="simulateAssignments()">🎲 Simulate Assignments</button>
             </div>
 
@@ -57,6 +59,7 @@ interface ManagementRow {
                     <thead>
                         <tr>
                             <th>Character</th>
+                            <th>Type</th>
                             <th>Power</th>
                             <th>Current Assignment</th>
                             <th>Registration (User Submitted)</th>
@@ -71,6 +74,17 @@ interface ManagementRow {
                                 <div class="char-id">{{ row.assignment.characterId }}</div>
                                 @if (row.isRemovedFromAlliance) {
                                     <div class="removed-badge">🚫 Left Alliance</div>
+                                }
+                            </td>
+                            <td>
+                                @if (row.assignment.mainCharacterId) {
+                                    <div class="farm-badge">🚜 Farm</div>
+                                    <div class="main-char-link">Main: {{ row.mainCharacterName }}</div>
+                                    @if ((row.assignment.extraMarches ?? 0) > 0) {
+                                        <div class="extra-marches-badge">+{{ row.assignment.extraMarches }} Marches</div>
+                                    }
+                                } @else {
+                                    <div class="main-badge">👑 Main</div>
                                 }
                             </td>
                             <td>{{ row.assignment.powerLevel | number }}</td>
@@ -130,6 +144,32 @@ interface ManagementRow {
                         <label>Power</label>
                         <input type="number" [(ngModel)]="editPower">
                     </div>
+                    <div class="form-group relative">
+                        <label>Main Character (Optional - for Farm)</label>
+                        <input [(ngModel)]="mainCharSearch" 
+                               (focus)="showMainCharDropdown = true" 
+                               (input)="showMainCharDropdown = true"
+                               placeholder="Search for main character...">
+                        <input type="hidden" [(ngModel)]="editMainCharacterId">
+                        
+                        @if (showMainCharDropdown && filteredMainCharCandidates().length > 0) {
+                            <ul class="dropdown-list">
+                                @for (candidate of filteredMainCharCandidates(); track candidate.characterId) {
+                                    <li (click)="selectMainChar(candidate)">
+                                        <div class="dd-name">{{ candidate.name }}</div>
+                                        <div class="dd-id">Power: {{ candidate.power | number }}</div>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                        @if (editMainCharacterId) {
+                             <div class="selected-helper">Selected ID: {{ editMainCharacterId }} <button class="clear-btn" (click)="clearMainChar()">×</button></div>
+                        }
+                    </div>
+                    <div class="form-group">
+                        <label>Extra Marches (for Farm)</label>
+                        <input type="number" [(ngModel)]="editExtraMarches">
+                    </div>
                     <div class="modal-actions">
                         <button (click)="saveEdit()">Save</button>
                         <button (click)="editingRow = null">Cancel</button>
@@ -151,6 +191,14 @@ interface ManagementRow {
                     <div class="form-group">
                         <label>Power</label>
                         <input type="number" [(ngModel)]="newCharPower">
+                    </div>
+                    <div class="form-group">
+                        <label>Main Character ID (Optional)</label>
+                        <input [(ngModel)]="newMainCharacterId">
+                    </div>
+                    <div class="form-group">
+                        <label>Extra Marches</label>
+                        <input type="number" [(ngModel)]="newExtraMarches">
                     </div>
                     <div class="modal-actions">
                         <button (click)="addCharacter()">Add</button>
@@ -176,6 +224,7 @@ interface ManagementRow {
         .tool-btn { border: none; padding: 0.6rem 1.2rem; border-radius: 4px; font-weight: bold; cursor: pointer; }
         .add-btn { background: #4caf50; color: white; }
         .sync-btn { background: #2196f3; color: white; }
+        .meta-btn { background: #9c27b0; color: white; }
         .simulate-btn { background: #00bcd4; color: white; }
 
         .missing-members-section {
@@ -226,6 +275,11 @@ interface ManagementRow {
             display: inline-block; background: #c62828; color: white; font-size: 0.7rem; padding: 0.1rem 0.4rem; border-radius: 4px; margin-top: 0.3rem;
         }
 
+        .farm-badge { display: inline-block; background: #795548; color: white; font-size: 0.7rem; padding: 0.1rem 0.4rem; border-radius: 4px; }
+        .main-badge { display: inline-block; background: #5d4037; color: #ffd54f; font-size: 0.7rem; padding: 0.1rem 0.4rem; border-radius: 4px; border: 1px solid #ffd54f; }
+        .main-char-link { font-size: 0.75rem; color: #aaa; margin-top: 0.2rem; }
+        .extra-marches-badge { font-size: 0.7rem; color: #81c784; margin-top: 0.2rem; }
+
         .actions-cell { display: flex; gap: 0.5rem; }
         .actions-cell button { border: none; background: #444; width: 32px; height: 32px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; transition: background 0.2s; }
         .accept-btn { background: #2196f3 !important; color: white; }
@@ -251,6 +305,22 @@ interface ManagementRow {
         .modal-actions button { padding: 0.5rem 1rem; cursor: pointer; border-radius: 4px; border:none; font-weight: bold; }
         .modal-actions button:first-child { background: #4caf50; color: white; }
         .modal-actions button:last-child { background: #444; color: white; }
+        .relative { position: relative; }
+        .dropdown-list {
+            position: absolute; top: 100%; left: 0; width: 100%; max-height: 200px; overflow-y: auto;
+            background: #222; border: 1px solid #444; border-radius: 4px; padding: 0; margin: 0; z-index: 10;
+            list-style: none; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+        .dropdown-list li {
+            padding: 0.5rem; border-bottom: 1px solid #333; cursor: pointer;
+        }
+        .dropdown-list li:hover { background: #333; }
+        .dropdown-list li:last-child { border-bottom: none; }
+        .dd-name { font-weight: bold; color: white; }
+        .dd-id { font-size: 0.75rem; color: #888; }
+        
+        .selected-helper { font-size: 0.8rem; color: #81c784; margin-top: 0.3rem; display: flex; align-items: center; gap: 0.5rem;}
+        .clear-btn { background: none; border: none; color: #e57373; font-weight: bold; cursor: pointer; font-size: 1rem; padding: 0 0.3rem; }
     `],
     imports: [CommonModule, RouterLink, FormsModule]
 })
@@ -307,6 +377,16 @@ export class VikingsEventManagementComponent {
         // Helper to check if still in alliance
         const allianceMemberIds = new Set((data.alliance?.members || []).map(m => m.characterId));
 
+        // Name Resolution Map
+        const nameMap = new Map<string, string>();
+        if (data.alliance?.members) {
+            data.alliance.members.forEach(m => nameMap.set(m.characterId, m.name));
+        }
+        // Fallback to event characters if not in alliance list (e.g. removed member)
+        assignments.forEach(c => {
+            if (!nameMap.has(c.characterId)) nameMap.set(c.characterId, c.characterName);
+        });
+
         return assignments.map(a => {
             const r = regMap.get(a.characterId);
             // Diff logic: Check if status or marches count differs
@@ -315,11 +395,18 @@ export class VikingsEventManagementComponent {
             // Check if removed from alliance (only if we have alliance data)
             const isRemovedFromAlliance = !!data.alliance && !allianceMemberIds.has(a.characterId);
 
+            // Resolve Main Character Name
+            let mainCharacterName = undefined;
+            if (a.mainCharacterId) {
+                mainCharacterName = nameMap.get(a.mainCharacterId) || `ID: ${a.mainCharacterId}`;
+            }
+
             return {
                 assignment: a,
                 registration: r,
                 hasDiff,
-                isRemovedFromAlliance
+                isRemovedFromAlliance,
+                mainCharacterName
             } as ManagementRow;
         }).sort((a, b) => b.assignment.powerLevel - a.assignment.powerLevel); // Sort by power
     });
@@ -329,12 +416,43 @@ export class VikingsEventManagementComponent {
     public editStatus: any = 'unknown';
     public editMarches: number = 0;
     public editPower: number = 0;
+    public editMainCharacterId: string = '';
+    public editExtraMarches: number = 0;
 
     // Add State
     public showAddModal = false;
     public newCharName = '';
     public newCharId = '';
     public newCharPower = 0;
+    public newMainCharacterId = '';
+    public newExtraMarches = 0;
+
+    // Autocomplete State
+    public mainCharSearch = '';
+    public showMainCharDropdown = false;
+
+    public filteredMainCharCandidates = computed(() => {
+        const search = this.mainCharSearch.toLowerCase();
+        const data = this.data();
+        if (!data || !data.alliance || !data.alliance.members) return [];
+
+        if (!search) return data.alliance.members.slice(0, 5); // Show top 5 if empty
+
+        return data.alliance.members.filter(m =>
+            m.name.toLowerCase().includes(search) || m.characterId.includes(search)
+        ).slice(0, 10);
+    });
+
+    public selectMainChar(candidate: AllianceMember) {
+        this.editMainCharacterId = candidate.characterId;
+        this.mainCharSearch = candidate.name;
+        this.showMainCharDropdown = false;
+    }
+
+    public clearMainChar() {
+        this.editMainCharacterId = '';
+        this.mainCharSearch = '';
+    }
 
     public async acceptRegistration(row: ManagementRow) {
         if (!row.registration) return;
@@ -382,6 +500,7 @@ export class VikingsEventManagementComponent {
             characterId: member.characterId,
             characterName: member.name,
             powerLevel: member.power,
+            mainCharacterId: member.mainCharacterId, // Carry over
             status: 'unknown',
             marchesCount: 0,
             reinforce: []
@@ -402,16 +521,34 @@ export class VikingsEventManagementComponent {
         this.editStatus = row.assignment.status;
         this.editMarches = row.assignment.marchesCount;
         this.editPower = row.assignment.powerLevel;
+        this.editMainCharacterId = row.assignment.mainCharacterId || '';
+        this.editExtraMarches = row.assignment.extraMarches || 0;
+
+        // Initialize search field
+        this.mainCharSearch = '';
+        if (this.editMainCharacterId) {
+            // Try to find name in alliance members
+            const member = this.data()?.alliance?.members?.find((m: AllianceMember) => m.characterId === this.editMainCharacterId);
+            if (member) this.mainCharSearch = member.name;
+            else this.mainCharSearch = this.editMainCharacterId; // Fallback to ID
+        }
     }
 
     public async saveEdit() {
         if (!this.editingRow) return;
 
-        await this.updateCharacter(this.editingRow.assignment.characterId, {
+        const changes: Partial<CharacterAssignment> = {
             status: this.editStatus,
             marchesCount: this.editMarches,
-            powerLevel: this.editPower
-        });
+            powerLevel: this.editPower,
+            mainCharacterId: this.editMainCharacterId || undefined,
+            extraMarches: this.editExtraMarches || 0
+        };
+
+        if (!changes.mainCharacterId) delete changes.mainCharacterId; // Ensure undefined if empty
+        if (!changes.extraMarches) delete changes.extraMarches;
+
+        await this.updateCharacter(this.editingRow.assignment.characterId, changes);
         this.editingRow = null;
     }
 
@@ -443,6 +580,8 @@ export class VikingsEventManagementComponent {
             characterId: this.newCharId,
             characterName: this.newCharName,
             powerLevel: this.newCharPower,
+            mainCharacterId: this.newMainCharacterId || undefined,
+            extraMarches: this.newExtraMarches || 0,
             status: 'unknown',
             marchesCount: 0,
             reinforce: []
@@ -456,6 +595,8 @@ export class VikingsEventManagementComponent {
             this.newCharName = '';
             this.newCharId = '';
             this.newCharPower = 0;
+            this.newMainCharacterId = '';
+            this.newExtraMarches = 0;
         } catch (e) {
             console.error(e);
             alert('Failed to add character');
@@ -494,6 +635,41 @@ export class VikingsEventManagementComponent {
         } catch (err) {
             console.error(err);
             alert('Failed to simulate assignments.');
+        }
+    }
+
+    public async syncAllianceMetadata() {
+        if (!confirm('Sync metadata (Main Character ID) from Alliance member list to this event? This will overwrite manual changes to Main Character IDs in this event.')) return;
+
+        const data = this.data();
+        if (!data || !data.event || !data.alliance) return;
+
+        const allianceMembers = new Map(data.alliance.members?.map(m => [m.characterId, m]));
+        let updateCount = 0;
+
+        const newCharacters = data.event.characters.map(char => {
+            const member = allianceMembers.get(char.characterId);
+            if (member && member.mainCharacterId !== char.mainCharacterId) {
+                updateCount++;
+                return {
+                    ...char,
+                    mainCharacterId: member.mainCharacterId
+                };
+            }
+            return char;
+        });
+
+        if (updateCount === 0) {
+            alert('No metadata differences found.');
+            return;
+        }
+
+        try {
+            await this.vikingsService.updateEventCharacters(data.event.id!, newCharacters);
+            alert(`Updated metadata for ${updateCount} characters.`);
+        } catch (err) {
+            console.error(err);
+            alert('Failed to sync metadata.');
         }
     }
 }

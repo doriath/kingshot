@@ -6,6 +6,8 @@ import { map } from 'rxjs/operators';
 export interface CharacterAssignment {
     characterId: string;
     characterName: string; // Used for display of the character itself
+    mainCharacterId?: string; // If set, this is a farm account
+    extraMarches?: number; // Extra marches to reinforce this character (if farm)
     powerLevel: number;
     marchesCount: number;
     status: 'online' | 'offline_empty' | 'not_available' | 'unknown';
@@ -124,6 +126,7 @@ export class VikingsService {
         const characters: CharacterAssignment[] = (alliance.members || []).map((m: any) => ({
             characterId: m.characterId,
             characterName: m.name,
+            mainCharacterId: m.mainCharacterId, // Copy from alliance member
             powerLevel: m.power,
             marchesCount: 0, // Default to 0, user will register explicit count
             status: 'unknown',
@@ -402,6 +405,10 @@ export class VikingsService {
                     return safeR;
                 });
             }
+            // Preserve new fields
+            if (safeC.mainCharacterId !== undefined) safeC.mainCharacterId = safeC.mainCharacterId;
+            if (safeC.extraMarches !== undefined) safeC.extraMarches = safeC.extraMarches;
+
             return safeC as CharacterAssignment;
         });
 
