@@ -205,6 +205,7 @@ export class VikingsService {
 
         // Clone characters to work with
         const workingCharacters = allCharacters.map(c => ({ ...c }));
+        // console.log('Starting calculateAssignments with', workingCharacters.length, 'characters');
 
         // Map to track assignments: targetId -> list of sourceIds
         const assignmentsMap = new Map<string, { characterId: string; marchType?: string; scoreValue?: number }[]>();
@@ -368,10 +369,19 @@ export class VikingsService {
                             if (othersCount >= t.extraMarches) return false;
                         }
                     }
+
+                    // RESTRICTION: Offline Not Empty sources can ONLY target Offline Not Empty
+                    if (source.status === 'offline_not_empty' && t.status === 'offline_empty') {
+                        return false;
+                    }
+
                     return true;
                 });
 
-                if (validTargets.length === 0) continue;
+                if (validTargets.length === 0) {
+                    // console.log(`[Phase 2] No valid targets for ${source.characterId}`);
+                    continue;
+                }
 
                 // Sort by Count ASC, then Offline Empty Priority
                 validTargets.sort((a, b) => {
@@ -387,9 +397,12 @@ export class VikingsService {
                     return 0; // Random/Stable
                 });
 
-                const bestTarget = validTargets[0];
-                if (assignWithCountUpdate(source.characterId, bestTarget.characterId)) {
-                    offlineImprovementMade = true;
+                // Iterate through candidates until one works
+                for (const target of validTargets) {
+                    if (assignWithCountUpdate(source.characterId, target.characterId)) {
+                        offlineImprovementMade = true;
+                        break; // Move to next source
+                    }
                 }
             }
         }
@@ -446,9 +459,11 @@ export class VikingsService {
                     return 0;
                 });
 
-                const bestTarget = validTargets[0];
-                if (assignWithCountUpdate(source.characterId, bestTarget.characterId)) {
-                    improvementMade = true;
+                for (const target of validTargets) {
+                    if (assignWithCountUpdate(source.characterId, target.characterId)) {
+                        improvementMade = true;
+                        break;
+                    }
                 }
             }
         }
@@ -460,10 +475,11 @@ export class VikingsService {
 
         const offlineNotEmptyTargets = [...offlineNotEmptyPlayers];
 
-        // Use ALL valid sources that have marches remaining
+        // Use ALL valid sources that have marches remaining EXCEPT online players
         // Excluding farms/unknown (already filtered in earlier lists or by check)
+        // CHANGE: Online players are strictly forbidden from reinforcing Offline Not Empty.
         const allRemainingSources = workingCharacters.filter(s =>
-            !isFarm(s) && !isUnknown(s) && (marchesRemainingMap.get(s.characterId) || 0) > 0
+            !isFarm(s) && !isUnknown(s) && s.status !== 'online' && (marchesRemainingMap.get(s.characterId) || 0) > 0
         );
 
         let phase4ImprovementMade = true;
@@ -500,8 +516,11 @@ export class VikingsService {
                     return countA - countB;
                 });
 
-                if (assignWithCountUpdate(source.characterId, validTargets[0].characterId)) {
-                    phase4ImprovementMade = true;
+                for (const target of validTargets) {
+                    if (assignWithCountUpdate(source.characterId, target.characterId)) {
+                        phase4ImprovementMade = true;
+                        break;
+                    }
                 }
             }
         }

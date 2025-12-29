@@ -75,23 +75,23 @@ describe('VikingsService', () => {
             // 4 Sources, 1 march each.
             // 2 Targets.
             // Greedy:
-            // 1. S1 -> T1 (0 vs 0, favor Empty) -> T1=1
-            // 2. S2 -> T2 (1 vs 0, favor Lowest) -> T2=1
-            // 3. S3 -> T1 (1 vs 1, favor Empty) -> T1=2
-            // 4. S4 -> T2 (2 vs 1, favor Lowest) -> T2=2
+            // 1. S1 -> T2 (Valid. T1 blocked due to status)
+            // 2. S2 -> T2 
+            // 3. S3 -> T2
+            // 4. S4 -> T2 (Assuming infinite capacity)
 
             const chars = [...sources, ...targets];
             const result = service.calculateAssignments(chars);
-
-            const t1 = result.find(c => c.characterId === 'T1');
-            const t2 = result.find(c => c.characterId === 'T2');
 
             // Count incoming reinforcement
             const getIncoming = (targetId: string) =>
                 result.filter(s => s.reinforce.some(r => r.characterId === targetId)).length;
 
-            expect(getIncoming('T1')).toBe(2);
-            expect(getIncoming('T2')).toBe(2);
+            // T1 (Offline Empty) is NOT a valid target for Offline Not Empty sources.
+            // T2 (Offline Not Empty) IS a valid target.
+
+            expect(getIncoming('T1')).toBe(0);
+            expect(getIncoming('T2')).toBe(5);
         });
 
         it('should assign Online sources greedily to least reinforced targets (Online U OfflineEmpty)', () => {
@@ -295,12 +295,10 @@ describe('VikingsService', () => {
         });
 
 
-        it('should allow Online players to reinforce Offline Not Empty players in Phase 4 if they have remaining marches', () => {
+        it('should NOT allow Online players to reinforce Offline Not Empty players', () => {
             // S1 is Online, has 6 marches.
             // T1 is Offline Not Empty.
-            // No other targets.
-            // Phase 3 (Online -> Online/Offline Empty) will fail to find targets.
-            // Phase 4 (All -> Offline Not Empty) should pick this up.
+            // Phase 4 (All -> Offline Not Empty) used to pick this up. Now it should NOT.
 
             const s1 = createMockCharacter('S_1', 'online', 6);
             const t1 = createMockCharacter('T_1', 'offline_not_empty', 0); // Pure target
@@ -309,15 +307,8 @@ describe('VikingsService', () => {
 
             const resS1 = result.find(c => c.characterId === 'S_1');
 
-            // S1 should reinforce T1.
-            // Capacity of T1? Defaults to infinite/unlimited in mock unless specified.
-            // S1 should dump 1 march (unique target constraint). 
-            // Wait, does 'assignmentsMap' allow multiple marches from same source to same target?
-            // "if (assignmentsMap.get(source)?.find(a => a.characterId === t.characterId)) return false;"
-            // So EXACTLY 1 march per source-target pair.
-
-            expect(resS1?.reinforce.length).toBe(1);
-            expect(resS1?.reinforce[0].characterId).toBe('T_1');
+            // S1 should NOT reinforce T1 because Online -> Offline Not Empty is forbidden.
+            expect(resS1?.reinforce.length).toBe(0);
         });
 
         it('should correctly assign reinforcements among 6 Offline Not Empty players', () => {
@@ -343,6 +334,64 @@ describe('VikingsService', () => {
                 expect(assigned?.reinforce.length).toBe(5);
                 // Verify no self-assignment
                 expect(assigned?.reinforce.find(x => x.characterId === p.characterId)).toBeUndefined();
+            });
+        });
+
+
+
+        it('should enforce strict reinforcement boundaries in a mixed 4x4x4 scenario', () => {
+            const online = Array.from({ length: 4 }, (_, i) => createMockCharacter(`On_${i}`, 'online', 6));
+            const offEmpty = Array.from({ length: 4 }, (_, i) => createMockCharacter(`OE_${i}`, 'offline_empty', 6));
+            const offNotEmpty = Array.from({ length: 4 }, (_, i) => createMockCharacter(`ONE_${i}`, 'offline_not_empty', 6));
+
+            const allChars = [...online, ...offEmpty, ...offNotEmpty];
+            const result = service.calculateAssignments(allChars);
+
+            const getSourcesFor = (targetId: string) =>
+                result.filter(s => s.reinforce.some(r => r.characterId === targetId));
+
+            // 1. Online players -> Reinforced ONLY by Online
+            online.forEach(p => {
+                const sources = getSourcesFor(p.characterId);
+                const invalidSources = sources.filter(s => s.status !== 'online');
+                // Note: It's possible for online to receive 0 reinforcements if no one targets them.
+                // But IF they receive reinforcements, they must be online.
+                if (sources.length > 0) {
+                    expect(invalidSources.length).toBe(0, `Online player ${p.characterId} reinforced by non-online sources: ${invalidSources.map(s => s.status)}`);
+                }
+            });
+
+            // 2. Offline Empty players -> Reinforced ONLY by Online and Offline Empty
+            // AND reinforced by AT LEAST 1 Online and AT LEAST 1 Offline Empty
+            offEmpty.forEach(p => {
+                const sources = getSourcesFor(p.characterId);
+                const invalidSources = sources.filter(s => s.status === 'offline_not_empty');
+                if (sources.length > 0) {
+                    expect(invalidSources.length).toBe(0, `Offline Empty player ${p.characterId} reinforced by offline_not_empty`);
+                }
+
+                const onlineCount = sources.filter(s => s.status === 'online').length;
+                const offEmptyCount = sources.filter(s => s.status === 'offline_empty').length;
+
+                expect(onlineCount).toBeGreaterThan(0, `Offline Empty player ${p.characterId} received 0 Online reinforcements`);
+                expect(offEmptyCount).toBeGreaterThan(0, `Offline Empty player ${p.characterId} received 0 Offline Empty reinforcements`);
+            });
+
+            // 3. Offline Not Empty players -> Reinforced by Offline Empty and Offline Not Empty (and NOT Online - previous fix)
+            // AND reinforced by AT LEAST 1 Offline Empty and AT LEAST 1 Offline Not Empty
+            offNotEmpty.forEach(p => {
+                const sources = getSourcesFor(p.characterId);
+                // Check for Online sources (should be 0)
+                const onlineSources = sources.filter(s => s.status === 'online');
+                if (sources.length > 0) {
+                    expect(onlineSources.length).toBe(0, `Offline Not Empty player ${p.characterId} reinforced by Online players`);
+                }
+
+                const offEmptyCount = sources.filter(s => s.status === 'offline_empty').length;
+                const offNotEmptyCount = sources.filter(s => s.status === 'offline_not_empty').length;
+
+                expect(offEmptyCount).toBeGreaterThan(0, `Offline Not Empty player ${p.characterId} received 0 Offline Empty reinforcements`);
+                expect(offNotEmptyCount).toBeGreaterThan(0, `Offline Not Empty player ${p.characterId} received 0 Offline Not Empty reinforcements`);
             });
         });
 
