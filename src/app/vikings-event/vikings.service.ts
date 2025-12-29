@@ -3,6 +3,8 @@ import { Firestore, collection, collectionData, query, where, orderBy, limit, do
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
+export type VikingsStatus = 'online' | 'offline_empty' | 'offline_not_empty';
+
 export interface CharacterAssignment {
     characterId: string;
     characterName: string;
@@ -11,7 +13,7 @@ export interface CharacterAssignment {
     extraMarches?: number;
     powerLevel: number;
     marchesCount: number;
-    status: 'online' | 'offline_empty' | 'not_available' | 'unknown';
+    status: VikingsStatus | 'unknown';
     reinforce: {
         characterId: string;
         marchType?: string;
@@ -51,7 +53,7 @@ export interface VikingsRegistration {
     eventId: string;
     characterId: string;
     userId: string;
-    status: 'online' | 'offline_empty' | 'not_available';
+    status: VikingsStatus;
     marchesCount: number;
     verified?: boolean; // Snapshot of verification status at time of registration
     updatedAt?: any; // Timestamp
@@ -228,8 +230,9 @@ export class VikingsService {
             if (count === 0) count = 6;
             count = Math.max(1, Math.min(6, count));
 
-            // EXPLICITLY FORCE 0 for Passive accounts (Farms, Not Available, Unknown)
-            if (c.status === 'not_available' || c.status === 'unknown' || c.mainCharacterId) {
+            // EXPLICITLY FORCE 0 for Passive accounts (Farms, Unknown)
+            // 'offline_not_empty' are NOW valid sources (Phase 4), so we do NOT force them to 0.
+            if (c.status === 'unknown' || c.mainCharacterId) {
                 count = 0;
             }
 
@@ -248,12 +251,10 @@ export class VikingsService {
                 onlinePlayers.push(c);
             } else if (c.status === 'offline_empty') {
                 offlineEmptyPlayers.push(c);
-            } else {
-                // Treat 'not_available', 'unknown' -> offline_not_empty for target purposes if valid
-                // But generally "Offline Not Empty" logic implies they are valid targets but low priority.
-                // Assuming everything else is "Offline Not Empty"
+            } else if (c.status === 'offline_not_empty') {
                 offlineNotEmptyPlayers.push(c);
             }
+            // 'unknown' are ignored or just left out of these lists (but in workingCharacters)
         });
 
         // Helper to assign MARCH
@@ -305,11 +306,10 @@ export class VikingsService {
         // Rule: Farms DO NOT reinforce anyone. 
         // So we filter pools to exclude anyone who IS a farm (has mainCharacterId).
         const isFarm = (c: CharacterAssignment) => !!c.mainCharacterId;
-        const isNotAvailable = (c: CharacterAssignment) => c.status === 'not_available';
         const isUnknown = (c: CharacterAssignment) => c.status === 'unknown';
 
         const onlineSources = onlinePlayers.filter(c => !isFarm(c));
-        const offlineSources = [...offlineEmptyPlayers, ...offlineNotEmptyPlayers].filter(c => !isFarm(c) && !isNotAvailable(c) && !isUnknown(c));
+        const offlineSources = [...offlineEmptyPlayers, ...offlineNotEmptyPlayers].filter(c => !isFarm(c) && !isUnknown(c));
 
         const allSources = [...onlineSources, ...offlineSources];
 
@@ -461,9 +461,9 @@ export class VikingsService {
         const offlineNotEmptyTargets = [...offlineNotEmptyPlayers];
 
         // Use ALL valid sources that have marches remaining
-        // Excluding farms/na/unknown (already filtered in earlier lists or by check)
+        // Excluding farms/unknown (already filtered in earlier lists or by check)
         const allRemainingSources = workingCharacters.filter(s =>
-            !isFarm(s) && !isNotAvailable(s) && !isUnknown(s) && (marchesRemainingMap.get(s.characterId) || 0) > 0
+            !isFarm(s) && !isUnknown(s) && (marchesRemainingMap.get(s.characterId) || 0) > 0
         );
 
         let phase4ImprovementMade = true;

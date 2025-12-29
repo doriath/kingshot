@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AlliancesService } from '../alliances/alliances.service';
-import { VikingsService, VikingsEvent, CharacterAssignmentView, VikingsRegistration } from './vikings.service';
+import { VikingsService, VikingsEvent, CharacterAssignmentView, VikingsRegistration, VikingsStatus } from './vikings.service';
 import { UserDataService } from '../user-data.service';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { switchMap, map } from 'rxjs/operators';
@@ -214,7 +214,7 @@ export class VikingsEventComponent {
         if (!event || !user) return;
 
         // Validate status type to satisfy TS
-        const validStatus = status as 'online' | 'offline_empty' | 'not_available';
+        const validStatus = status as VikingsStatus;
 
         // Find character to get verification status
         const character = this.userDataService.characters().find(c => c.id === Number(characterId));

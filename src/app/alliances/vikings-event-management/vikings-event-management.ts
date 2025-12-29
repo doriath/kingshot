@@ -2,7 +2,7 @@ import { Component, inject, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { VikingsService, VikingsEventView, CharacterAssignment, VikingsRegistration } from '../../vikings-event/vikings.service';
+import { VikingsService, VikingsEventView, CharacterAssignment, VikingsRegistration, VikingsStatus } from '../../vikings-event/vikings.service';
 import { AlliancesService, AllianceMember, Alliance } from '../alliances.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { switchMap, map } from 'rxjs/operators';
@@ -21,7 +21,7 @@ interface ManagementRow {
 interface ResolvedReinforcement {
     name: string;
     marchType?: string;
-    status: 'online' | 'offline_empty' | 'not_available' | 'unknown';
+    status: VikingsStatus | 'unknown';
     scoreValue?: number;
 }
 
@@ -172,7 +172,7 @@ interface ResolvedReinforcement {
                         <select [(ngModel)]="editStatus">
                             <option value="online">ONLINE</option>
                             <option value="offline_empty">OFFLINE (Empty)</option>
-                            <option value="not_available">NOT AVAILABLE</option>
+                            <option value="offline_not_empty">OFFLINE (Not Empty)</option>
                             <option value="unknown">UNKNOWN</option>
                         </select>
                     </div>
@@ -304,7 +304,7 @@ interface ResolvedReinforcement {
         }
         .status-pill.online { background: rgba(76, 175, 80, 0.2); color: #81c784; }
         .status-pill.offline_empty { background: rgba(255, 152, 0, 0.2); color: #ffb74d; }
-        .status-pill.not_available { background: rgba(244, 67, 54, 0.2); color: #e57373; }
+        .status-pill.not_available, .status-pill.offline_not_empty { background: rgba(244, 67, 54, 0.2); color: #e57373; }
         .status-pill.unknown { background: #444; color: #aaa; }
 
         .verification-badge { display: inline-block; font-size: 0.75rem; padding: 0.1rem 0.4rem; border-radius: 4px; margin-left: 0.5rem; background: #3d2b2b; color: #e57373; border: 1px solid #e57373; }
@@ -338,7 +338,7 @@ interface ResolvedReinforcement {
         .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
         .status-dot.online { background: #81c784; box-shadow: 0 0 4px #81c784; }
         .status-dot.offline_empty { background: #ffb74d; }
-        .status-dot.not_available { background: #e57373; }
+        .status-dot.not_available, .status-dot.offline_not_empty { background: #e57373; }
         .status-dot.unknown { background: #666; }
 
         .actions-cell { display: flex; gap: 0.5rem; }

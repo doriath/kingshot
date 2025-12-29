@@ -1,6 +1,6 @@
 
 import { TestBed } from '@angular/core/testing';
-import { VikingsService, CharacterAssignment } from './vikings.service';
+import { VikingsService, CharacterAssignment, VikingsStatus } from './vikings.service';
 import { Firestore } from '@angular/fire/firestore';
 
 describe('VikingsService', () => {
@@ -20,7 +20,7 @@ describe('VikingsService', () => {
 
     describe('calculateAssignments', () => {
 
-        function createMockCharacter(id: string, status: 'online' | 'offline_empty' | 'not_available' | 'unknown' | 'offline_not_empty', marchesCount: number = 6, mainCharacterId?: string, extraMarches?: number, reinforcementCapacity?: number): CharacterAssignment {
+        function createMockCharacter(id: string, status: VikingsStatus | 'unknown', marchesCount: number = 6, mainCharacterId?: string, extraMarches?: number, reinforcementCapacity?: number): CharacterAssignment {
             return {
                 characterId: id,
                 characterName: `User ${id}`,
@@ -172,18 +172,7 @@ describe('VikingsService', () => {
             expect(incoming).toBe(2);
         });
 
-        it('should NOT allow not_available players to reinforce anyone', () => {
-            const chars = [
-                createMockCharacter('NA', 'not_available', 6),
-                createMockCharacter('Target', 'offline_empty', 6),
-            ];
 
-            const result = service.calculateAssignments(chars);
-
-            // NA should not reinforce Target
-            const na = result.find(c => c.characterId === 'NA');
-            expect(na?.reinforce.length).toBe(0);
-        });
 
         it('should NOT allow unknown players to reinforce anyone', () => {
             const chars = [
@@ -211,15 +200,10 @@ describe('VikingsService', () => {
 
             const chars = [
                 createMockCharacter('OE1', 'offline_empty', 6),
-                createMockCharacter('ONE1', 'unknown', 6), // 'unknown' is treated as Passive Source but Valid Target (Offline Not Empty category)
+                createMockCharacter('ONE1', 'offline_not_empty', 6),
             ];
 
-            // Wait, 'unknown' is now EXCLUDED from sources.
-            // Is it included in 'offlineNotEmptyPlayers' list?
-            // In initialization:
-            // else { offlineNotEmptyPlayers.push(c) } 
-            // Yes, 'unknown' falls into 'else' of status check.
-            // So 'unknown' IS a target.
+            // ONE1 is Offline Not Empty. Valid Target.
 
             // 'OE1' is Offline Empty. Functioning Source.
 
