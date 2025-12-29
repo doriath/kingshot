@@ -231,7 +231,7 @@ export class VikingsService {
 
             // EXPLICITLY FORCE 0 for Passive accounts (Farms, Unknown)
             // 'offline_not_empty' are NOW valid sources (Phase 4), so we do NOT force them to 0.
-            if (c.status === 'unknown' || c.mainCharacterId) {
+            if (c.mainCharacterId) {
                 count = 0;
             }
 
@@ -250,10 +250,9 @@ export class VikingsService {
                 onlinePlayers.push(c);
             } else if (c.status === 'offline_empty') {
                 offlineEmptyPlayers.push(c);
-            } else if (c.status === 'offline_not_empty') {
+            } else {
                 offlineNotEmptyPlayers.push(c);
             }
-            // 'unknown' are ignored or just left out of these lists (but in workingCharacters)
         });
 
         // Helper to assign MARCH
@@ -305,10 +304,9 @@ export class VikingsService {
         // Rule: Farms DO NOT reinforce anyone. 
         // So we filter pools to exclude anyone who IS a farm (has mainCharacterId).
         const isFarm = (c: CharacterAssignment) => !!c.mainCharacterId;
-        const isUnknown = (c: CharacterAssignment) => c.status === 'unknown';
 
         const onlineSources = onlinePlayers.filter(c => !isFarm(c));
-        const offlineSources = [...offlineEmptyPlayers, ...offlineNotEmptyPlayers].filter(c => !isFarm(c) && !isUnknown(c));
+        const offlineSources = [...offlineEmptyPlayers, ...offlineNotEmptyPlayers].filter(c => !isFarm(c));
 
         const allSources = [...onlineSources, ...offlineSources];
 
@@ -477,7 +475,7 @@ export class VikingsService {
         // Excluding farms/unknown (already filtered in earlier lists or by check)
         // CHANGE: Online players are strictly forbidden from reinforcing Offline Not Empty.
         const allRemainingSources = workingCharacters.filter(s =>
-            !isFarm(s) && !isUnknown(s) && s.status !== 'online' && (marchesRemainingMap.get(s.characterId) || 0) > 0
+            !isFarm(s) && s.status !== 'online' && (marchesRemainingMap.get(s.characterId) || 0) > 0
         );
 
         let phase4ImprovementMade = true;
