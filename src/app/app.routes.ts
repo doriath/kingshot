@@ -10,6 +10,11 @@ import { MysticTrialEventComponent } from './mystic-trial-event/mystic-trial-eve
 export const routes: Routes = [
     { path: '', redirectTo: 'home', pathMatch: 'full' },
     { path: 'home', component: HomeComponent, title: 'Home' },
+    {
+        path: 'login',
+        loadComponent: () => import('./login/login').then(m => m.LoginComponent),
+        title: 'Sign In'
+    },
     { path: 'swordland', component: SwordlandEventComponent, title: 'Swordland Event' },
     {
         path: 'swordland/guide',

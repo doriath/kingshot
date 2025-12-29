@@ -1,0 +1,34 @@
+<div class="login-container">
+    <h1>Sign In</h1>
+    <form (submit)="signIn($event)">
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" [formControl]="emailControl" required>
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" [formControl]="passwordControl" required>
+        </div>
+
+        @if (error()) {
+        <div class="error-message">
+            {{ error() }}
+        </div>
+        }
+
+        <div class="actions">
+            <button type="submit" [disabled]="loading()">
+                @if (loading()) { Signing In... } @else { Sign In }
+            </button>
+            <button type="button" (click)="createAccount()" [disabled]="loading()">
+                Create Account
+            </button>
+        </div>
+    </form>
+
+    <div class="divider">OR</div>
+
+    <button class="google-btn" (click)="signInWithGoogle()" [disabled]="loading()">
+        Sign in with Google
+    </button>
+</div>

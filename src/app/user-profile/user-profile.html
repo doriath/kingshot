@@ -28,7 +28,7 @@
     </button>
     @if (isDropdownOpen) {
     <div class="dropdown-menu">
-        <a (click)="signInWithGoogle()">Sign In with Google</a>
+        <a routerLink="/login" (click)="isDropdownOpen = false">Sign In</a>
     </div>
     }
     }

@@ -223,7 +223,7 @@ export class AllianceManagementComponent {
             characterId: this.newMemberId,
             name: this.newMemberName,
             power: Number(this.newMemberPower),
-            mainCharacterId: this.newMemberMainId || undefined
+            ...(this.newMemberMainId ? { mainCharacterId: this.newMemberMainId } : {})
         };
 
         try {
