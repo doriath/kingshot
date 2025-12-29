@@ -2,14 +2,14 @@ import { Component, inject, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { VikingsService, VikingsEventView, CharacterAssignment, VikingsRegistration, VikingsStatus } from '../../vikings-event/vikings.service';
+import { VikingsService, VikingsEventView, CharacterAssignment, CharacterAssignmentView, VikingsRegistration, VikingsStatus } from '../../vikings-event/vikings.service';
 import { AlliancesService, AllianceMember, Alliance } from '../alliances.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { switchMap, map } from 'rxjs/operators';
 import { of, combineLatest } from 'rxjs';
 
 interface ManagementRow {
-    assignment: CharacterAssignment;
+    assignment: CharacterAssignmentView;
     registration?: VikingsRegistration;
     hasDiff: boolean; // True if registration differs from assignment
     isRemovedFromAlliance: boolean; // True if member is no longer in the alliance

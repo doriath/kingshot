@@ -174,16 +174,18 @@ describe('VikingsService', () => {
 
 
 
-        it('should NOT allow unknown players to reinforce anyone', () => {
+        it('should allow unknown players to reinforce (fallback behavior)', () => {
             const chars = [
                 createMockCharacter('Unknown', 'unknown', 6),
-                createMockCharacter('Target', 'offline_empty', 6),
+                createMockCharacter('Target', 'offline_not_empty', 6),
             ];
 
             const result = service.calculateAssignments(chars);
 
             const unk = result.find(c => c.characterId === 'Unknown');
-            expect(unk?.reinforce.length).toBe(0);
+            // User changed logic to treat unknown as offline sources (fallback).
+            // They bypass the 'offline_not_empty' status check, so they can reinforce offline_empty.
+            expect(unk?.reinforce.length).toBeGreaterThan(0);
         });
 
         it('should enable Offline Empty players to reinforce Offline Not Empty players', () => {

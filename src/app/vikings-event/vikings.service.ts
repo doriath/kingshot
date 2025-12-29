@@ -251,6 +251,7 @@ export class VikingsService {
             } else if (c.status === 'offline_empty') {
                 offlineEmptyPlayers.push(c);
             } else {
+                c.status = 'offline_not_empty';
                 offlineNotEmptyPlayers.push(c);
             }
         });
@@ -306,7 +307,7 @@ export class VikingsService {
         const isFarm = (c: CharacterAssignment) => !!c.mainCharacterId;
 
         const onlineSources = onlinePlayers.filter(c => !isFarm(c));
-        const offlineSources = [...offlineEmptyPlayers, ...offlineNotEmptyPlayers].filter(c => !isFarm(c));
+        const offlineSources = [...offlineEmptyPlayers].filter(c => !isFarm(c));
 
         const allSources = [...onlineSources, ...offlineSources];
 
@@ -334,7 +335,7 @@ export class VikingsService {
 
 
         // --- PHASE 2: Offline Sources Assignment ---
-        // Sources: Offline Sources (Empty + Not Empty - Farms/NA/Unknown)
+        // Sources: Offline Sources (Empty - Farms/NA/Unknown)
         // Targets: Offline Empty + Offline Not Empty
         // Logic: Greedy Least-Reinforced. Tie-breaker: Offline Empty.
 
@@ -342,11 +343,12 @@ export class VikingsService {
         const availableOfflineSources = offlineSources.filter(s => (marchesRemainingMap.get(s.characterId) || 0) > 0);
 
         let offlineImprovementMade = true;
+
+        // Randomize sources
+        availableOfflineSources.sort(() => 0.5 - Math.random());
+
         while (offlineImprovementMade) {
             offlineImprovementMade = false;
-
-            // Randomize sources
-            availableOfflineSources.sort(() => 0.5 - Math.random());
 
             for (const source of availableOfflineSources) {
                 if ((marchesRemainingMap.get(source.characterId) || 0) <= 0) continue;
@@ -366,7 +368,7 @@ export class VikingsService {
                         }
                     }
 
-                    // RESTRICTION: Offline Not Empty sources can ONLY target Offline Not Empty
+                    // RESTRICTION: Offline Not Empty sources (and Unknown/Fallback) can ONLY target Offline Not Empty
                     if (source.status === 'offline_not_empty' && t.status === 'offline_empty') {
                         return false;
                     }
@@ -393,10 +395,15 @@ export class VikingsService {
                     return 0; // Random/Stable
                 });
 
+                // if (source.status === 'unknown') {
+                //    console.log(`[Phase 2] Unknown source ${source.characterId} sees ${validTargets.length} targets. First: ${validTargets[0].characterId} (${validTargets[0].status})`);
+                // }
+
                 // Iterate through candidates until one works
                 for (const target of validTargets) {
                     if (assignWithCountUpdate(source.characterId, target.characterId)) {
                         offlineImprovementMade = true;
+                        // if (source.status === 'unknown') console.log(`[Phase 2] Assigned Unknown ${source.characterId} -> ${target.characterId}`);
                         break; // Move to next source
                     }
                 }
@@ -512,8 +519,16 @@ export class VikingsService {
                     return countA - countB;
                 });
 
+                // Sort by Count ASC
+                validTargets.sort((a, b) => {
+                    const countA = targetReinforcementCountMap.get(a.characterId) || 0;
+                    const countB = targetReinforcementCountMap.get(b.characterId) || 0;
+                    return countA - countB;
+                });
+
                 for (const target of validTargets) {
                     if (assignWithCountUpdate(source.characterId, target.characterId)) {
+                        // console.log(`Phase 4 Assigned ${source.characterId} to ${target.characterId}`);
                         phase4ImprovementMade = true;
                         break;
                     }
