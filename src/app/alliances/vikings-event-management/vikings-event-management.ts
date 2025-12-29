@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { VikingsService, VikingsEventView, CharacterAssignment, VikingsRegistration } from '../../vikings-event/vikings.service';
+import { AlliancesService, AllianceMember, Alliance } from '../alliances.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { switchMap, map } from 'rxjs/operators';
 import { of, combineLatest } from 'rxjs';
@@ -11,12 +12,14 @@ interface ManagementRow {
     assignment: CharacterAssignment;
     registration?: VikingsRegistration;
     hasDiff: boolean; // True if registration differs from assignment
+    isRemovedFromAlliance: boolean; // True if member is no longer in the alliance
 }
 
 @Component({
     selector: 'app-vikings-event-management',
     template: `
-        <div class="manage-container" *ngIf="event() as evt">
+        <div class="manage-container" *ngIf="data() as d">
+            <ng-container *ngIf="d.event as evt">
             <header>
                 <div class="breadcrumbs">
                     <a routerLink="/admin/alliances">Alliances</a> &gt; 
@@ -32,6 +35,22 @@ interface ManagementRow {
                 <button class="tool-btn sync-btn" (click)="acceptAllRegs()">📥 Accept All Differences</button>
             </div>
 
+            <!-- Missing Members Section -->
+            @if (missingMembers().length > 0) {
+                <div class="missing-members-section">
+                    <h3>⚠️ Missing Alliance Members</h3>
+                    <div class="missing-list">
+                        @for (member of missingMembers(); track member.characterId) {
+                            <div class="missing-item">
+                                <span class="name">{{ member.name }}</span>
+                                <span class="power">{{ member.power | number }}</span>
+                                <button class="add-missing-btn" (click)="addMissingMember(member)">Add to Event</button>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
             <div class="table-container">
                 <table>
                     <thead>
@@ -45,10 +64,13 @@ interface ManagementRow {
                     </thead>
                     <tbody>
                         @for (row of rows(); track row.assignment.characterId) {
-                        <tr [class.has-diff]="row.hasDiff">
+                        <tr [class.has-diff]="row.hasDiff" [class.removed-member]="row.isRemovedFromAlliance">
                             <td>
                                 <div class="char-name">{{ row.assignment.characterName }}</div>
                                 <div class="char-id">{{ row.assignment.characterId }}</div>
+                                @if (row.isRemovedFromAlliance) {
+                                    <div class="removed-badge">🚫 Left Alliance</div>
+                                }
                             </td>
                             <td>{{ row.assignment.powerLevel | number }}</td>
                             <td>
@@ -135,9 +157,9 @@ interface ManagementRow {
                     </div>
                 </div>
             </div>
-
+            </ng-container>
         </div>
-        <div *ngIf="!event()" class="loading">Loading Event Data...</div>
+        <div *ngIf="!data()" class="loading">Loading Event Data...</div>
     `,
     styles: [`
         .manage-container { padding: 2rem; color: #eee; max-width: 1200px; margin: 0 auto; }
@@ -153,6 +175,21 @@ interface ManagementRow {
         .tool-btn { border: none; padding: 0.6rem 1.2rem; border-radius: 4px; font-weight: bold; cursor: pointer; }
         .add-btn { background: #4caf50; color: white; }
         .sync-btn { background: #2196f3; color: white; }
+
+        .missing-members-section {
+            background: #332b00; border: 1px solid #665500; border-radius: 8px; padding: 1rem; margin-bottom: 2rem;
+        }
+        .missing-members-section h3 { margin-top: 0; color: #ffd54f; font-size: 1rem; }
+        .missing-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .missing-item { 
+            background: rgba(0,0,0,0.3); padding: 0.5rem 1rem; border-radius: 20px; display: flex; align-items: center; gap: 0.5rem; border: 1px solid #665500;
+        }
+        .missing-item .name { font-weight: bold; }
+        .missing-item .power { font-size: 0.8rem; color: #aaa; }
+        .add-missing-btn { 
+            background: #ffd54f; color: #000; border: none; padding: 0.2rem 0.6rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: bold;
+        }
+        .add-missing-btn:hover { background: #ffca28; }
 
         .table-container { background: #222; border-radius: 8px; overflow: hidden; }
         table { width: 100%; border-collapse: collapse; }
@@ -180,6 +217,12 @@ interface ManagementRow {
 
         .has-diff { background: rgba(33, 150, 243, 0.05); }
         .has-diff .reg-info { border: 1px solid #2196f3; padding: 0.5rem; border-radius: 4px; background: rgba(33, 150, 243, 0.1); }
+
+        .removed-member td { background: rgba(244, 67, 54, 0.1); }
+        .removed-member .char-name { color: #e57373; }
+        .removed-badge { 
+            display: inline-block; background: #c62828; color: white; font-size: 0.7rem; padding: 0.1rem 0.4rem; border-radius: 4px; margin-top: 0.3rem;
+        }
 
         .actions-cell { display: flex; gap: 0.5rem; }
         .actions-cell button { border: none; background: #444; width: 32px; height: 32px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; transition: background 0.2s; }
@@ -212,6 +255,7 @@ interface ManagementRow {
 export class VikingsEventManagementComponent {
     private route = inject(ActivatedRoute);
     private vikingsService = inject(VikingsService);
+    private alliancesService = inject(AlliancesService);
 
     public eventId = toSignal(this.route.paramMap.pipe(map(p => p.get('id'))));
 
@@ -221,17 +265,34 @@ export class VikingsEventManagementComponent {
             map(p => p.get('id')),
             switchMap(id => {
                 if (!id) return of(null);
-                return combineLatest([
-                    this.vikingsService.getVikingsEventById(id),
-                    this.vikingsService.getEventRegistrations(id)
-                ]).pipe(
-                    map(([event, regs]) => ({ event, regs }))
+
+                // Get the event first to know which alliance to fetch
+                return this.vikingsService.getVikingsEventById(id).pipe(
+                    switchMap(event => {
+                        if (!event) return of({ event: null, regs: [], alliance: null });
+
+                        return combineLatest([
+                            this.vikingsService.getEventRegistrations(event.id!),
+                            this.alliancesService.getAlliance(event.allianceId)
+                        ]).pipe(
+                            map(([regs, alliance]) => ({ event, regs, alliance }))
+                        );
+                    })
                 );
             })
         )
     );
 
     public event = computed(() => this.data()?.event);
+
+    // Compute missing members (In Alliance but NOT in Event)
+    public missingMembers = computed(() => {
+        const data = this.data();
+        if (!data || !data.event || !data.alliance) return [];
+
+        const eventCharIds = new Set(data.event.characters.map(c => c.characterId));
+        return (data.alliance.members || []).filter(m => !eventCharIds.has(m.characterId));
+    });
 
     // Process rows primarily for display
     public rows = computed(() => {
@@ -241,14 +302,22 @@ export class VikingsEventManagementComponent {
         const assignments = data.event.characters || [];
         const regMap = new Map((data.regs || []).map(r => [r.characterId, r]));
 
+        // Helper to check if still in alliance
+        const allianceMemberIds = new Set((data.alliance?.members || []).map(m => m.characterId));
+
         return assignments.map(a => {
             const r = regMap.get(a.characterId);
             // Diff logic: Check if status or marches count differs
             const hasDiff = !!r && (r.status !== a.status || r.marchesCount !== a.marchesCount);
+
+            // Check if removed from alliance (only if we have alliance data)
+            const isRemovedFromAlliance = !!data.alliance && !allianceMemberIds.has(a.characterId);
+
             return {
                 assignment: a,
                 registration: r,
-                hasDiff
+                hasDiff,
+                isRemovedFromAlliance
             } as ManagementRow;
         }).sort((a, b) => b.assignment.powerLevel - a.assignment.powerLevel); // Sort by power
     });
@@ -299,6 +368,30 @@ export class VikingsEventManagementComponent {
         } catch (e) {
             console.error(e);
             alert('Failed to sync registrations.');
+        }
+    }
+
+    public async addMissingMember(member: AllianceMember) {
+        const eventId = this.eventId();
+        const event = this.event();
+        if (!eventId || !event) return;
+
+        const newChar: CharacterAssignment = {
+            characterId: member.characterId,
+            characterName: member.name,
+            powerLevel: member.power,
+            status: 'unknown',
+            marchesCount: 0,
+            reinforce: []
+        };
+
+        const newCharacters = [...event.characters, newChar];
+
+        try {
+            await this.vikingsService.updateEventCharacters(eventId, newCharacters);
+        } catch (e) {
+            console.error(e);
+            alert('Failed to add character');
         }
     }
 

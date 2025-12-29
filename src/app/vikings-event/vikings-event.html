@@ -86,7 +86,7 @@
                     <div class="header-right">
                         <span class="player-power">Power: {{ character.powerLevel | number }}</span>
                         <span class="expand-icon">
-                            @if (event.status !== 'voting') {
+                            @if (event.status !== 'voting' || isPreview()) {
                             @if (expandedPlayerId() === character.characterId) {
                             ▼
                             } @else {
@@ -137,7 +137,7 @@
                     <div class="header-right">
                         <span class="player-power">Power: {{ character.powerLevel | number }}</span>
                         <span class="expand-icon">
-                            @if (event.status !== 'voting') {
+                            @if (event.status !== 'voting' || isPreview()) {
                             @if (expandedPlayerId() === character.characterId) {
                             ▼
                             } @else {

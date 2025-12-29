@@ -26,6 +26,11 @@ export class VikingsEventComponent {
 
     public user = toSignal(this.authService.user$);
 
+    public isPreview = toSignal(
+        this.route.queryParamMap.pipe(map(params => params.get('preview') === 'true')),
+        { initialValue: false }
+    );
+
     // Fetch event data by ID from route
     public eventData = toSignal(
         this.route.paramMap.pipe(
@@ -149,8 +154,8 @@ export class VikingsEventComponent {
     }
 
     public toggleCharacter(characterId: string) {
-        // Disable expansion if in voting mode
-        if (this.eventData()?.status === 'voting') return;
+        // Disable expansion if in voting mode AND not in preview
+        if (this.eventData()?.status === 'voting' && !this.isPreview()) return;
 
         if (this.expandedPlayerId() === characterId) {
             this.expandedPlayerId.set(null);

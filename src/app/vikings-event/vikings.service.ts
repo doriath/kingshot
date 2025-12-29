@@ -168,6 +168,26 @@ export class VikingsService {
         });
     }
 
+    async simulateAssignments(eventId: string): Promise<void> {
+        const docRef = doc(this.firestore, `vikingsEvents/${eventId}`);
+        const firestore = await import('@angular/fire/firestore');
+        const snap = await firestore.getDoc(docRef);
+
+        if (!snap.exists()) {
+            throw new Error('Event not found');
+        }
+
+        const event = snap.data() as VikingsEvent;
+        const allCharacters = event.characters || [];
+
+        const updatedCharacters = this.calculateAssignments(allCharacters);
+
+        await firestore.updateDoc(docRef, {
+            // status remains unchanged (e.g., 'voting')
+            characters: updatedCharacters
+        });
+    }
+
     calculateAssignments(allCharacters: CharacterAssignment[]): CharacterAssignment[] {
         // 0. Setup and Helper structures
         const REINFORCE_SIZE = 2; // Parameter for future
