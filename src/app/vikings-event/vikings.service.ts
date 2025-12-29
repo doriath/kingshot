@@ -17,9 +17,7 @@ export interface CharacterAssignment {
     reinforce: {
         characterId: string;
         marchType?: string;
-        scoreValue?: number; // Score for this specific reinforcement
     }[];
-    score?: number; // Total score
 }
 
 export interface CharacterAssignmentView extends Omit<CharacterAssignment, 'reinforce'> {
@@ -208,7 +206,7 @@ export class VikingsService {
         // console.log('Starting calculateAssignments with', workingCharacters.length, 'characters');
 
         // Map to track assignments: targetId -> list of sourceIds
-        const assignmentsMap = new Map<string, { characterId: string; marchType?: string; scoreValue?: number }[]>();
+        const assignmentsMap = new Map<string, { characterId: string; marchType?: string }[]>();
 
         // Map to track remaining marches for each source: sourceId -> count
         const marchesRemainingMap = new Map<string, number>();
@@ -525,56 +523,11 @@ export class VikingsService {
             }
         }
 
-
-        // --- Score Calculation ---
-        // Formula Updates:
-        // Online: 1.3 / Count
-        // Offline Empty: 1.0 / Count
-        // Offline Not Empty: 1.0 / (4 + Count)
-
-        // 1. Calculate incoming counts
-        const finalIncomingCounts = new Map<string, number>();
-        assignmentsMap.forEach((targets, sourceId) => {
-            targets.forEach(t => {
-                finalIncomingCounts.set(t.characterId, (finalIncomingCounts.get(t.characterId) || 0) + 1);
-            });
-        });
-
-        // 2. Compute Scores
-        const scoresMap = new Map<string, number>();
-
-        // Helper to find target status efficiently
-        const charMap = new Map(workingCharacters.map(c => [c.characterId, c]));
-
-        assignmentsMap.forEach((targets, sourceId) => {
-            let totalScore = 0;
-            targets.forEach(t => {
-                const count = finalIncomingCounts.get(t.characterId) || 1;
-                const targetChar = charMap.get(t.characterId);
-                let value = 0;
-
-                if (targetChar) {
-                    if (targetChar.status === 'online') {
-                        value = 1.3 / count;
-                    } else if (targetChar.status === 'offline_empty') {
-                        value = 1.0 / count;
-                    } else {
-                        // Offline Not Empty
-                        value = 1.0 / (4 + count);
-                    }
-                }
-
-                t.scoreValue = value; // Store on the assignment object
-                totalScore += value;
-            });
-            scoresMap.set(sourceId, totalScore);
-        });
-
-        // --- Convert to Output Format ---
+        // --- Convert to Output Format (Scores REMOVED) ---
         return workingCharacters.map(c => ({
             ...c,
             marchesCount: (c.marchesCount === 0) ? 6 : Math.max(1, Math.min(6, c.marchesCount)),
-            score: scoresMap.get(c.characterId) || 0,
+            // score: scoresMap.get(c.characterId) || 0, // removed
             reinforce: assignmentsMap.get(c.characterId) || []
         }));
     }
@@ -592,8 +545,9 @@ export class VikingsService {
                     if (r.marchType) {
                         safeR.marchType = r.marchType;
                     }
+                    // Remove scoreValue if present (it shouldn't be in DB model anymore)
                     if (r.scoreValue !== undefined) {
-                        safeR.scoreValue = r.scoreValue;
+                        delete safeR.scoreValue;
                     }
                     return safeR;
                 });
@@ -619,27 +573,64 @@ export class VikingsService {
         return collectionData(q, { idField: 'id' }) as Observable<VikingsRegistration[]>;
     }
 
-    private transformEventToView(event: VikingsEvent): VikingsEventView {
+    public transformEventToView(event: VikingsEvent): VikingsEventView {
         const characterMap = new Map<string, CharacterAssignment>();
         if (event.characters) {
             event.characters.forEach(c => characterMap.set(c.characterId, c));
         }
 
+        // --- DYNAMIC SCORE CALCULATION ---
+        // 1. Calculate incoming counts
+        const incomingCounts = new Map<string, number>();
+        if (event.characters) {
+            event.characters.forEach(source => {
+                source.reinforce.forEach(target => {
+                    incomingCounts.set(target.characterId, (incomingCounts.get(target.characterId) || 0) + 1);
+                });
+            });
+        }
+
+        // 2. Map characters and compute scores
+        const viewCharacters: CharacterAssignmentView[] = (event.characters || []).map(c => {
+            // Re-calculate scores for outgoing reinforcements
+            const viewReinforce = (c.reinforce || []).map(r => {
+                const target = characterMap.get(r.characterId);
+                let scoreValue = 0;
+
+                if (target) {
+                    const count = incomingCounts.get(target.characterId) || 1; // Avoid div/0 if logical inconsistency
+                    if (target.status === 'online') {
+                        scoreValue = 1.3 / count;
+                    } else if (target.status === 'offline_empty') {
+                        scoreValue = 1.0 / count;
+                    } else {
+                        // Offline Not Empty
+                        scoreValue = 1.0 / (4 + count);
+                    }
+                }
+
+                return {
+                    characterId: r.characterId,
+                    marchType: r.marchType,
+                    scoreValue: scoreValue,
+                    characterName: target?.characterName || 'Unknown',
+                    powerLevel: target?.powerLevel
+                };
+            });
+
+            // Sum up total score
+            const totalScore = viewReinforce.reduce((sum, r) => sum + (r.scoreValue || 0), 0);
+
+            return {
+                ...c,
+                reinforce: viewReinforce,
+                score: totalScore
+            };
+        });
+
         return {
             ...event,
-            characters: (event.characters || []).map(c => ({
-                ...c,
-                reinforce: (c.reinforce || []).map(r => {
-                    const target = characterMap.get(r.characterId);
-                    return {
-                        characterId: r.characterId,
-                        marchType: r.marchType,
-                        scoreValue: r.scoreValue, // Propagate scoreValue
-                        characterName: target?.characterName || 'Unknown',
-                        powerLevel: target?.powerLevel
-                    };
-                })
-            }))
+            characters: viewCharacters
         };
     }
 }

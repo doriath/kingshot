@@ -278,7 +278,14 @@ describe('VikingsService', () => {
             // Let's verify this specific outcome.
 
             const result = service.calculateAssignments([s1, s2, t1, t2]);
-            const resS1 = result.find(c => c.characterId === 'S_1');
+
+            // To verify scores, we must now use transformEventToView
+            const mockEvent: any = {
+                characters: result,
+                status: 'voting'
+            };
+            const view = service.transformEventToView(mockEvent);
+            const resS1 = view.characters.find(c => c.characterId === 'S_1');
 
             // Check counts first to ensure assumptions hold
             const getIncoming = (id: string) => result.filter(r => r.reinforce.some(x => x.characterId === id)).length;
