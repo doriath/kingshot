@@ -33,6 +33,7 @@ interface ManagementRow {
             <div class="toolbar">
                 <button class="tool-btn add-btn" (click)="showAddModal = true">➕ Add Character</button>
                 <button class="tool-btn sync-btn" (click)="acceptAllRegs()">📥 Accept All Differences</button>
+                <button class="tool-btn simulate-btn" (click)="simulateAssignments()">🎲 Simulate Assignments</button>
             </div>
 
             <!-- Missing Members Section -->
@@ -175,6 +176,7 @@ interface ManagementRow {
         .tool-btn { border: none; padding: 0.6rem 1.2rem; border-radius: 4px; font-weight: bold; cursor: pointer; }
         .add-btn { background: #4caf50; color: white; }
         .sync-btn { background: #2196f3; color: white; }
+        .simulate-btn { background: #00bcd4; color: white; }
 
         .missing-members-section {
             background: #332b00; border: 1px solid #665500; border-radius: 8px; padding: 1rem; margin-bottom: 2rem;
@@ -478,6 +480,20 @@ export class VikingsEventManagementComponent {
         } catch (e) {
             console.error(e);
             alert('Action failed.');
+        }
+    }
+
+    public async simulateAssignments() {
+        if (!confirm('Simulate assignments for this event? This will overwrite current temporary assignments.')) return;
+        const eventId = this.eventId();
+        if (!eventId) return;
+
+        try {
+            await this.vikingsService.simulateAssignments(eventId);
+            alert('Assignments simulated!');
+        } catch (err) {
+            console.error(err);
+            alert('Failed to simulate assignments.');
         }
     }
 }
