@@ -17,6 +17,7 @@ export interface AllianceMember {
     name: string;
     power: number;
     mainCharacterId?: string;
+    reinforcementCapacity?: number;
 }
 
 @Injectable({

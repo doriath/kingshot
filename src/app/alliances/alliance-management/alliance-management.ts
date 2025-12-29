@@ -42,6 +42,10 @@ import { AllianceSwordlandEventsComponent } from '../alliance-swordland-events/a
                                 <input [(ngModel)]="newMemberPower" name="power" type="number" placeholder="e.g. 1000000" required>
                             </div>
                             <div class="form-group">
+                                <label>Reinforcement Capacity (Optional)</label>
+                                <input [(ngModel)]="newMemberReinforcementCapacity" name="reinforcementCapacity" type="number" placeholder="e.g. 500000">
+                            </div>
+                            <div class="form-group">
                                 <label>Main Character (Optional)</label>
                                 <select [(ngModel)]="newMemberMainId" name="mainId">
                                     <option [ngValue]="null">-- None (Regular Account) --</option>
@@ -67,6 +71,7 @@ import { AllianceSwordlandEventsComponent } from '../alliance-swordland-events/a
                         <span>Name</span>
                         <span>ID</span>
                         <span>Power</span>
+                        <span>Cap</span>
                         <span>Actions</span>
                     </div>
                     
@@ -81,6 +86,7 @@ import { AllianceSwordlandEventsComponent } from '../alliance-swordland-events/a
                         </span>
                         <span class="member-id">{{ member.characterId }}</span>
                         <span class="member-power">{{ member.power | number }}</span>
+                        <span class="member-cap">{{ member.reinforcementCapacity ? (member.reinforcementCapacity | number) : '-' }}</span>
                         <span class="member-actions">
                             <button class="action-btn icon-btn" title="Edit" (click)="editMember(member)">✏️</button>
                             <button class="action-btn icon-btn delete-btn" title="Remove" (click)="removeMember(member)">🗑️</button>
@@ -141,11 +147,11 @@ import { AllianceSwordlandEventsComponent } from '../alliance-swordland-events/a
         .members-list h3 { padding: 1rem; margin: 0; background: #333; font-size: 1rem; }
 
         .list-header { 
-            display: grid; grid-template-columns: 50px 2fr 1fr 1fr 1fr; 
+            display: grid; grid-template-columns: 50px 2fr 1fr 1fr 1fr 1fr; 
             padding: 0.8rem 1rem; background: #2a2a2a; color: #aaa; font-size: 0.85rem; font-weight: bold;
         }
         .member-row {
-            display: grid; grid-template-columns: 50px 2fr 1fr 1fr 1fr;
+            display: grid; grid-template-columns: 50px 2fr 1fr 1fr 1fr 1fr;
             padding: 0.8rem 1rem; border-bottom: 1px solid #333; align-items: center;
         }
         .member-row:last-child { border-bottom: none; }
@@ -153,6 +159,7 @@ import { AllianceSwordlandEventsComponent } from '../alliance-swordland-events/a
         .member-pos { color: #888; font-weight: bold; }
         .member-id { font-family: monospace; color: #aaa; }
         .member-power { color: #ffb74d; }
+        .member-cap { color: #81c784; font-size: 0.9rem; }
         
         .icon-btn { background: none; border: none; cursor: pointer; font-size: 1rem; opacity: 0.7; }
         .icon-btn:hover { opacity: 1; }
@@ -181,6 +188,7 @@ export class AllianceManagementComponent {
     public newMemberName = '';
     public newMemberId = '';
     public newMemberPower: number | null = null;
+    public newMemberReinforcementCapacity: number | null = null;
     public newMemberMainId: string | null = null;
 
     public allianceData = toSignal(
@@ -223,7 +231,9 @@ export class AllianceManagementComponent {
             characterId: this.newMemberId,
             name: this.newMemberName,
             power: Number(this.newMemberPower),
-            ...(this.newMemberMainId ? { mainCharacterId: this.newMemberMainId } : {})
+
+            ...(this.newMemberMainId ? { mainCharacterId: this.newMemberMainId } : {}),
+            ...(this.newMemberReinforcementCapacity ? { reinforcementCapacity: Number(this.newMemberReinforcementCapacity) } : {})
         };
 
         try {
@@ -234,6 +244,7 @@ export class AllianceManagementComponent {
             this.newMemberId = '';
             this.newMemberPower = null;
             this.newMemberMainId = null;
+            this.newMemberReinforcementCapacity = null;
 
             // Optional: Show toast
         } catch (err) {
@@ -247,6 +258,7 @@ export class AllianceManagementComponent {
         this.newMemberId = member.characterId;
         this.newMemberPower = member.power;
         this.newMemberMainId = member.mainCharacterId || null;
+        this.newMemberReinforcementCapacity = member.reinforcementCapacity || null;
     }
 
     public async removeMember(member: AllianceMember) {

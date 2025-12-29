@@ -7,6 +7,7 @@ export interface CharacterAssignment {
     characterId: string;
     characterName: string; // Used for display of the character itself
     mainCharacterId?: string; // If set, this is a farm account
+    reinforcementCapacity?: number; // Capacity for reinforcements
     extraMarches?: number; // Extra marches to reinforce this character (if farm)
     powerLevel: number;
     marchesCount: number;
@@ -127,6 +128,7 @@ export class VikingsService {
             characterId: m.characterId,
             characterName: m.name,
             mainCharacterId: m.mainCharacterId, // Copy from alliance member
+            reinforcementCapacity: m.reinforcementCapacity,
             powerLevel: m.power,
             marchesCount: 0, // Default to 0, user will register explicit count
             status: 'unknown',
@@ -407,7 +409,11 @@ export class VikingsService {
             }
             // Preserve new fields
             if (safeC.mainCharacterId !== undefined) safeC.mainCharacterId = safeC.mainCharacterId;
+            if (safeC.reinforcementCapacity !== undefined) safeC.reinforcementCapacity = safeC.reinforcementCapacity;
             if (safeC.extraMarches !== undefined) safeC.extraMarches = safeC.extraMarches;
+
+            // Remove any undefined keys to satisfy Firestore
+            Object.keys(safeC).forEach(key => (safeC as any)[key] === undefined && delete (safeC as any)[key]);
 
             return safeC as CharacterAssignment;
         });

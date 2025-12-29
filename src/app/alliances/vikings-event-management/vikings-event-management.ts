@@ -14,6 +14,14 @@ interface ManagementRow {
     hasDiff: boolean; // True if registration differs from assignment
     isRemovedFromAlliance: boolean; // True if member is no longer in the alliance
     mainCharacterName?: string; // Resolved name of the main character
+    resolvedReinforcements?: ResolvedReinforcement[]; // Resolved names and status of reinforcement targets
+    reinforcedBy?: ResolvedReinforcement[]; // Resolved names and status of characters reinforcing THIS character
+}
+
+interface ResolvedReinforcement {
+    name: string;
+    marchType?: string;
+    status: 'online' | 'offline_empty' | 'not_available' | 'unknown';
 }
 
 @Component({
@@ -92,7 +100,33 @@ interface ManagementRow {
                                 <div class="status-pill" [class]="row.assignment.status">
                                     {{ row.assignment.status | uppercase }}
                                 </div>
-                                <div class="marches">Marches: {{ row.assignment.marchesCount }}</div>
+
+                                <div class="marches">
+                                    Marches: {{ row.assignment.marchesCount }} | 
+                                    Cap: {{ row.assignment.reinforcementCapacity ? (row.assignment.reinforcementCapacity | number) : '-' }}
+                                </div>
+                                @if (row.resolvedReinforcements && row.resolvedReinforcements.length > 0) {
+                                    <div class="reinforcements-list">
+                                        <div class="reinforce-header">Reinforces:</div>
+                                        @for (item of row.resolvedReinforcements; track $index) {
+                                            <div class="reinforce-item">
+                                                <span class="status-dot" [class]="item.status" [title]="item.status"></span>
+                                                🛡️ {{ item.name }} {{ item.marchType ? '(' + item.marchType + ')' : '' }}
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                                @if (row.reinforcedBy && row.reinforcedBy.length > 0) {
+                                    <div class="reinforcements-list incoming">
+                                        <div class="reinforce-header">Reinforced By:</div>
+                                        @for (item of row.reinforcedBy; track $index) {
+                                            <div class="reinforce-item">
+                                                <span class="status-dot" [class]="item.status" [title]="item.status"></span>
+                                                🛡️ {{ item.name }} {{ item.marchType ? '(' + item.marchType + ')' : '' }}
+                                            </div>
+                                        }
+                                    </div>
+                                }
                             </td>
                             <td>
                                 @if (row.registration) {
@@ -146,7 +180,6 @@ interface ManagementRow {
                     </div>
                     <div class="form-group relative">
                         <label>Main Character (Optional - for Farm)</label>
-                        <input [(ngModel)]="mainCharSearch" 
                                (focus)="showMainCharDropdown = true" 
                                (input)="showMainCharDropdown = true"
                                placeholder="Search for main character...">
@@ -167,6 +200,11 @@ interface ManagementRow {
                         }
                     </div>
                     <div class="form-group">
+                        <label>Reinforcement Capacity</label>
+                        <input type="number" [(ngModel)]="editReinforcementCapacity">
+                    </div>
+                    <div class="form-group">
+
                         <label>Extra Marches (for Farm)</label>
                         <input type="number" [(ngModel)]="editExtraMarches">
                     </div>
@@ -195,6 +233,10 @@ interface ManagementRow {
                     <div class="form-group">
                         <label>Main Character ID (Optional)</label>
                         <input [(ngModel)]="newMainCharacterId">
+                    </div>
+                    <div class="form-group">
+                        <label>Reinforcement Capacity</label>
+                        <input type="number" [(ngModel)]="newReinforcementCapacity">
                     </div>
                     <div class="form-group">
                         <label>Extra Marches</label>
@@ -279,6 +321,19 @@ interface ManagementRow {
         .main-badge { display: inline-block; background: #5d4037; color: #ffd54f; font-size: 0.7rem; padding: 0.1rem 0.4rem; border-radius: 4px; border: 1px solid #ffd54f; }
         .main-char-link { font-size: 0.75rem; color: #aaa; margin-top: 0.2rem; }
         .extra-marches-badge { font-size: 0.7rem; color: #81c784; margin-top: 0.2rem; }
+        
+        .reinforcements-list { margin-top: 0.5rem; border-top: 1px solid #444; padding-top: 0.3rem; }
+        .reinforcements-list.incoming { border-top: none; border-top: 1px dashed #444; margin-top: 0.3rem; }
+        .reinforcements-list.incoming .reinforce-header { color: #81c784; }
+        
+        .reinforce-header { font-size: 0.7rem; color: #aaa; text-transform: uppercase; margin-bottom: 0.2rem; }
+        .reinforce-item { font-size: 0.8rem; color: #fff; margin-bottom: 0.1rem; display: flex; align-items: center; gap: 0.3rem; }
+        
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        .status-dot.online { background: #81c784; box-shadow: 0 0 4px #81c784; }
+        .status-dot.offline_empty { background: #ffb74d; }
+        .status-dot.not_available { background: #e57373; }
+        .status-dot.unknown { background: #666; }
 
         .actions-cell { display: flex; gap: 0.5rem; }
         .actions-cell button { border: none; background: #444; width: 32px; height: 32px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; transition: background 0.2s; }
@@ -401,12 +456,46 @@ export class VikingsEventManagementComponent {
                 mainCharacterName = nameMap.get(a.mainCharacterId) || `ID: ${a.mainCharacterId}`;
             }
 
+
+
+            // Status Map for Reinforcements
+            const statusMap = new Map<string, string>();
+            const incomingReinforcementMap = new Map<string, ResolvedReinforcement[]>();
+
+            assignments.forEach(c => {
+                statusMap.set(c.characterId, c.status);
+                // Build incoming map
+                if (c.reinforce) {
+                    c.reinforce.forEach(r => {
+                        const targetId = r.characterId;
+                        const sourceName = nameMap.get(c.characterId) || `ID: ${c.characterId}`;
+                        const sourceStatus = (c.status || 'unknown') as any;
+
+                        const list = incomingReinforcementMap.get(targetId) || [];
+                        list.push({ name: sourceName, status: sourceStatus, marchType: r.marchType });
+                        incomingReinforcementMap.set(targetId, list);
+                    });
+                }
+            });
+
+            // Resolve Reinforcements (Outgoing)
+            const resolvedReinforcements: ResolvedReinforcement[] = (a.reinforce || []).map(r => {
+                const name = nameMap.get(r.characterId) || `ID: ${r.characterId}`;
+                const status = (statusMap.get(r.characterId) || 'unknown') as any;
+                return { name, marchType: r.marchType, status };
+            });
+
+            // Resolve Reinforced By (Incoming)
+            const reinforcedBy = incomingReinforcementMap.get(a.characterId) || [];
+
             return {
                 assignment: a,
                 registration: r,
                 hasDiff,
                 isRemovedFromAlliance,
-                mainCharacterName
+                mainCharacterName,
+                resolvedReinforcements,
+                reinforcedBy
             } as ManagementRow;
         }).sort((a, b) => b.assignment.powerLevel - a.assignment.powerLevel); // Sort by power
     });
@@ -417,6 +506,8 @@ export class VikingsEventManagementComponent {
     public editMarches: number = 0;
     public editPower: number = 0;
     public editMainCharacterId: string = '';
+
+    public editReinforcementCapacity: number = 0;
     public editExtraMarches: number = 0;
 
     // Add State
@@ -425,6 +516,8 @@ export class VikingsEventManagementComponent {
     public newCharId = '';
     public newCharPower = 0;
     public newMainCharacterId = '';
+
+    public newReinforcementCapacity = 0;
     public newExtraMarches = 0;
 
     // Autocomplete State
@@ -500,7 +593,9 @@ export class VikingsEventManagementComponent {
             characterId: member.characterId,
             characterName: member.name,
             powerLevel: member.power,
+
             mainCharacterId: member.mainCharacterId, // Carry over
+            reinforcementCapacity: member.reinforcementCapacity,
             status: 'unknown',
             marchesCount: 0,
             reinforce: []
@@ -522,6 +617,8 @@ export class VikingsEventManagementComponent {
         this.editMarches = row.assignment.marchesCount;
         this.editPower = row.assignment.powerLevel;
         this.editMainCharacterId = row.assignment.mainCharacterId || '';
+
+        this.editReinforcementCapacity = row.assignment.reinforcementCapacity || 0;
         this.editExtraMarches = row.assignment.extraMarches || 0;
 
         // Initialize search field
@@ -541,11 +638,14 @@ export class VikingsEventManagementComponent {
             status: this.editStatus,
             marchesCount: this.editMarches,
             powerLevel: this.editPower,
+
             mainCharacterId: this.editMainCharacterId || undefined,
+            reinforcementCapacity: this.editReinforcementCapacity || undefined,
             extraMarches: this.editExtraMarches || 0
         };
 
         if (!changes.mainCharacterId) delete changes.mainCharacterId; // Ensure undefined if empty
+        if (!changes.reinforcementCapacity) delete changes.reinforcementCapacity;
         if (!changes.extraMarches) delete changes.extraMarches;
 
         await this.updateCharacter(this.editingRow.assignment.characterId, changes);
@@ -580,7 +680,9 @@ export class VikingsEventManagementComponent {
             characterId: this.newCharId,
             characterName: this.newCharName,
             powerLevel: this.newCharPower,
+
             mainCharacterId: this.newMainCharacterId || undefined,
+            reinforcementCapacity: this.newReinforcementCapacity || undefined,
             extraMarches: this.newExtraMarches || 0,
             status: 'unknown',
             marchesCount: 0,
@@ -596,6 +698,7 @@ export class VikingsEventManagementComponent {
             this.newCharId = '';
             this.newCharPower = 0;
             this.newMainCharacterId = '';
+            this.newReinforcementCapacity = 0;
             this.newExtraMarches = 0;
         } catch (e) {
             console.error(e);
@@ -649,11 +752,12 @@ export class VikingsEventManagementComponent {
 
         const newCharacters = data.event.characters.map(char => {
             const member = allianceMembers.get(char.characterId);
-            if (member && member.mainCharacterId !== char.mainCharacterId) {
+            if (member && (member.mainCharacterId !== char.mainCharacterId || member.reinforcementCapacity !== char.reinforcementCapacity)) {
                 updateCount++;
                 return {
                     ...char,
-                    mainCharacterId: member.mainCharacterId
+                    mainCharacterId: member.mainCharacterId,
+                    reinforcementCapacity: member.reinforcementCapacity
                 };
             }
             return char;
