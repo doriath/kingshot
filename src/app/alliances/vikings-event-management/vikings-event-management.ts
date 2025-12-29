@@ -22,6 +22,7 @@ interface ResolvedReinforcement {
     name: string;
     marchType?: string;
     status: 'online' | 'offline_empty' | 'not_available' | 'unknown';
+    scoreValue?: number;
 }
 
 @Component({
@@ -69,6 +70,7 @@ interface ResolvedReinforcement {
                             <th>Character</th>
                             <th>Type</th>
                             <th>Power</th>
+                            <th>Score</th>
                             <th>Current Assignment</th>
                             <th>Registration (User Submitted)</th>
                             <th>Actions</th>
@@ -96,6 +98,7 @@ interface ResolvedReinforcement {
                                 }
                             </td>
                             <td>{{ row.assignment.powerLevel | number }}</td>
+                            <td>{{ (row.assignment.score || 0) | number:'1.2-2' }}</td>
                             <td>
                                 <div class="status-pill" [class]="row.assignment.status">
                                     {{ row.assignment.status | uppercase }}
@@ -112,6 +115,9 @@ interface ResolvedReinforcement {
                                             <div class="reinforce-item">
                                                 <span class="status-dot" [class]="item.status" [title]="item.status"></span>
                                                 🛡️ {{ item.name }} {{ item.marchType ? '(' + item.marchType + ')' : '' }}
+                                                @if (item.scoreValue) {
+                                                    <span class="score-badge">({{ item.scoreValue | number:'1.2-2' }})</span>
+                                                }
                                             </div>
                                         }
                                     </div>
@@ -482,7 +488,7 @@ export class VikingsEventManagementComponent {
             const resolvedReinforcements: ResolvedReinforcement[] = (a.reinforce || []).map(r => {
                 const name = nameMap.get(r.characterId) || `ID: ${r.characterId}`;
                 const status = (statusMap.get(r.characterId) || 'unknown') as any;
-                return { name, marchType: r.marchType, status };
+                return { name, marchType: r.marchType, status, scoreValue: r.scoreValue };
             });
 
             // Resolve Reinforced By (Incoming)
@@ -507,8 +513,8 @@ export class VikingsEventManagementComponent {
     public editPower: number = 0;
     public editMainCharacterId: string = '';
 
-    public editReinforcementCapacity: number = 0;
-    public editExtraMarches: number = 0;
+    public editReinforcementCapacity: number | null = null;
+    public editExtraMarches: number | null = null;
 
     // Add State
     public showAddModal = false;
@@ -618,8 +624,8 @@ export class VikingsEventManagementComponent {
         this.editPower = row.assignment.powerLevel;
         this.editMainCharacterId = row.assignment.mainCharacterId || '';
 
-        this.editReinforcementCapacity = row.assignment.reinforcementCapacity || 0;
-        this.editExtraMarches = row.assignment.extraMarches || 0;
+        this.editReinforcementCapacity = row.assignment.reinforcementCapacity ?? null;
+        this.editExtraMarches = row.assignment.extraMarches ?? null;
 
         // Initialize search field
         this.mainCharSearch = '';
@@ -640,13 +646,13 @@ export class VikingsEventManagementComponent {
             powerLevel: this.editPower,
 
             mainCharacterId: this.editMainCharacterId || undefined,
-            reinforcementCapacity: this.editReinforcementCapacity || undefined,
-            extraMarches: this.editExtraMarches || 0
+            reinforcementCapacity: this.editReinforcementCapacity ?? undefined,
+            extraMarches: this.editExtraMarches ?? undefined
         };
 
-        if (!changes.mainCharacterId) delete changes.mainCharacterId; // Ensure undefined if empty
-        if (!changes.reinforcementCapacity) delete changes.reinforcementCapacity;
-        if (!changes.extraMarches) delete changes.extraMarches;
+        if (changes.mainCharacterId === undefined || changes.mainCharacterId === '') delete changes.mainCharacterId;
+        if (changes.reinforcementCapacity === undefined || changes.reinforcementCapacity === null) delete changes.reinforcementCapacity;
+        if (changes.extraMarches === undefined || changes.extraMarches === null) delete changes.extraMarches;
 
         await this.updateCharacter(this.editingRow.assignment.characterId, changes);
         this.editingRow = null;
