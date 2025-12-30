@@ -18,6 +18,7 @@ export interface AllianceMember {
     power: number;
     mainCharacterId?: string;
     reinforcementCapacity?: number;
+    marchesCount?: number;
 }
 
 @Injectable({

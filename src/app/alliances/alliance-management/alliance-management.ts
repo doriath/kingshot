@@ -26,7 +26,7 @@ import { AllianceSwordlandEventsComponent } from '../alliance-swordland-events/a
 
             <section class="members-section" *ngIf="activeTab === 'members'">
                 <div class="add-member-card">
-                    <h3>{{ newMemberId ? 'Edit' : 'Add New' }} Member</h3>
+                    <h3>Add New Member</h3>
                     <form (submit)="$event.preventDefault(); addMember()">
                         <div class="form-row">
                             <div class="form-group">
@@ -44,6 +44,10 @@ import { AllianceSwordlandEventsComponent } from '../alliance-swordland-events/a
                             <div class="form-group">
                                 <label>Reinforcement Capacity (Optional)</label>
                                 <input [(ngModel)]="newMemberReinforcementCapacity" name="reinforcementCapacity" type="number" placeholder="e.g. 500000">
+                            </div>
+                            <div class="form-group">
+                                <label>Marches Count (Optional)</label>
+                                <input [(ngModel)]="newMemberMarchesCount" name="marchesCount" type="number" placeholder="e.g. 6">
                             </div>
                             <div class="form-group">
                                 <label>Main Character (Optional)</label>
@@ -68,10 +72,10 @@ import { AllianceSwordlandEventsComponent } from '../alliance-swordland-events/a
                     
                     <div class="list-header">
                         <span>#</span>
-                        <span>Name</span>
-                        <span>ID</span>
+                        <span>Name/ID</span>
                         <span>Power</span>
                         <span>Cap</span>
+                        <span>Marches</span>
                         <span>Actions</span>
                     </div>
                     
@@ -79,14 +83,17 @@ import { AllianceSwordlandEventsComponent } from '../alliance-swordland-events/a
                     <div class="member-row">
                         <span class="member-pos">{{ i + 1 }}</span>
                         <span class="member-name">
-                            {{ member.name }}
-                            @if (member.mainCharacterId) {
-                                <span class="alt-badge" title="Alt Account">Alt of {{ getMemberName(member.mainCharacterId) }}</span>
-                            }
+                            <div class="name-text">
+                                {{ member.name }}
+                                @if (member.mainCharacterId) {
+                                    <span class="alt-badge" title="Alt Account">Alt of {{ getMemberName(member.mainCharacterId) }}</span>
+                                }
+                            </div>
+                            <div class="id-subline">{{ member.characterId }}</div>
                         </span>
-                        <span class="member-id">{{ member.characterId }}</span>
                         <span class="member-power">{{ member.power | number }}</span>
                         <span class="member-cap">{{ member.reinforcementCapacity ? (member.reinforcementCapacity | number) : '-' }}</span>
+                        <span class="member-marches">{{ member.marchesCount !== undefined ? member.marchesCount : '-' }}</span>
                         <span class="member-actions">
                             <button class="action-btn icon-btn" title="Edit" (click)="editMember(member)">✏️</button>
                             <button class="action-btn icon-btn delete-btn" title="Remove" (click)="removeMember(member)">🗑️</button>
@@ -105,10 +112,55 @@ import { AllianceSwordlandEventsComponent } from '../alliance-swordland-events/a
             <section class="events-section" *ngIf="activeTab === 'swordland'">
                 <app-alliance-swordland-events [alliance]="ally"></app-alliance-swordland-events>
             </section>
+
+            <!-- Edit Modal -->
+            @if (isEditModalOpen && editingMember_) {
+            <div class="modal-backdrop">
+                <div class="modal">
+                    <h3>Edit Member: {{ editingMember_.name }}</h3>
+                    <div class="form-group">
+                        <label>Name</label>
+                        <input [(ngModel)]="editingMember_.name" placeholder="Name">
+                    </div>
+                    <!-- ID is usually fixed, but maybe allow edit if it was wrong? For now mostly fixed or careful edit. -->
+                     <div class="form-group">
+                        <label>ID (Read-only)</label>
+                        <input [value]="editingMember_.characterId" disabled title="ID cannot be changed directly">
+                    </div>
+                    <div class="form-group">
+                        <label>Power</label>
+                        <input type="number" [(ngModel)]="editingMember_.power" placeholder="Power">
+                    </div>
+                    <div class="form-group">
+                        <label>Reinforcement Capacity</label>
+                        <input type="number" [(ngModel)]="editingMember_.reinforcementCapacity" placeholder="Capacity">
+                    </div>
+                    <div class="form-group">
+                        <label>Marches Count</label>
+                        <input type="number" [(ngModel)]="editingMember_.marchesCount" placeholder="Marches">
+                    </div>
+                     <div class="form-group">
+                        <label>Main Character (Optional)</label>
+                        <select [(ngModel)]="editingMember_.mainCharacterId">
+                            <option [ngValue]="undefined">-- None (Regular Account) --</option>
+                            @for (m of members(); track m.characterId) {
+                                @if (m.characterId !== editingMember_.characterId) {
+                                    <option [value]="m.characterId">{{ m.name }} ({{ m.power | number }})</option>
+                                }
+                            }
+                        </select>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button class="save-btn" (click)="saveEdit()">Save Changes</button>
+                        <button class="cancel-btn" (click)="cancelEdit()">Cancel</button>
+                    </div>
+                </div>
+            </div>
+            }
         </div>
         <div *ngIf="!alliance()" class="loading">Loading...</div>
     `,
-    // Styles ... (truncating for brevity in tool call, will use original styles and append/modify)
     styles: [`
         .manage-container { max-width: 900px; margin: 0 auto; padding: 2rem; color: #eee; }
         /* Existing styles... */
@@ -135,31 +187,34 @@ import { AllianceSwordlandEventsComponent } from '../alliance-swordland-events/a
         .add-member-card h3 { margin-top: 0; color: #81c784; }
 
         .form-row { display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap; }
-        .form-group { flex: 1; min-width: 150px; }
+        .form-group { flex: 1; min-width: 150px; margin-bottom: 1rem; } /* added margin-bottom for modal vertical stacking */
         .form-group label { display: block; color: #ccc; margin-bottom: 0.3rem; font-size: 0.85rem; }
-        .form-group input { width: 100%; padding: 0.5rem; background: #1a1a1a; border: 1px solid #555; border-radius: 4px; color: white; }
+        .form-group input, .form-group select { width: 100%; padding: 0.5rem; background: #1a1a1a; border: 1px solid #555; border-radius: 4px; color: white; }
         .btn-container { flex: 0; }
         
         .add-btn { background: #4caf50; color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 4px; cursor: pointer; font-weight: bold; white-space: nowrap; }
         .add-btn:disabled { background: #555; cursor: not-allowed; color: #888; }
 
-        .members-list { background: #222; border-radius: 8px; overflow: hidden; }
+        .members-list { background: #222; border-radius: 8px; overflow-x: auto; }
         .members-list h3 { padding: 1rem; margin: 0; background: #333; font-size: 1rem; }
 
         .list-header { 
-            display: grid; grid-template-columns: 50px 2fr 1fr 1fr 1fr 1fr; 
-            padding: 0.8rem 1rem; background: #2a2a2a; color: #aaa; font-size: 0.85rem; font-weight: bold;
+            display: grid; grid-template-columns: 50px 3fr 1.2fr 1fr 0.8fr 100px; 
+            padding: 0.8rem 1rem; background: #2a2a2a; color: #aaa; font-size: 0.85rem; font-weight: bold; min-width: 600px;
         }
         .member-row {
-            display: grid; grid-template-columns: 50px 2fr 1fr 1fr 1fr 1fr;
-            padding: 0.8rem 1rem; border-bottom: 1px solid #333; align-items: center;
+            display: grid; grid-template-columns: 50px 3fr 1.2fr 1fr 0.8fr 100px;
+            padding: 0.8rem 1rem; border-bottom: 1px solid #333; align-items: center; min-width: 600px;
         }
         .member-row:last-child { border-bottom: none; }
         .member-name { font-weight: 500; color: white; }
+        .name-text { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+        .id-subline { font-family: monospace; color: #666; font-size: 0.75rem; margin-top: 2px; }
+        
         .member-pos { color: #888; font-weight: bold; }
-        .member-id { font-family: monospace; color: #aaa; }
         .member-power { color: #ffb74d; }
         .member-cap { color: #81c784; font-size: 0.9rem; }
+        .member-marches { color: #ce93d8; font-size: 0.9rem; }
         
         .icon-btn { background: none; border: none; cursor: pointer; font-size: 1rem; opacity: 0.7; }
         .icon-btn:hover { opacity: 1; }
@@ -176,6 +231,30 @@ import { AllianceSwordlandEventsComponent } from '../alliance-swordland-events/a
 
         .empty-list { padding: 2rem; text-align: center; color: #666; font-style: italic; }
         .loading { text-align: center; margin-top: 3rem; color: #888; }
+
+        /* Modal Styles */
+        .modal-backdrop {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 1000;
+        }
+        .modal {
+            background: #2a2a2a;
+            padding: 2rem;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 500px;
+            border: 1px solid #444;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        .modal h3 { margin-top: 0; color: #ffca28; margin-bottom: 1.5rem; }
+        .modal-actions {
+            display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem;
+        }
+        .save-btn { background: #2196f3; color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .cancel-btn { background: transparent; color: #aaa; border: 1px solid #555; padding: 0.6rem 1.2rem; border-radius: 4px; cursor: pointer; }
+        .cancel-btn:hover { color: white; border-color: #888; }
     `],
     imports: [CommonModule, RouterLink, FormsModule, AllianceVikingsEventsComponent, AllianceSwordlandEventsComponent]
 })
@@ -189,7 +268,12 @@ export class AllianceManagementComponent {
     public newMemberId = '';
     public newMemberPower: number | null = null;
     public newMemberReinforcementCapacity: number | null = null;
+    public newMemberMarchesCount: number | null = null;
     public newMemberMainId: string | null = null;
+
+    // Edit State
+    public editingMember_: Partial<AllianceMember> | null = null;
+    public isEditModalOpen = false;
 
     public allianceData = toSignal(
         this.route.paramMap.pipe(
@@ -233,7 +317,8 @@ export class AllianceManagementComponent {
             power: Number(this.newMemberPower),
 
             ...(this.newMemberMainId ? { mainCharacterId: this.newMemberMainId } : {}),
-            ...(this.newMemberReinforcementCapacity ? { reinforcementCapacity: Number(this.newMemberReinforcementCapacity) } : {})
+            ...(this.newMemberReinforcementCapacity ? { reinforcementCapacity: Number(this.newMemberReinforcementCapacity) } : {}),
+            ...(this.newMemberMarchesCount !== null ? { marchesCount: Number(this.newMemberMarchesCount) } : {})
         };
 
         try {
@@ -245,6 +330,7 @@ export class AllianceManagementComponent {
             this.newMemberPower = null;
             this.newMemberMainId = null;
             this.newMemberReinforcementCapacity = null;
+            this.newMemberMarchesCount = null;
 
             // Optional: Show toast
         } catch (err) {
@@ -254,11 +340,39 @@ export class AllianceManagementComponent {
     }
 
     public editMember(member: AllianceMember) {
-        this.newMemberName = member.name;
-        this.newMemberId = member.characterId;
-        this.newMemberPower = member.power;
-        this.newMemberMainId = member.mainCharacterId || null;
-        this.newMemberReinforcementCapacity = member.reinforcementCapacity || null;
+        this.editingMember_ = { ...member };
+        this.isEditModalOpen = true;
+    }
+
+    public cancelEdit() {
+        this.editingMember_ = null;
+        this.isEditModalOpen = false;
+    }
+
+    public async saveEdit() {
+        const ally = this.alliance();
+        const em = this.editingMember_;
+        if (!ally || !em || !em.characterId || !em.name) return;
+
+        // Construct updated member object safely to avoid 'undefined'
+        const updatedMember: AllianceMember = {
+            characterId: em.characterId, // ID is key, cannot change
+            name: em.name,
+            power: Number(em.power),
+
+            ...(em.mainCharacterId ? { mainCharacterId: em.mainCharacterId } : {}),
+            ...(em.reinforcementCapacity ? { reinforcementCapacity: Number(em.reinforcementCapacity) } : {}),
+            ...(em.marchesCount !== undefined && em.marchesCount !== null ? { marchesCount: Number(em.marchesCount) } : {})
+        };
+
+        try {
+            await this.alliancesService.addAllianceMember(ally.uuid, updatedMember);
+            this.isEditModalOpen = false;
+            this.editingMember_ = null;
+        } catch (err) {
+            console.error(err);
+            alert('Failed to update member.');
+        }
     }
 
     public async removeMember(member: AllianceMember) {

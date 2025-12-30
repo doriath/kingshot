@@ -11,8 +11,10 @@ import { of, combineLatest } from 'rxjs';
 interface ManagementRow {
     assignment: CharacterAssignmentView;
     registration?: VikingsRegistration;
-    hasDiff: boolean; // True if registration differs from assignment
-    isRemovedFromAlliance: boolean; // True if member is no longer in the alliance
+    allianceMember?: AllianceMember;
+    hasDiff: boolean; // True if registration OR alliance data differs from assignment
+    isRemovedFromAlliance: boolean; // True if member is no longer in the allianceholder to switch strategy.
+    // I will use multi_replace_file_content in the next step.iance
     mainCharacterName?: string; // Resolved name of the main character
     resolvedReinforcements?: ResolvedReinforcement[]; // Resolved names and status of reinforcement targets
     reinforcedBy?: ResolvedReinforcement[]; // Resolved names and status of characters reinforcing THIS character
@@ -37,7 +39,11 @@ interface ResolvedReinforcement {
                     <span>Manage</span>
                 </div>
                 <h1>⚔️ Manage Assignments: {{ evt.date.toDate() | date:'medium' }}</h1>
-                <div class="subtitle">[{{ evt.allianceTag }}] Server #{{ evt.server }}</div>
+                <div class="subtitle">
+                    <a [routerLink]="['/admin', 'alliances', evt.allianceId]" class="alliance-link">
+                        [{{ evt.allianceTag }}] Server #{{ evt.server }}
+                    </a>
+                </div>
             </header>
 
             <div class="toolbar">
@@ -267,6 +273,8 @@ interface ResolvedReinforcement {
         header { margin-bottom: 2rem; border-bottom: 1px solid #444; padding-bottom: 1rem; }
         h1 { margin: 0; color: #ffca28; }
         .subtitle { color: #888; font-size: 1.1rem; margin-top: 0.5rem; }
+        .alliance-link { color: #888; text-decoration: none; transition: color 0.2s; }
+        .alliance-link:hover { color: #2196f3; text-decoration: underline; }
 
         .toolbar { display: flex; gap: 1rem; margin-bottom: 1.5rem; }
         .tool-btn { border: none; padding: 0.6rem 1.2rem; border-radius: 4px; font-weight: bold; cursor: pointer; }
@@ -290,7 +298,7 @@ interface ResolvedReinforcement {
         }
         .add-missing-btn:hover { background: #ffca28; }
 
-        .table-container { background: #222; border-radius: 8px; overflow: hidden; }
+        .table-container { background: #222; border-radius: 8px; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; }
         th { text-align: left; padding: 1rem; background: #333; color: #aaa; font-weight: bold; font-size: 0.9rem; }
         td { padding: 1rem; border-bottom: 1px solid #333; vertical-align: top; }
@@ -450,8 +458,23 @@ export class VikingsEventManagementComponent {
 
         return assignments.map(a => {
             const r = regMap.get(a.characterId);
+            const m = data.alliance?.members?.find(mem => mem.characterId === a.characterId);
+
             // Diff logic: Check if status or marches count differs
-            const hasDiff = !!r && (r.status !== a.status || r.marchesCount !== a.marchesCount);
+            // Target Marches: Registration > Alliance Member > Current
+            const regMarches = r ? r.marchesCount : undefined;
+            const allyMarches = m ? m.marchesCount : undefined;
+
+            let targetMarches = a.marchesCount;
+            if (regMarches !== undefined) {
+                targetMarches = regMarches;
+            } else if (allyMarches !== undefined) {
+                targetMarches = allyMarches;
+            }
+
+            const marchesDiff = a.marchesCount !== targetMarches;
+            const statusDiff = !!r && (r.status !== a.status);
+            const hasDiff = statusDiff || marchesDiff;
 
             // Check if removed from alliance (only if we have alliance data)
             const isRemovedFromAlliance = !!data.alliance && !allianceMemberIds.has(a.characterId);
@@ -497,6 +520,7 @@ export class VikingsEventManagementComponent {
             return {
                 assignment: a,
                 registration: r,
+                allianceMember: m,
                 hasDiff,
                 isRemovedFromAlliance,
                 mainCharacterName,
@@ -554,11 +578,20 @@ export class VikingsEventManagementComponent {
     }
 
     public async acceptRegistration(row: ManagementRow) {
-        if (!row.registration) return;
+        // Source of truth: Registration > Alliance Member
+        let newStatus = row.assignment.status;
+        let newMarches = row.assignment.marchesCount;
+
+        if (row.registration) {
+            newStatus = row.registration.status;
+            newMarches = row.registration.marchesCount;
+        } else if (row.allianceMember && row.allianceMember.marchesCount !== undefined) {
+            newMarches = row.allianceMember.marchesCount;
+        }
 
         await this.updateCharacter(row.assignment.characterId, {
-            status: row.registration.status,
-            marchesCount: row.registration.marchesCount
+            status: newStatus,
+            marchesCount: newMarches
         });
     }
 
@@ -603,7 +636,7 @@ export class VikingsEventManagementComponent {
             mainCharacterId: member.mainCharacterId, // Carry over
             reinforcementCapacity: member.reinforcementCapacity,
             status: 'unknown',
-            marchesCount: 0,
+            marchesCount: member.marchesCount !== undefined ? member.marchesCount : 0,
             reinforce: []
         };
 
