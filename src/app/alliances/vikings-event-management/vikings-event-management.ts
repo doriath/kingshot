@@ -832,7 +832,7 @@ export class VikingsEventManagementComponent {
     }
 
     public async syncAllianceMetadata() {
-        if (!confirm('Sync metadata (Main Character ID) from Alliance member list to this event? This will overwrite manual changes to Main Character IDs in this event.')) return;
+        if (!confirm('Sync metadata (Main Character ID, Reinforcement Capacity, Marches Count) from Alliance member list to this event? This will overwrite manual changes to these fields in this event.')) return;
 
         const data = this.data();
         if (!data || !data.event || !data.alliance) return;
@@ -842,13 +842,23 @@ export class VikingsEventManagementComponent {
 
         const newCharacters = data.event.characters.map(char => {
             const member = allianceMembers.get(char.characterId);
-            if (member && (member.mainCharacterId !== char.mainCharacterId || member.reinforcementCapacity !== char.reinforcementCapacity)) {
-                updateCount++;
-                return {
-                    ...char,
-                    mainCharacterId: member.mainCharacterId,
-                    reinforcementCapacity: member.reinforcementCapacity
-                };
+            if (member) {
+                const marchDiff = member.marchesCount !== undefined && member.marchesCount !== char.marchesCount;
+                const mainDiff = member.mainCharacterId !== char.mainCharacterId;
+                const capDiff = member.reinforcementCapacity !== char.reinforcementCapacity;
+
+                if (marchDiff || mainDiff || capDiff) {
+                    updateCount++;
+                    const updated = {
+                        ...char,
+                        mainCharacterId: member.mainCharacterId,
+                        reinforcementCapacity: member.reinforcementCapacity
+                    };
+                    if (member.marchesCount !== undefined) {
+                        updated.marchesCount = member.marchesCount;
+                    }
+                    return updated;
+                }
             }
             return char;
         });
