@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { AlliancesService, Alliance } from '../alliances.service';
 import { AuthService } from '../../auth.service';
+import { UserDataService } from '../../user-data.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { switchMap, of } from 'rxjs';
 
@@ -11,6 +12,11 @@ import { switchMap, of } from 'rxjs';
     template: `
         <div class="admin-container">
             <h1>🛡️ Alliance Administration</h1>
+            @if (userData.isGlobalAdmin()) {
+                <div class="global-actions">
+                    <a routerLink="/admin/characters" class="manage-btn global-btn">Manage Characters</a>
+                </div>
+            }
             <p>Manage your alliances.</p>
 
             <div class="alliance-list">
@@ -83,6 +89,7 @@ import { switchMap, of } from 'rxjs';
 export class AllianceAdminListComponent {
     private alliancesService = inject(AlliancesService);
     private authService = inject(AuthService);
+    public userData = inject(UserDataService);
 
     public user = toSignal(this.authService.user$);
 

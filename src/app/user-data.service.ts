@@ -1,7 +1,7 @@
 import { Injectable, inject, signal, effect, computed } from '@angular/core';
-import { Firestore, collection, doc, setDoc, deleteDoc, query, where, collectionData, updateDoc } from '@angular/fire/firestore';
+import { Firestore, collection, doc, setDoc, deleteDoc, query, where, collectionData, updateDoc, docData } from '@angular/fire/firestore';
 import { AuthService } from './auth.service';
-import { filter, switchMap, map, combineLatestWith } from 'rxjs/operators';
+import { filter, switchMap, map, combineLatestWith, startWith } from 'rxjs/operators';
 import { of, Observable, combineLatest, firstValueFrom } from 'rxjs';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { StorageService } from './storage.service';
@@ -14,6 +14,7 @@ export interface Character {
     server?: number;
     alliance?: string;
     marches?: number | null;
+    showAdmin?: boolean;
 }
 
 export interface CharacterUI extends Character {
@@ -92,6 +93,23 @@ export class UserDataService {
         if (!id) return null;
         return chars.find(c => c.id === id) || null;
     });
+
+    public showAdminInMenu = computed(() => {
+        return !!this.activeCharacter()?.showAdmin;
+    });
+
+    // Global Admin Check
+    private isGlobalAdmin$ = this.authService.user$.pipe(
+        switchMap(user => {
+            if (!user) return of(false);
+            const adminDoc = doc(this.firestore, `globalAdmins/${user.uid}`);
+            return docData(adminDoc).pipe(
+                map(snapshot => !!snapshot), // If document exists, they are admin
+                startWith(false)
+            );
+        })
+    );
+    public isGlobalAdmin = toSignal(this.isGlobalAdmin$, { initialValue: false });
 
     constructor() {
         // Auto-select active character if user has only 1 verified character

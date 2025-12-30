@@ -23,7 +23,7 @@ export class App {
   private activatedRoute = inject(ActivatedRoute);
   private solverService = inject(SolverService);
   private authService = inject(AuthService);
-  private userDataService = inject(UserDataService);
+  public userData = inject(UserDataService);
 
   private user = toSignal(this.authService.user$);
 
@@ -32,7 +32,7 @@ export class App {
     // Hint if: Not logged in OR (Logged in AND No characters)
     if (!user) return true;
 
-    const chars = this.userDataService.characters();
+    const chars = this.userData.characters();
     return chars.length === 0;
   });
 

@@ -60,9 +60,13 @@ export const routes: Routes = [
 
     // Alliance Admin Routes
     {
-        path: 'admin/alliances',
+        path: 'admin',
         loadComponent: () => import('./alliances/alliance-admin-list/alliance-admin-list').then(m => m.AllianceAdminListComponent),
-        // canActivate: [AuthGuard] // In future
+    },
+    {
+        path: 'admin/alliances',
+        redirectTo: 'admin',
+        pathMatch: 'full'
     },
     {
         path: 'admin/alliances/:id',
