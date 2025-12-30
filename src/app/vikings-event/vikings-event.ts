@@ -170,23 +170,7 @@ export class VikingsEventComponent {
     public async copyAssignments(character: CharacterAssignmentView, event: Event) {
         event.stopPropagation(); // Prevent toggling the card when clicking copy
 
-        const lines = [`Player ${character.characterName} reinforces:`];
-
-        if (!character.reinforce || character.reinforce.length === 0) {
-            lines.push('No assignments.');
-        } else {
-            character.reinforce.forEach((target, index) => {
-                let line = `${index + 1}. ${target.characterName}`;
-                if (target.powerLevel != null) {
-                    // Format power with commas/spaces if needed, but user just said <power level>
-                    // Using toLocaleString() for readability
-                    line += `: ${target.powerLevel.toLocaleString()}`;
-                }
-                lines.push(line);
-            });
-        }
-
-        const text = lines.join('\n');
+        const text = this.vikingsService.generateAssignmentClipboardText(character);
 
         try {
             await navigator.clipboard.writeText(text);

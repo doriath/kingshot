@@ -648,4 +648,22 @@ export class VikingsService {
             characters: viewCharacters
         };
     }
+
+    public generateAssignmentClipboardText(character: CharacterAssignmentView): string {
+        const lines = [`Player ${character.characterName} reinforces:`];
+
+        if (!character.reinforce || character.reinforce.length === 0) {
+            lines.push('No assignments.');
+        } else {
+            character.reinforce.forEach((target, index) => {
+                let line = `${index + 1}. ${target.characterName}`;
+                if (target.powerLevel != null) {
+                    line += `: ${target.powerLevel.toLocaleString()}`;
+                }
+                lines.push(line);
+            });
+        }
+
+        return lines.join('\n');
+    }
 }

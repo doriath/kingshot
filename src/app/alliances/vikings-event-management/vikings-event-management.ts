@@ -51,6 +51,7 @@ interface ResolvedReinforcement {
                 <button class="tool-btn sync-btn" (click)="acceptAllRegs()">📥 Accept All Differences</button>
                 <button class="tool-btn meta-btn" (click)="syncAllianceMetadata()">🔄 Sync Alliance Metadata</button>
                 <button class="tool-btn simulate-btn" (click)="simulateAssignments()">🎲 Simulate Assignments</button>
+                <button class="tool-btn msg-btn" (click)="showMessagingView = true">📨 Messaging View</button>
             </div>
 
             <!-- Quit Members Warning -->
@@ -278,6 +279,46 @@ interface ResolvedReinforcement {
                     </div>
                 </div>
             </div>
+
+            <!-- Messaging View Overlay -->
+            <div class="messaging-view-overlay" *ngIf="showMessagingView">
+                <div class="mv-header">
+                    <h2>📨 Messaging View (Online & Offline Empty)</h2>
+                    @if (notificationMessage) {
+                        <div class="notification-toast">{{ notificationMessage }}</div>
+                    }
+                    <button class="close-btn" (click)="closeMessagingView()">Close</button>
+                </div>
+                <div class="mv-content">
+                    <div class="mv-table-container">
+                        <table class="mv-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-name">Name</th>
+                                    <th class="col-power">Power</th>
+                                    <th class="col-status">Status</th>
+                                    <th class="col-action">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (row of messagingList(); track row.assignment.characterId) {
+                                    <tr (click)="copyMessage(row)">
+                                        <td class="col-name">{{ row.assignment.characterName }}</td>
+                                        <td class="col-power">{{ row.assignment.powerLevel | number }}</td>
+                                        <td class="col-status">
+                                            <span class="status-dot" [class]="row.assignment.status" [title]="row.assignment.status"></span>
+                                        </td>
+                                        <td class="col-action">
+                                            <span class="copy-icon">📋</span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
             </ng-container>
         </div>
         <div *ngIf="!data()" class="loading">Loading Event Data...</div>
@@ -300,6 +341,7 @@ interface ResolvedReinforcement {
         .sync-btn { background: #2196f3; color: white; }
         .meta-btn { background: #9c27b0; color: white; }
         .simulate-btn { background: #00bcd4; color: white; }
+        .msg-btn { background: #ff9800; color: white; }
 
         .missing-members-section {
             background: #332b00; border: 1px solid #665500; border-radius: 8px; padding: 1rem; margin-bottom: 2rem;
@@ -424,6 +466,56 @@ interface ResolvedReinforcement {
         
         .selected-helper { font-size: 0.8rem; color: #81c784; margin-top: 0.3rem; display: flex; align-items: center; gap: 0.5rem;}
         .clear-btn { background: none; border: none; color: #e57373; font-weight: bold; cursor: pointer; font-size: 1rem; padding: 0 0.3rem; }
+
+        /* Messaging View */
+        .messaging-view-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #1a1a1a; z-index: 2000;
+            display: flex; flex-direction: column;
+            overflow: hidden;
+        }
+        .mv-header {
+            padding: 0.5rem 1rem; background: #333; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            flex-shrink: 0;
+        }
+        .mv-header h2 { margin: 0; color: #ff9800; font-size: 1.1rem; }
+        .mv-content {
+            flex: 1; overflow-y: auto; padding: 0.5rem; background: #222;
+        }
+        .mv-table-container { 
+            width: 100%; overflow-x: auto; 
+        }
+        .mv-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .mv-table th { 
+            text-align: left; padding: 0.5rem; background: #333; color: #aaa; position: sticky; top: 0; z-index: 10;
+            border-bottom: 2px solid #555;
+        }
+        .mv-table td { 
+            padding: 0.4rem 0.5rem; border-bottom: 1px solid #333; vertical-align: middle; 
+            cursor: pointer;
+        }
+        .mv-table tr:hover td { background: #333; }
+        
+        /* Compact columns */
+        .col-name { font-weight: bold; color: white; width: 40%; }
+        .col-power { color: #aaa; width: 25%; text-align: right; }
+        .col-status { width: 15%; text-align: center; }
+        .col-action { width: 10%; text-align: center; }
+
+        .copy-icon { font-size: 1.2rem; }
+        
+        .close-btn {
+            background: #444; color: white; border: none; padding: 0.3rem 0.8rem; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.9rem;
+        }
+        .notification-toast {
+            background: #4caf50; color: white; padding: 0.3rem 0.8rem; border-radius: 20px; animation: fadeIn 0.3s; font-weight: bold; font-size: 0.8rem;
+            position: absolute; top: 3.5rem; left: 50%; transform: translateX(-50%); z-index: 2001;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translate(-50%, -10px); } to { opacity: 1; transform: translate(-50%, 0); } }
+
+        /* Status Dot specific for table */
+        .mv-table .status-dot { margin: 0 auto; display: block; }
     `],
     imports: [CommonModule, RouterLink, FormsModule]
 })
@@ -794,6 +886,39 @@ export class VikingsEventManagementComponent {
             console.error(e);
             alert('Failed to add character');
         }
+    }
+
+    // Messaging View State
+    public showMessagingView = false;
+    public notificationMessage: string | null = null; // Reusing or adding new for feedbacks
+
+    public messagingList = computed(() => {
+        const rows = this.rows();
+        // Filter: Online OR Offline Empty
+        // Sort: Power Desc
+        return rows
+            .filter(r => r.assignment.status === 'online' || r.assignment.status === 'offline_empty')
+            .sort((a, b) => b.assignment.powerLevel - a.assignment.powerLevel);
+    });
+
+    public async copyMessage(row: ManagementRow) {
+        const text = this.vikingsService.generateAssignmentClipboardText(row.assignment);
+        try {
+            await navigator.clipboard.writeText(text);
+            this.showNotification(`Message for ${row.assignment.characterName} copied!`);
+        } catch (err) {
+            console.error('Failed to copy', err);
+            this.showNotification('Failed to copy message', true);
+        }
+    }
+
+    private showNotification(msg: string, isError = false) {
+        this.notificationMessage = msg;
+        setTimeout(() => this.notificationMessage = null, 2000);
+    }
+
+    public closeMessagingView() {
+        this.showMessagingView = false;
     }
 
     // Helper to update a single character in the array -> writes whole array
