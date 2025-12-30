@@ -66,16 +66,17 @@ export class AdminSvsPrepManagementComponent {
   public unassignedRegistrations = computed(() => {
     const regs = this.registrations();
     const assignedMap = this.assignedUserIds();
-    // For general list: show players assigned to NOTHING? Or allow them to appear if they missed ANY preference?
-    // Let's stick effectively to "Partial unassigned" list might be too huge.
-    // "Unassigned Players" usually implies "Fully Unassigned".
-    // A player is fully unassigned if they are not in construction AND not in research AND not in troops.
+    const activeTab = this.activeScheduleTab() as 'construction' | 'research' | 'troops';
 
-    return regs.filter(r =>
-      !assignedMap.construction.has(r.characterId) &&
-      !assignedMap.research.has(r.characterId) &&
-      !assignedMap.troops.has(r.characterId)
-    );
+    return regs.filter(r => {
+      // 1. Check if user WANTS this boost type
+      const wantsBoost = r.preferences.some(p => p.boostType === activeTab && p.slots.length > 0);
+      if (!wantsBoost) return false;
+
+      // 2. Check if user is already assigned in this boost type
+      const isAssigned = assignedMap[activeTab].has(r.characterId);
+      return !isAssigned;
+    });
   });
 
   public getUnassignedForType(type: 'construction' | 'research' | 'troops') {
@@ -104,6 +105,9 @@ export class AdminSvsPrepManagementComponent {
   public newManualName = signal('');
   public newManualTimeRange = signal('');
   public isAdding = signal(false);
+
+  // Schedule View State
+  public activeScheduleTab = signal<string>('construction');
 
   // Editing State
   public editingRegId = signal<string | null>(null);
@@ -273,57 +277,55 @@ export class AdminSvsPrepManagementComponent {
     const regs = this.registrations();
     if (!event || !event.id) return;
 
-    if (!confirm('This will assign players to empty slots based on their preferences. Continue?')) return;
+    const currentType = this.activeScheduleTab() as 'construction' | 'research' | 'troops';
+    const typeLabel = currentType.charAt(0).toUpperCase() + currentType.slice(1);
+
+    if (!confirm(`Run schedule for ${typeLabel} ONLY? This will assign players to empty slots based on preferences.`)) return;
 
     const assignments = event.assignments ? JSON.parse(JSON.stringify(event.assignments)) : {};
-    const boostTypes: ('construction' | 'research' | 'troops')[] = ['construction', 'research', 'troops'];
 
-    // Initialize assignments structure if missing
-    boostTypes.forEach(t => {
-      if (!assignments[t]) assignments[t] = {};
-    });
+    // Initialize if missing
+    if (!assignments[currentType]) assignments[currentType] = {};
 
     const slots = this.timeSlots();
 
-    // Iterate boosts
-    for (const type of boostTypes) {
-      const assignedInThisType = new Set<string>();
-      if (assignments[type]) {
-        Object.values(assignments[type]).forEach((cid) => assignedInThisType.add(cid as string));
-      }
+    // Iterate ONLY the active boost type
+    const assignedInThisType = new Set<string>();
+    if (assignments[currentType]) {
+      Object.values(assignments[currentType]).forEach((cid) => assignedInThisType.add(cid as string));
+    }
 
-      // Iterate slots
-      for (const slot of slots) {
-        // Skip if already assigned
-        if (assignments[type][slot]) continue;
+    // Iterate slots
+    for (const slot of slots) {
+      // Skip if already assigned
+      if (assignments[currentType][slot]) continue;
 
-        // Find candidates
-        const candidates = regs.filter(r => {
-          // Must NOT be assigned in THIS type
-          if (assignedInThisType.has(r.characterId)) return false;
+      // Find candidates
+      const candidates = regs.filter(r => {
+        // Must NOT be assigned in THIS type
+        if (assignedInThisType.has(r.characterId)) return false;
 
-          const pref = r.preferences.find(p => p.boostType === type);
-          return pref?.slots.includes(slot);
-        });
+        const pref = r.preferences.find(p => p.boostType === currentType);
+        return pref?.slots.includes(slot);
+      });
 
-        if (candidates.length === 0) continue;
+      if (candidates.length === 0) continue;
 
-        // Sort candidates
-        // Prioritize people who have FEWER options? Or just random/stable ID?
-        // For now, stable sort by ID.
-        candidates.sort((a, b) => a.characterId.localeCompare(b.characterId));
+      // Sort candidates
+      // Prioritize people who have FEWER options? Or just random/stable ID?
+      // For now, stable sort by ID.
+      candidates.sort((a, b) => a.characterId.localeCompare(b.characterId));
 
-        // Pick best candidate
-        const chosen = candidates[0];
-        assignments[type][slot] = chosen.characterId;
-        assignedInThisType.add(chosen.characterId);
-      }
+      // Pick best candidate
+      const chosen = candidates[0];
+      assignments[currentType][slot] = chosen.characterId;
+      assignedInThisType.add(chosen.characterId);
     }
 
     // Save
     try {
       await this.svsService.updateEvent(event.id, { assignments });
-      alert('Schedule updated!');
+      alert(`Schedule for ${typeLabel} updated!`);
     } catch (e) {
       console.error(e);
       alert('Failed to save schedule');

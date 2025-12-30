@@ -189,15 +189,27 @@
 
     @if (view() === 'schedule') {
     <div class="schedule-section">
+        <div class="schedule-tabs" style="display: flex; gap: 8px; margin-bottom: 16px;">
+            <button class="tab-btn" [class.active]="activeScheduleTab() === 'construction'"
+                (click)="activeScheduleTab.set('construction')">Construction</button>
+            <button class="tab-btn" [class.active]="activeScheduleTab() === 'research'"
+                (click)="activeScheduleTab.set('research')">Research</button>
+            <button class="tab-btn" [class.active]="activeScheduleTab() === 'troops'"
+                (click)="activeScheduleTab.set('troops')">Troops</button>
+        </div>
+
         <div class="schedule-actions">
-            <button class="action-btn schedule-run" (click)="runSchedule()">Run Schedule (Greedy)</button>
+            <button class="action-btn schedule-run" (click)="runSchedule()">Run Schedule for {{ activeScheduleTab() |
+                titlecase }}</button>
         </div>
 
         <div class="schedule-grid" *ngIf="event() as evt">
             <!-- Construction -->
-            <div class="schedule-column">
+            @if(activeScheduleTab() === 'construction') {
+            <div class="schedule-column" style="flex: 1; max-width: 600px; margin: 0 auto;">
                 <div class="column-header">
                     <h3>Construction ({{ evt.constructionDay }})</h3>
+
                     <button class="clear-btn" (click)="clearDay('construction')"
                         title="Clear all construction assignments">Clear</button>
                 </div>
@@ -232,9 +244,11 @@
                     }
                 </div>
             </div>
+            }
 
             <!-- Research -->
-            <div class="schedule-column">
+            @if(activeScheduleTab() === 'research') {
+            <div class="schedule-column" style="flex: 1; max-width: 600px; margin: 0 auto;">
                 <div class="column-header">
                     <h3>Research ({{ evt.researchDay }})</h3>
                     <button class="clear-btn" (click)="clearDay('research')"
@@ -271,9 +285,11 @@
                     }
                 </div>
             </div>
+            }
 
             <!-- Troops -->
-            <div class="schedule-column">
+            @if(activeScheduleTab() === 'troops') {
+            <div class="schedule-column" style="flex: 1; max-width: 600px; margin: 0 auto;">
                 <div class="column-header">
                     <h3>Troops ({{ evt.troopsDay }})</h3>
                     <button class="clear-btn" (click)="clearDay('troops')"
@@ -310,6 +326,7 @@
                     }
                 </div>
             </div>
+            }
         </div>
 
         @if (unassignedRegistrations(); as unassigned) {

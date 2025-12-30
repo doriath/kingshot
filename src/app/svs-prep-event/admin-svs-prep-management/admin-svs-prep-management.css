@@ -423,3 +423,39 @@ th {
     background: var(--surface-hover);
     color: var(--error-default);
 }
+
+/* Daily Schedule Tabs */
+.schedule-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border-default);
+    margin-bottom: 24px;
+    gap: 0;
+    padding: 0;
+    background: transparent;
+    border-radius: 0;
+}
+
+.tab-btn {
+    padding: 12px 24px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+    font-size: 1rem;
+}
+
+.tab-btn:hover {
+    color: var(--text-primary);
+    background: var(--surface-hover);
+}
+
+.tab-btn.active {
+    color: var(--primary-default);
+    background: transparent;
+    border-bottom-color: var(--primary-default);
+    box-shadow: none;
+}
