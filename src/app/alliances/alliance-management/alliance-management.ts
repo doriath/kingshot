@@ -60,6 +60,12 @@ import { AllianceSwordlandEventsComponent } from '../alliance-swordland-events/a
                                     }
                                 </select>
                             </div>
+                            <div class="form-group checkbox-group">
+                                <label>
+                                    <input type="checkbox" [(ngModel)]="newMemberQuit" name="quit">
+                                    Quit / Stopped Playing
+                                </label>
+                            </div>
                             <div class="form-group btn-container">
                                 <button type="submit" [disabled]="!isValidMember()" class="add-btn">{{ newMemberId ? 'Update' : 'Add' }} Member</button>
                             </div>
@@ -85,6 +91,9 @@ import { AllianceSwordlandEventsComponent } from '../alliance-swordland-events/a
                         <span class="member-name">
                             <div class="name-text">
                                 {{ member.name }}
+                                @if (member.quit) {
+                                    <span class="quit-badge">QUIT</span>
+                                }
                                 @if (member.mainCharacterId) {
                                     <span class="alt-badge" title="Alt Account">Alt of {{ getMemberName(member.mainCharacterId) }}</span>
                                 }
@@ -150,6 +159,12 @@ import { AllianceSwordlandEventsComponent } from '../alliance-swordland-events/a
                             }
                         </select>
                     </div>
+                    <div class="form-group checkbox-group">
+                        <label>
+                            <input type="checkbox" [(ngModel)]="editingMember_.quit" name="editQuit">
+                            Quit / Stopped Playing
+                        </label>
+                    </div>
 
                     <div class="modal-actions">
                         <button class="save-btn" (click)="saveEdit()">Save Changes</button>
@@ -164,6 +179,10 @@ import { AllianceSwordlandEventsComponent } from '../alliance-swordland-events/a
     styles: [`
         .manage-container { max-width: 900px; margin: 0 auto; padding: 2rem; color: #eee; }
         /* Existing styles... */
+        .checkbox-group { display: flex; align-items: center; }
+        .checkbox-group label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: #ccc; font-size: 0.9rem; }
+        .checkbox-group input { width: auto; margin: 0; }
+
         .back-link { color: #aaa; text-decoration: none; font-size: 0.9rem; }
         .back-link:hover { color: white; }
         
@@ -229,6 +248,17 @@ import { AllianceSwordlandEventsComponent } from '../alliance-swordland-events/a
             vertical-align: middle;
         }
 
+        .quit-badge {
+            background-color: #b71c1c;
+            color: white;
+            font-size: 0.75rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 8px;
+            vertical-align: middle;
+            font-weight: bold;
+        }
+
         .empty-list { padding: 2rem; text-align: center; color: #666; font-style: italic; }
         .loading { text-align: center; margin-top: 3rem; color: #888; }
 
@@ -270,6 +300,7 @@ export class AllianceManagementComponent {
     public newMemberReinforcementCapacity: number | null = null;
     public newMemberMarchesCount: number | null = null;
     public newMemberMainId: string | null = null;
+    public newMemberQuit = false;
 
     // Edit State
     public editingMember_: Partial<AllianceMember> | null = null;
@@ -318,7 +349,8 @@ export class AllianceManagementComponent {
 
             ...(this.newMemberMainId ? { mainCharacterId: this.newMemberMainId } : {}),
             ...(this.newMemberReinforcementCapacity ? { reinforcementCapacity: Number(this.newMemberReinforcementCapacity) } : {}),
-            ...(this.newMemberMarchesCount !== null ? { marchesCount: Number(this.newMemberMarchesCount) } : {})
+            ...(this.newMemberMarchesCount !== null ? { marchesCount: Number(this.newMemberMarchesCount) } : {}),
+            ...(this.newMemberQuit ? { quit: true } : {})
         };
 
         try {
@@ -331,6 +363,7 @@ export class AllianceManagementComponent {
             this.newMemberMainId = null;
             this.newMemberReinforcementCapacity = null;
             this.newMemberMarchesCount = null;
+            this.newMemberQuit = false;
 
             // Optional: Show toast
         } catch (err) {
@@ -362,7 +395,8 @@ export class AllianceManagementComponent {
 
             ...(em.mainCharacterId ? { mainCharacterId: em.mainCharacterId } : {}),
             ...(em.reinforcementCapacity ? { reinforcementCapacity: Number(em.reinforcementCapacity) } : {}),
-            ...(em.marchesCount !== undefined && em.marchesCount !== null ? { marchesCount: Number(em.marchesCount) } : {})
+            ...(em.marchesCount !== undefined && em.marchesCount !== null ? { marchesCount: Number(em.marchesCount) } : {}),
+            ...(em.quit ? { quit: true } : {})
         };
 
         try {

@@ -129,16 +129,18 @@ export class VikingsService {
         // Need to import Alliance interface properly if we want strict typing, 
         // but for now relying on the structure being passed.
         // Mapped from AllianceMember to CharacterAssignment
-        const characters: CharacterAssignment[] = (alliance.members || []).map((m: any) => ({
-            characterId: m.characterId,
-            characterName: m.name,
-            mainCharacterId: m.mainCharacterId, // Copy from alliance member
-            reinforcementCapacity: m.reinforcementCapacity,
-            powerLevel: m.power,
-            marchesCount: 0, // Default to 0, user will register explicit count
-            status: 'unknown',
-            reinforce: []
-        }));
+        const characters: CharacterAssignment[] = (alliance.members || [])
+            .filter((m: any) => !m.quit)
+            .map((m: any) => ({
+                characterId: m.characterId,
+                characterName: m.name,
+                mainCharacterId: m.mainCharacterId, // Copy from alliance member
+                reinforcementCapacity: m.reinforcementCapacity,
+                powerLevel: m.power,
+                marchesCount: 0, // Default to 0, user will register explicit count
+                status: 'unknown',
+                reinforce: []
+            }));
 
         const event: VikingsEvent = {
             allianceId: alliance.uuid,

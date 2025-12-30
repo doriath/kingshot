@@ -14,7 +14,7 @@ interface ManagementRow {
     allianceMember?: AllianceMember;
     hasDiff: boolean; // True if registration OR alliance data differs from assignment
     isRemovedFromAlliance: boolean; // True if member is no longer in the allianceholder to switch strategy.
-    // I will use multi_replace_file_content in the next step.iance
+    isQuit: boolean; // True if member is marked as quit
     mainCharacterName?: string; // Resolved name of the main character
     resolvedReinforcements?: ResolvedReinforcement[]; // Resolved names and status of reinforcement targets
     reinforcedBy?: ResolvedReinforcement[]; // Resolved names and status of characters reinforcing THIS character
@@ -53,6 +53,21 @@ interface ResolvedReinforcement {
                 <button class="tool-btn simulate-btn" (click)="simulateAssignments()">🎲 Simulate Assignments</button>
             </div>
 
+            <!-- Quit Members Warning -->
+            @if (quitMembersInEvent().length > 0) {
+                <div class="quit-members-section">
+                    <h3>🛑 Quit Members in Event</h3>
+                    <div class="quit-list">
+                        @for (char of quitMembersInEvent(); track char.characterId) {
+                            <div class="quit-item">
+                                <span class="name">{{ char.characterName }}</span>
+                                <button class="remove-quit-btn" (click)="removeCharacterById(char.characterId, char.characterName)">Remove</button>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
             <!-- Missing Members Section -->
             @if (missingMembers().length > 0) {
                 <div class="missing-members-section">
@@ -90,6 +105,9 @@ interface ResolvedReinforcement {
                                 <div class="char-id">{{ row.assignment.characterId }}</div>
                                 @if (row.isRemovedFromAlliance) {
                                     <div class="removed-badge">🚫 Left Alliance</div>
+                                }
+                                @if (row.isQuit) {
+                                    <div class="quit-badge">🛑 Quit</div>
                                 }
                             </td>
                             <td>
@@ -298,6 +316,19 @@ interface ResolvedReinforcement {
         }
         .add-missing-btn:hover { background: #ffca28; }
 
+        .quit-members-section {
+            background: #3e2723; border: 1px solid #c62828; border-radius: 8px; padding: 1rem; margin-bottom: 2rem;
+        }
+        .quit-members-section h3 { margin-top: 0; color: #e57373; font-size: 1rem; }
+        .quit-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .quit-item {
+            background: rgba(0,0,0,0.3); padding: 0.5rem 1rem; border-radius: 20px; display: flex; align-items: center; gap: 0.5rem; border: 1px solid #c62828;
+        }
+        .quit-item .name { font-weight: bold; color: #e57373; }
+        .remove-quit-btn {
+            background: #c62828; color: white; border: none; padding: 0.2rem 0.6rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: bold;
+        }
+
         .table-container { background: #222; border-radius: 8px; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; }
         th { text-align: left; padding: 1rem; background: #333; color: #aaa; font-weight: bold; font-size: 0.9rem; }
@@ -329,6 +360,9 @@ interface ResolvedReinforcement {
         .removed-member .char-name { color: #e57373; }
         .removed-badge { 
             display: inline-block; background: #c62828; color: white; font-size: 0.7rem; padding: 0.1rem 0.4rem; border-radius: 4px; margin-top: 0.3rem;
+        }
+        .quit-badge {
+            display: inline-block; background: #b71c1c; color: white; font-size: 0.7rem; padding: 0.1rem 0.4rem; border-radius: 4px; margin-top: 0.3rem; font-weight: bold;
         }
 
         .farm-badge { display: inline-block; background: #795548; color: white; font-size: 0.7rem; padding: 0.1rem 0.4rem; border-radius: 4px; }
@@ -432,7 +466,18 @@ export class VikingsEventManagementComponent {
         if (!data || !data.event || !data.alliance) return [];
 
         const eventCharIds = new Set(data.event.characters.map(c => c.characterId));
-        return (data.alliance.members || []).filter(m => !eventCharIds.has(m.characterId));
+        return (data.alliance.members || []).filter(m => !eventCharIds.has(m.characterId) && !m.quit);
+    });
+
+    public quitMembersInEvent = computed(() => {
+        const data = this.data();
+        if (!data || !data.event || !data.alliance) return [];
+
+        const allianceMemberMap = new Map((data.alliance.members || []).map(m => [m.characterId, m]));
+        return data.event.characters.filter(c => {
+            const m = allianceMemberMap.get(c.characterId);
+            return m && m.quit;
+        });
     });
 
     // Process rows primarily for display
@@ -478,6 +523,7 @@ export class VikingsEventManagementComponent {
 
             // Check if removed from alliance (only if we have alliance data)
             const isRemovedFromAlliance = !!data.alliance && !allianceMemberIds.has(a.characterId);
+            const isQuit = !!m && !!m.quit;
 
             // Resolve Main Character Name
             let mainCharacterName = undefined;
@@ -523,6 +569,7 @@ export class VikingsEventManagementComponent {
                 allianceMember: m,
                 hasDiff,
                 isRemovedFromAlliance,
+                isQuit,
                 mainCharacterName,
                 resolvedReinforcements,
                 reinforcedBy
@@ -692,13 +739,17 @@ export class VikingsEventManagementComponent {
     }
 
     public async deleteRow(row: ManagementRow) {
-        if (!confirm(`Remove ${row.assignment.characterName} from event?`)) return;
+        await this.removeCharacterById(row.assignment.characterId, row.assignment.characterName);
+    }
+
+    public async removeCharacterById(charId: string, name: string) {
+        if (!confirm(`Remove ${name} from event?`)) return;
 
         const eventId = this.eventId();
         const event = this.event();
         if (!eventId || !event) return;
 
-        const newCharacters = event.characters.filter(c => c.characterId !== row.assignment.characterId);
+        const newCharacters = event.characters.filter(c => c.characterId !== charId);
 
         try {
             await this.vikingsService.updateEventCharacters(eventId, newCharacters);
