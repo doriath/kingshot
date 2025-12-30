@@ -104,6 +104,8 @@ export class AdminSvsPrepManagementComponent {
 
   // Editing State
   public editingRegId = signal<string | null>(null);
+  public editingSameTimeForAll = signal(true);
+  public editingTimeRangeInput = signal('');
 
   // Time Slots (Shared with User component, duplicate for now or extract to service? extract to service better but simple enough here)
   public timeSlots = computed(() => {
@@ -174,6 +176,21 @@ export class AdminSvsPrepManagementComponent {
       this.editingRegId.set(null);
     } else {
       this.editingRegId.set(regId);
+
+      // Initialize edit state
+      const reg = this.registrations().find(r => r.id === regId);
+      if (reg) {
+        const c = this.getSlotsFor(reg, 'construction');
+        const r = this.getSlotsFor(reg, 'research');
+        const t = this.getSlotsFor(reg, 'troops');
+
+        const cStr = Array.from(c).sort().join(',');
+        const rStr = Array.from(r).sort().join(',');
+        const tStr = Array.from(t).sort().join(',');
+
+        this.editingSameTimeForAll.set(cStr === rStr && cStr === tStr);
+        this.editingTimeRangeInput.set('');
+      }
     }
   }
 
@@ -202,6 +219,84 @@ export class AdminSvsPrepManagementComponent {
     // Optimistic ? No, wait for Firestore stream to update UI.
     // But we need to save.
     await this.svsService.saveRegistration(updatedReg);
+  }
+
+  async updateSlotsUnified(reg: SvSPrepRegistration, newSlots: Set<string>) {
+    const types: ('construction' | 'research' | 'troops')[] = ['construction', 'research', 'troops'];
+    const sortedSlots = Array.from(newSlots).sort();
+
+    const prefs = reg.preferences.filter(p => !types.includes(p.boostType)); // Keep others if any? Currently only 3 types exist.
+
+    types.forEach(t => {
+      prefs.push({
+        boostType: t,
+        slots: [...sortedSlots]
+      });
+    });
+
+    const updatedReg: SvSPrepRegistration = {
+      ...reg,
+      preferences: prefs,
+      updatedAt: new Date()
+    };
+
+    await this.svsService.saveRegistration(updatedReg);
+  }
+
+  async applyEditingTimeRange(reg: SvSPrepRegistration) {
+    const input = this.editingTimeRangeInput().trim();
+    if (!input) return;
+
+    const slots = this.parseTimeInput(input);
+    if (slots.length === 0) {
+      alert('Could not parse time range.');
+      return;
+    }
+
+    // Apply to all types (Unified)
+    const slotsSet = new Set(slots);
+    await this.updateSlotsUnified(reg, slotsSet);
+
+    this.editingSameTimeForAll.set(true);
+    this.editingTimeRangeInput.set(''); // Clear after apply? Or keep? Clearing is usually better feeback.
+  }
+
+  parseTimeInput(input: string): string[] {
+    const parts = input.split(/[\s,]+/);
+    const result = new Set<string>();
+    const allSlots = this.timeSlots();
+
+    parts.forEach(part => {
+      const [startStr, endStr] = part.split('-');
+      if (startStr && endStr) {
+        const startMin = this.toMinutes(startStr);
+        const endMin = this.toMinutes(endStr);
+
+        for (const slot of allSlots) {
+          const slotMin = this.toMinutes(slot);
+          if (slotMin >= startMin && slotMin < endMin) {
+            result.add(slot);
+          }
+        }
+      }
+    });
+    return Array.from(result);
+  }
+
+  toMinutes(timeStr: string): number {
+    let str = timeStr;
+    let isNeg = false;
+    if (str.startsWith('-')) {
+      isNeg = true;
+      str = str.substring(1);
+    }
+    if (!str.includes(':')) {
+      str += ':00';
+    }
+    const [h, m] = str.split(':').map(Number);
+    let total = h * 60 + m;
+    if (isNeg) total = -total;
+    return total;
   }
 
   // --- Scheduling Logic ---

@@ -117,6 +117,44 @@
                             <div class="edit-panel">
                                 <h4>Edit Slots for {{ reg.characterName }}</h4>
                                 @if (event(); as evt) {
+                                <div class="time-controls"
+                                    style="margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid var(--border-default);">
+                                    <div class="quick-entry" style="margin-bottom: 16px;">
+                                        <label
+                                            style="display: block; margin-bottom: 8px; color: var(--text-secondary);">Quick
+                                            Entry (e.g. "10-12")</label>
+                                        <div style="display: flex; gap: 8px;">
+                                            <input type="text" [ngModel]="editingTimeRangeInput()"
+                                                (ngModelChange)="editingTimeRangeInput.set($event)"
+                                                placeholder="Enter range..."
+                                                style="flex: 1; padding: 8px; border-radius: 6px; border: 1px solid var(--border-default); background: var(--surface-card); color: var(--text-primary);">
+                                            <button (click)="applyEditingTimeRange(reg)"
+                                                style="padding: 8px 16px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: 6px; color: var(--text-primary); cursor: pointer;">Apply</button>
+                                        </div>
+                                    </div>
+
+                                    <div class="toggle-control">
+                                        <label
+                                            style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: var(--text-primary);">
+                                            <input type="checkbox" [ngModel]="editingSameTimeForAll()"
+                                                (ngModelChange)="editingSameTimeForAll.set($event)">
+                                            Same time for Construction, Research, and Troops
+                                        </label>
+                                    </div>
+                                </div>
+
+                                @if (editingSameTimeForAll()) {
+                                <div class="edit-grids">
+                                    <div class="edit-group">
+                                        <h5>General Availability (All Days)</h5>
+                                        <app-svs-boost-grid [boostType]="'construction'" [slots]="timeSlots()"
+                                            [selectedMs]="getSlotsFor(reg, 'construction')"
+                                            (selectionChange)="updateSlotsUnified(reg, $event)">
+                                        </app-svs-boost-grid>
+                                        <!-- Note: Using 'construction' slots as the source of truth for display since they are all synced -->
+                                    </div>
+                                </div>
+                                } @else {
                                 <div class="edit-grids">
                                     <div class="edit-group">
                                         <h5>Construction ({{ evt.constructionDay }})</h5>
@@ -140,6 +178,7 @@
                                         </app-svs-boost-grid>
                                     </div>
                                 </div>
+                                }
                                 }
                                 <button class="close-edit" (click)="toggleEdit(reg.id!)">Done</button>
                             </div>

@@ -18,7 +18,12 @@
                 </div>
                 <div class="status">
                     @if (char.isRegistered) {
-                    <span class="badge registered">Registered</span>
+                    <div class="registered-summary">
+                        <span class="badge registered">Registered</span>
+                        @if (char.summary) {
+                        <span class="summary-text">{{ char.summary }}</span>
+                        }
+                    </div>
                     } @else {
                     <span class="badge not-registered">Not Registered</span>
                     }
@@ -44,6 +49,43 @@
                 </div>
                 }
 
+                <div class="time-controls">
+                    <div class="quick-entry">
+                        <label>Quick Entry (e.g. "10-12", "14-16, 18-20")</label>
+                        <div class="input-group">
+                            <input type="text" [ngModel]="timeRangeInput()" (ngModelChange)="timeRangeInput.set($event)"
+                                placeholder="Enter time ranges...">
+                            <button class="btn-secondary" (click)="applyTimeRange()">Apply</button>
+                        </div>
+                    </div>
+
+                    <div class="toggle-control">
+                        <label>
+                            <input type="checkbox" [ngModel]="sameTimeForAll()"
+                                (ngModelChange)="sameTimeForAll.set($event)">
+                            Same time for all days
+                        </label>
+                    </div>
+                </div>
+
+                @if (sameTimeForAll()) {
+                <div class="boost-section">
+                    <h4>General Availability (Applied to All Days)</h4>
+                    <p class="section-hint">Select times below to apply to Construction, Research, and Troops.</p>
+                    <div class="time-grid" (mouseleave)="stopDrag()"
+                        (touchmove)="handleTouchMove($event, 'construction')">
+                        @for (time of timeSlots(); track time) {
+                        <button class="time-slot" [attr.data-time]="time"
+                            [class.selected]="isSelected('construction', time)"
+                            (mousedown)="startDrag($event, 'construction', time)"
+                            (mouseenter)="onMouseEnter('construction', time)" (mouseup)="stopDrag()"
+                            (touchstart)="startDrag($event, 'construction', time)" (touchend)="stopDrag()">
+                            {{ time }}
+                        </button>
+                        }
+                    </div>
+                </div>
+                } @else {
                 <div class="boost-section">
                     <h4>Construction ({{ evt.constructionDay | titlecase }})</h4>
                     <div class="time-grid" (mouseleave)="stopDrag()"
@@ -88,6 +130,7 @@
                         }
                     </div>
                 </div>
+                }
 
                 <div class="boost-section image-section">
                     <h4>Backpack Screenshots (Required: 2)</h4>
