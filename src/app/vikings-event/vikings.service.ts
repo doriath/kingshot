@@ -14,6 +14,7 @@ export interface CharacterAssignment {
     powerLevel: number;
     marchesCount: number;
     status: VikingsStatus | 'unknown';
+    actualStatus?: VikingsStatus | 'unknown';
     reinforce: {
         characterId: string;
         marchType?: string;
@@ -571,6 +572,7 @@ export class VikingsService {
             if (safeC.mainCharacterId !== undefined) safeC.mainCharacterId = safeC.mainCharacterId;
             if (safeC.reinforcementCapacity !== undefined) safeC.reinforcementCapacity = safeC.reinforcementCapacity;
             if (safeC.extraMarches !== undefined) safeC.extraMarches = safeC.extraMarches;
+            if (safeC.actualStatus !== undefined) safeC.actualStatus = safeC.actualStatus;
 
             // Remove any undefined keys to satisfy Firestore
             Object.keys(safeC).forEach(key => (safeC as any)[key] === undefined && delete (safeC as any)[key]);

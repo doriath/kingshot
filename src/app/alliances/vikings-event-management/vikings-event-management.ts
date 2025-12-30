@@ -18,6 +18,7 @@ interface ManagementRow {
     mainCharacterName?: string; // Resolved name of the main character
     resolvedReinforcements?: ResolvedReinforcement[]; // Resolved names and status of reinforcement targets
     reinforcedBy?: ResolvedReinforcement[]; // Resolved names and status of characters reinforcing THIS character
+    actualStatus?: VikingsStatus | 'unknown'; // Actual status of the character during the event
 }
 
 interface ResolvedReinforcement {
@@ -128,6 +129,9 @@ interface ResolvedReinforcement {
                                 <div class="status-pill" [class]="row.assignment.status">
                                     {{ row.assignment.status | uppercase }}
                                 </div>
+                                <div *ngIf="row.assignment.actualStatus" class="status-pill actual" [class]="row.assignment.actualStatus">
+                                    Expected: {{ row.assignment.status | uppercase }} | Actual: {{ row.assignment.actualStatus | uppercase }}
+                                </div>
 
                                 <div class="marches">
                                     Marches: {{ row.assignment.marchesCount }} | 
@@ -195,6 +199,16 @@ interface ResolvedReinforcement {
                     <div class="form-group">
                         <label>Status</label>
                         <select [(ngModel)]="editStatus">
+                            <option value="online">ONLINE</option>
+                            <option value="offline_empty">OFFLINE (Empty)</option>
+                            <option value="offline_not_empty">OFFLINE (Not Empty)</option>
+                            <option value="unknown">UNKNOWN</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Actual Status</label>
+                        <select [(ngModel)]="editActualStatus">
+                            <option [ngValue]="undefined">Same as Expected</option>
                             <option value="online">ONLINE</option>
                             <option value="offline_empty">OFFLINE (Empty)</option>
                             <option value="offline_not_empty">OFFLINE (Not Empty)</option>
@@ -383,6 +397,7 @@ interface ResolvedReinforcement {
         .status-pill {
             display: inline-block; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.75rem; font-weight: bold; margin-bottom: 0.3rem;
         }
+        .status-pill.actual { border: 1px solid #fff; } 
         .status-pill.online { background: rgba(76, 175, 80, 0.2); color: #81c784; }
         .status-pill.offline_empty { background: rgba(255, 152, 0, 0.2); color: #ffb74d; }
         .status-pill.not_available, .status-pill.offline_not_empty { background: rgba(244, 67, 54, 0.2); color: #e57373; }
@@ -664,7 +679,8 @@ export class VikingsEventManagementComponent {
                 isQuit,
                 mainCharacterName,
                 resolvedReinforcements,
-                reinforcedBy
+                reinforcedBy,
+                actualStatus: a.actualStatus
             } as ManagementRow;
         }).sort((a, b) => b.assignment.powerLevel - a.assignment.powerLevel); // Sort by power
     });
@@ -672,6 +688,7 @@ export class VikingsEventManagementComponent {
     // Edit State
     public editingRow: ManagementRow | null = null;
     public editStatus: any = 'unknown';
+    public editActualStatus: any = undefined;
     public editMarches: number = 0;
     public editPower: number = 0;
     public editMainCharacterId: string = '';
@@ -792,6 +809,7 @@ export class VikingsEventManagementComponent {
     public editRow(row: ManagementRow) {
         this.editingRow = row;
         this.editStatus = row.assignment.status;
+        this.editActualStatus = row.assignment.actualStatus;
         this.editMarches = row.assignment.marchesCount;
         this.editPower = row.assignment.powerLevel;
         this.editMainCharacterId = row.assignment.mainCharacterId || '';
@@ -814,6 +832,7 @@ export class VikingsEventManagementComponent {
 
         const changes: Partial<CharacterAssignment> = {
             status: this.editStatus,
+            actualStatus: this.editActualStatus,
             marchesCount: this.editMarches,
             powerLevel: this.editPower,
 

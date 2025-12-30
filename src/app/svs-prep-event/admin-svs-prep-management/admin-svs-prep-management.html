@@ -18,10 +18,13 @@
     <div class="manual-add-section">
 
         <h3>Manual Registration</h3>
-        <div class="add-form">
-            <input type="text" placeholder="Character Name" [ngModel]="newManualName()"
-                (ngModelChange)="newManualName.set($event)" />
-            <button (click)="addManualRegistration()" [disabled]="!newManualName() || isAdding()">Add</button>
+        <div class="manual-add-row">
+            <input type="text" [ngModel]="newManualName()" (ngModelChange)="newManualName.set($event)"
+                placeholder="Character Name">
+            <input type="text" [ngModel]="newManualTimeRange()" (ngModelChange)="newManualTimeRange.set($event)"
+                placeholder="Time Range (e.g. 10-12)" class="time-range-input">
+            <button (click)="addManualRegistration()" [disabled]="!newManualName() || isAdding()">Add Manual
+                User</button>
         </div>
     </div>
 
@@ -73,33 +76,21 @@
                         <td>
                             @for (pref of reg.preferences; track pref.boostType) {
                             @if (pref.boostType === 'construction') {
-                            <div class="slots-list">
-                                @for (slot of pref.slots; track slot) {
-                                <span class="slot-tag">{{ slot }}</span>
-                                }
-                            </div>
+                            <span class="slot-tag">{{ getCompressedSlots(pref.slots) }}</span>
                             }
                             }
                         </td>
                         <td>
                             @for (pref of reg.preferences; track pref.boostType) {
                             @if (pref.boostType === 'research') {
-                            <div class="slots-list">
-                                @for (slot of pref.slots; track slot) {
-                                <span class="slot-tag">{{ slot }}</span>
-                                }
-                            </div>
+                            <span class="slot-tag">{{ getCompressedSlots(pref.slots) }}</span>
                             }
                             }
                         </td>
                         <td>
                             @for (pref of reg.preferences; track pref.boostType) {
                             @if (pref.boostType === 'troops') {
-                            <div class="slots-list">
-                                @for (slot of pref.slots; track slot) {
-                                <span class="slot-tag">{{ slot }}</span>
-                                }
-                            </div>
+                            <span class="slot-tag">{{ getCompressedSlots(pref.slots) }}</span>
                             }
                             }
                         </td>

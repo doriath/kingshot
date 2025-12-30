@@ -49,86 +49,134 @@
                 </div>
                 }
 
-                <div class="time-controls">
-                    <div class="quick-entry">
-                        <label>Quick Entry (e.g. "10-12", "14-16, 18-20")</label>
+                <div class="mode-tabs">
+                    <button [class.active]="entryMode() === 'simple'" (click)="entryMode.set('simple')">Simple
+                        Mode</button>
+                    <button [class.active]="entryMode() === 'advanced'" (click)="entryMode.set('advanced')">Advanced
+                        Mode</button>
+                </div>
+
+                @if (entryMode() === 'simple') {
+                <div class="simple-mode">
+                    <p class="section-hint">Select the days you are available and enter your time range.</p>
+
+                    <div class="target-checkboxes">
+                        <label>
+                            <input type="checkbox" [checked]="simpleModeTargets().construction"
+                                (change)="setSimpleTarget('construction', $any($event.target).checked)">
+                            Construction ({{ evt.constructionDay | titlecase }})
+                        </label>
+                        <label>
+                            <input type="checkbox" [checked]="simpleModeTargets().research"
+                                (change)="setSimpleTarget('research', $any($event.target).checked)">
+                            Research ({{ evt.researchDay | titlecase }})
+                        </label>
+                        <label>
+                            <input type="checkbox" [checked]="simpleModeTargets().troops"
+                                (change)="setSimpleTarget('troops', $any($event.target).checked)">
+                            Troops ({{ evt.troopsDay | titlecase }})
+                        </label>
+                    </div>
+
+                    <div class="quick-entry expanded">
+                        <label>Time Range (e.g. "10-12", "14-16")</label>
                         <div class="input-group">
                             <input type="text" [ngModel]="timeRangeInput()" (ngModelChange)="timeRangeInput.set($event)"
-                                placeholder="Enter time ranges...">
-                            <button class="btn-secondary" (click)="applyTimeRange()">Apply</button>
+                                placeholder="Enter time ranges..." (keydown.enter)="applyTimeRange()">
+                            <button class="btn-primary" (click)="applyTimeRange()">Apply</button>
+                        </div>
+                        <p class="helper">Enter times in 24h format. Examples: "10-12", "14:30-16:00", "19-21".</p>
+                    </div>
+                </div>
+                }
+
+                @if (entryMode() === 'advanced') {
+                <div class="advanced-mode">
+                    <div class="time-controls">
+                        <div class="quick-entry">
+                            <label>Quick Entry</label>
+                            <div class="input-group">
+                                <input type="text" [ngModel]="timeRangeInput()"
+                                    (ngModelChange)="timeRangeInput.set($event)" placeholder="Range...">
+                                <button class="btn-secondary" (click)="applyTimeRange()">Apply</button>
+                            </div>
+                        </div>
+
+                        <div class="toggle-control">
+                            <label>
+                                <input type="checkbox" [ngModel]="sameTimeForAll()"
+                                    (ngModelChange)="sameTimeForAll.set($event)">
+                                Same time for all days
+                            </label>
                         </div>
                     </div>
 
-                    <div class="toggle-control">
-                        <label>
-                            <input type="checkbox" [ngModel]="sameTimeForAll()"
-                                (ngModelChange)="sameTimeForAll.set($event)">
-                            Same time for all days
-                        </label>
+                    @if (sameTimeForAll()) {
+                    <div class="boost-section">
+                        <h4>General Availability (Applied to All Days)</h4>
+                        <p class="section-hint">Select times below to apply to Construction, Research, and Troops.</p>
+                        <div class="time-grid" (mouseleave)="stopDrag()"
+                            (touchmove)="handleTouchMove($event, 'construction')">
+                            @for (time of timeSlots(); track time) {
+                            <button class="time-slot" [attr.data-time]="time"
+                                [class.selected]="isSelected('construction', time)"
+                                (mousedown)="startDrag($event, 'construction', time)"
+                                (mouseenter)="onMouseEnter('construction', time)" (mouseup)="stopDrag()"
+                                (touchstart)="startDrag($event, 'construction', time)" (touchend)="stopDrag()">
+                                {{ time }}
+                            </button>
+                            }
+                        </div>
                     </div>
-                </div>
+                    } @else {
+                    <div class="boost-section">
+                        <h4>Construction ({{ evt.constructionDay | titlecase }})</h4>
+                        <div class="time-grid" (mouseleave)="stopDrag()"
+                            (touchmove)="handleTouchMove($event, 'construction')">
+                            @for (time of timeSlots(); track time) {
+                            <button class="time-slot" [attr.data-time]="time"
+                                [class.selected]="isSelected('construction', time)"
+                                (mousedown)="startDrag($event, 'construction', time)"
+                                (mouseenter)="onMouseEnter('construction', time)" (mouseup)="stopDrag()"
+                                (touchstart)="startDrag($event, 'construction', time)" (touchend)="stopDrag()">
+                                {{ time }}
+                            </button>
+                            }
+                        </div>
+                    </div>
 
-                @if (sameTimeForAll()) {
-                <div class="boost-section">
-                    <h4>General Availability (Applied to All Days)</h4>
-                    <p class="section-hint">Select times below to apply to Construction, Research, and Troops.</p>
-                    <div class="time-grid" (mouseleave)="stopDrag()"
-                        (touchmove)="handleTouchMove($event, 'construction')">
-                        @for (time of timeSlots(); track time) {
-                        <button class="time-slot" [attr.data-time]="time"
-                            [class.selected]="isSelected('construction', time)"
-                            (mousedown)="startDrag($event, 'construction', time)"
-                            (mouseenter)="onMouseEnter('construction', time)" (mouseup)="stopDrag()"
-                            (touchstart)="startDrag($event, 'construction', time)" (touchend)="stopDrag()">
-                            {{ time }}
-                        </button>
-                        }
+                    <div class="boost-section">
+                        <h4>Research ({{ evt.researchDay | titlecase }})</h4>
+                        <div class="time-grid" (mouseleave)="stopDrag()"
+                            (touchmove)="handleTouchMove($event, 'research')">
+                            @for (time of timeSlots(); track time) {
+                            <button class="time-slot" [attr.data-time]="time"
+                                [class.selected]="isSelected('research', time)"
+                                (mousedown)="startDrag($event, 'research', time)"
+                                (mouseenter)="onMouseEnter('research', time)" (mouseup)="stopDrag()"
+                                (touchstart)="startDrag($event, 'research', time)" (touchend)="stopDrag()">
+                                {{ time }}
+                            </button>
+                            }
+                        </div>
                     </div>
-                </div>
-                } @else {
-                <div class="boost-section">
-                    <h4>Construction ({{ evt.constructionDay | titlecase }})</h4>
-                    <div class="time-grid" (mouseleave)="stopDrag()"
-                        (touchmove)="handleTouchMove($event, 'construction')">
-                        @for (time of timeSlots(); track time) {
-                        <button class="time-slot" [attr.data-time]="time"
-                            [class.selected]="isSelected('construction', time)"
-                            (mousedown)="startDrag($event, 'construction', time)"
-                            (mouseenter)="onMouseEnter('construction', time)" (mouseup)="stopDrag()"
-                            (touchstart)="startDrag($event, 'construction', time)" (touchend)="stopDrag()">
-                            {{ time }}
-                        </button>
-                        }
-                    </div>
-                </div>
 
-                <div class="boost-section">
-                    <h4>Research ({{ evt.researchDay | titlecase }})</h4>
-                    <div class="time-grid" (mouseleave)="stopDrag()" (touchmove)="handleTouchMove($event, 'research')">
-                        @for (time of timeSlots(); track time) {
-                        <button class="time-slot" [attr.data-time]="time"
-                            [class.selected]="isSelected('research', time)"
-                            (mousedown)="startDrag($event, 'research', time)"
-                            (mouseenter)="onMouseEnter('research', time)" (mouseup)="stopDrag()"
-                            (touchstart)="startDrag($event, 'research', time)" (touchend)="stopDrag()">
-                            {{ time }}
-                        </button>
-                        }
+                    <div class="boost-section">
+                        <h4>Troops ({{ evt.troopsDay | titlecase }})</h4>
+                        <div class="time-grid" (mouseleave)="stopDrag()"
+                            (touchmove)="handleTouchMove($event, 'troops')">
+                            @for (time of timeSlots(); track time) {
+                            <button class="time-slot" [attr.data-time]="time"
+                                [class.selected]="isSelected('troops', time)"
+                                (mousedown)="startDrag($event, 'troops', time)"
+                                (mouseenter)="onMouseEnter('troops', time)" (mouseup)="stopDrag()"
+                                (touchstart)="startDrag($event, 'troops', time)" (touchend)="stopDrag()">
+                                {{ time }}
+                            </button>
+                            }
+                        </div>
                     </div>
-                </div>
-
-                <div class="boost-section">
-                    <h4>Troops ({{ evt.troopsDay | titlecase }})</h4>
-                    <div class="time-grid" (mouseleave)="stopDrag()" (touchmove)="handleTouchMove($event, 'troops')">
-                        @for (time of timeSlots(); track time) {
-                        <button class="time-slot" [attr.data-time]="time" [class.selected]="isSelected('troops', time)"
-                            (mousedown)="startDrag($event, 'troops', time)" (mouseenter)="onMouseEnter('troops', time)"
-                            (mouseup)="stopDrag()" (touchstart)="startDrag($event, 'troops', time)"
-                            (touchend)="stopDrag()">
-                            {{ time }}
-                        </button>
-                        }
-                    </div>
+                    }
                 </div>
                 }
 

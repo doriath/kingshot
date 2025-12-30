@@ -7,6 +7,7 @@ import { FormsModule } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { switchMap, map } from 'rxjs/operators';
 import { of } from 'rxjs';
+import { generateTimeSlots, getCompressedSlots, parseTimeInput } from '../svs-time-utils';
 
 @Component({
   selector: 'app-admin-svs-prep-management',
@@ -99,7 +100,9 @@ export class AdminSvsPrepManagementComponent {
   public manualAssignmentId = signal<string | null>(null);
 
   // Manual Registration State
+  // Manual Registration State
   public newManualName = signal('');
+  public newManualTimeRange = signal('');
   public isAdding = signal(false);
 
   // Editing State
@@ -108,25 +111,8 @@ export class AdminSvsPrepManagementComponent {
   public editingTimeRangeInput = signal('');
 
   // Time Slots (Shared with User component, duplicate for now or extract to service? extract to service better but simple enough here)
-  public timeSlots = computed(() => {
-    const slots: string[] = [];
-    // Start from -15 minutes (representing 23:45 of previous day)
-    // End at 1425 minutes (23:45 of current day)
-    // Step 30 minutes
-    for (let m = -15; m <= 1425; m += 30) {
-      if (m < 0) {
-        // Special case for previous day
-        slots.push("-23:45");
-      } else {
-        const h = Math.floor(m / 60);
-        const min = m % 60;
-        const hStr = h.toString().padStart(2, '0');
-        const mStr = min.toString().padStart(2, '0');
-        slots.push(`${hStr}:${mStr}`);
-      }
-    }
-    return slots;
-  });
+  // Time Slots (Shared with User component, duplicate for now or extract to service? extract to service better but simple enough here)
+  public timeSlots = computed(() => generateTimeSlots());
 
   async addManualRegistration() {
     const name = this.newManualName().trim();
@@ -137,18 +123,34 @@ export class AdminSvsPrepManagementComponent {
     try {
       // Create unique ID
       const charId = 'manual_' + Date.now();
+
+      const preferences: any[] = [];
+      const rangeInput = this.newManualTimeRange().trim();
+      if (rangeInput) {
+        const slots = parseTimeInput(rangeInput, this.timeSlots());
+        if (slots.length === 0) {
+          alert('Invalid time range. No slots matched.');
+          this.isAdding.set(false);
+          return;
+        }
+        preferences.push({ boostType: 'construction', slots: slots });
+        preferences.push({ boostType: 'research', slots: slots });
+        preferences.push({ boostType: 'troops', slots: slots });
+      }
+
       const reg: SvSPrepRegistration = {
         eventId: evtId,
         userId: 'manual', // Special user ID
         characterId: charId,
         characterName: name,
         isManual: true,
-        preferences: [],
+        preferences: preferences,
         updatedAt: new Date(),
         characterVerified: true // Manual ones are trusted/verified by admin
       };
       await this.svsService.saveRegistration(reg);
       this.newManualName.set('');
+      this.newManualTimeRange.set('');
     } catch (e) {
       console.error(e);
       alert('Failed to add');
@@ -247,56 +249,21 @@ export class AdminSvsPrepManagementComponent {
     const input = this.editingTimeRangeInput().trim();
     if (!input) return;
 
-    const slots = this.parseTimeInput(input);
+    // Apply to all types (Unified)
+    const slots = parseTimeInput(input, this.timeSlots());
     if (slots.length === 0) {
       alert('Could not parse time range.');
       return;
     }
 
-    // Apply to all types (Unified)
     const slotsSet = new Set(slots);
     await this.updateSlotsUnified(reg, slotsSet);
 
     this.editingSameTimeForAll.set(true);
     this.editingTimeRangeInput.set(''); // Clear after apply? Or keep? Clearing is usually better feeback.
   }
-
-  parseTimeInput(input: string): string[] {
-    const parts = input.split(/[\s,]+/);
-    const result = new Set<string>();
-    const allSlots = this.timeSlots();
-
-    parts.forEach(part => {
-      const [startStr, endStr] = part.split('-');
-      if (startStr && endStr) {
-        const startMin = this.toMinutes(startStr);
-        const endMin = this.toMinutes(endStr);
-
-        for (const slot of allSlots) {
-          const slotMin = this.toMinutes(slot);
-          if (slotMin >= startMin && slotMin < endMin) {
-            result.add(slot);
-          }
-        }
-      }
-    });
-    return Array.from(result);
-  }
-
-  toMinutes(timeStr: string): number {
-    let str = timeStr;
-    let isNeg = false;
-    if (str.startsWith('-')) {
-      isNeg = true;
-      str = str.substring(1);
-    }
-    if (!str.includes(':')) {
-      str += ':00';
-    }
-    const [h, m] = str.split(':').map(Number);
-    let total = h * 60 + m;
-    if (isNeg) total = -total;
-    return total;
+  getCompressedSlots(slots: string[]): string {
+    return getCompressedSlots(slots);
   }
 
   // --- Scheduling Logic ---

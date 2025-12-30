@@ -66,16 +66,121 @@
     display: flex;
     flex-direction: column;
     align-items: flex-end;
+    gap: 4px;
 }
 
 .summary-text {
-    font-size: 0.75em;
+    font-size: 0.85em;
     color: var(--text-secondary);
     max-width: 300px;
-    text-align: right;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+/* Mode Tabs */
+.mode-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--border-default);
+}
+
+.mode-tabs button {
+    padding: 12px 24px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 1em;
+    transition: all 0.2s;
+}
+
+.mode-tabs button.active {
+    color: var(--primary-default, #007bff);
+    border-bottom-color: var(--primary-default, #007bff);
+    font-weight: 500;
+}
+
+.mode-tabs button:hover:not(.active) {
+    color: var(--text-primary);
+}
+
+/* Simple Mode Styles */
+.simple-mode .section-hint {
+    margin-bottom: 24px;
+    color: var(--text-secondary);
+}
+
+.target-checkboxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.target-checkboxes label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 8px 12px;
+    background: var(--surface-card-alt, #2a2a2a);
+    border: 1px solid var(--border-default);
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.target-checkboxes label:hover {
+    border-color: var(--primary-default, #007bff);
+}
+
+.quick-entry.expanded {
+    background: var(--surface-card-alt, #2a2a2a);
+    padding: 24px;
+    border-radius: 12px;
+    border: 1px solid var(--border-default);
+}
+
+.quick-entry.expanded label {
+    font-weight: 500;
+    font-size: 1.1em;
+    margin-bottom: 16px;
+    display: block;
+}
+
+.quick-entry.expanded .input-group input {
+    padding: 12px;
+    font-size: 1.1em;
+}
+
+.helper {
+    font-size: 0.9em;
+    color: var(--text-secondary);
+    margin-top: 8px;
+}
+
+.btn-primary {
+    background: var(--primary-default, #007bff);
+    color: white;
+    border: none;
+    padding: 0 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.btn-primary:hover {
+    filter: brightness(1.1);
+}
+
+/* Advanced Mode */
+.advanced-mode .time-controls {
+    margin-bottom: 24px;
+    padding: 16px;
+    background: var(--surface-card-alt, #2a2a2a);
+    border-radius: 8px;
 }
 
 .badge {
