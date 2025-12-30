@@ -27,7 +27,21 @@ export class App {
 
   private user = toSignal(this.authService.user$);
 
+  private currentUrl = toSignal(
+    this.router.events.pipe(
+      filter((e) => e instanceof NavigationEnd),
+      map((e: NavigationEnd) => e.urlAfterRedirects)
+    ),
+    { initialValue: this.router.url }
+  );
+
   public showRegistrationHint = computed(() => {
+    // Check URL first
+    const url = this.currentUrl();
+    const isTargetPage = url.startsWith('/vikings') || url.startsWith('/swordland');
+
+    if (!isTargetPage) return false;
+
     const user = this.user();
     // Hint if: Not logged in OR (Logged in AND No characters)
     if (!user) return true;
