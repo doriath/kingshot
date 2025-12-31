@@ -48,7 +48,12 @@ For each event, we calculate a raw score (1.0 for Match, 0.0 for Mismatch). This
 - `expected_reinforcement`: sum of confidence levels of all sources that reinforce the target.
 - score for reinforcing `online` player: `1.5 / (expected_reinforcement)`
 - score for reinforcing `offline_empty` player: `1 / (expected_reinforcement)`
-- score for reinforcing `offline_not_empty` player: `1 / (4 + expected_reinforcement)`
+- score for reinforcing `offline_not_empty` player: `1 / (2 + expected_reinforcement)`
+
+To take confidence into account, the score is modified as follows:
+- `online`: `score * confidence + (1-confidence) * offline_not_empty_score` 
+- `offline_empty`: `score * confidence + (1 - confidence) * offline_not_empty_score`
+- `offline_not_empty`: `score`
 
 ### Surivival
 
@@ -59,5 +64,18 @@ If player is `online` or `offline_empty`, they will require some amount of reinf
 - **Farm Priorities**: Ensure farms are reinforced by their owners first.
 - We want to make sure that as many `online` and `offline_empty` players are reinforced to survive.
 - Maximize the score of `online` and `offline_empty` players (targetting ~1.5 more points for `online` player  vs `offline_empty` player)
+- If possible, we want to `online` players to reinforce `online` and `offline_empty` players, and we want `offline_empty` players to reinforce `offline_empty` and `offline_not_empty` players. 
 - We should take confidence into account. The player with lower confidence should get less points (it is also ok to reinforce it with players with lower confidence).
 - Perform the assignments of `online` and `offline_empty` players first. The assignment of reinforcements for `offline_not_empty` emptys should be done last, just to have some assignment, but we do not expect them to actually be done.
+
+### Algorithm
+
+#### Phase 1 - offline_empty players
+
+1. Take the `offline_empty` player that has the least amount of reinforcements assigned to it. In case of tie, take the one with highest confidence level.
+2. Take all `offline_empty` players and `offline_not_empty` players - compute the score that we would get for reinforcing the selected player. Assign the reinforcement to the player with the highest score.
+
+#### Phase 2 - online players
+
+1. Take the `online` player that has the least amount of reinforcements assigned to it. In case of tie, take the one with highest confidence level.
+2. Take all `online` players and `offline_empty` players - compute the score that we would get for reinforcing the selected player. Assign the reinforcement to the player with the highest score.
