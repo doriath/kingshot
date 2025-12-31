@@ -10,9 +10,4 @@ import { RouterLink } from '@angular/router';
     imports: [CommonModule, RouterLink]
 })
 export class VikingsGuideComponent {
-    public activeTab = signal<'casual' | 'advanced'>('casual');
-
-    public setTab(tab: 'casual' | 'advanced') {
-        this.activeTab.set(tab);
-    }
 }

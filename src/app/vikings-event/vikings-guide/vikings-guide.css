@@ -38,55 +38,6 @@ h1 {
     color: #ffcc00;
 }
 
-/* Tabs */
-.tabs {
-    display: flex;
-    justify-content: center;
-    gap: 16px;
-    margin-bottom: 32px;
-}
-
-.tabs button {
-    background: transparent;
-    border: 2px solid #444;
-    color: #888;
-    padding: 10px 24px;
-    border-radius: 30px;
-    font-size: 1.1rem;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-weight: 600;
-}
-
-.tabs button:hover {
-    border-color: #666;
-    color: #ccc;
-}
-
-.tabs button.active {
-    background: #ffcc00;
-    border-color: #ffcc00;
-    color: #1a1a1a;
-    box-shadow: 0 0 15px rgba(255, 204, 0, 0.3);
-}
-
-/* Content */
-.content {
-    animation: fadeIn 0.4s ease-out;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
 /* Casual Guide */
 .step-card {
     display: flex;
@@ -122,39 +73,6 @@ h1 {
     margin: 0;
     color: #bbb;
     line-height: 1.6;
-}
-
-/* Advanced Guide */
-.advanced-guide article {
-    margin-bottom: 40px;
-}
-
-.advanced-guide h2 {
-    color: #ffcc00;
-    border-bottom: 1px solid #333;
-    padding-bottom: 16px;
-    margin-bottom: 24px;
-}
-
-.advanced-guide h3 {
-    color: #fff;
-    font-size: 1.3rem;
-    margin-bottom: 16px;
-}
-
-.advanced-guide p,
-.advanced-guide li {
-    color: #ccc;
-    line-height: 1.8;
-    font-size: 1.05rem;
-}
-
-.advanced-guide ul {
-    padding-left: 20px;
-}
-
-.advanced-guide li {
-    margin-bottom: 12px;
 }
 
 strong,
