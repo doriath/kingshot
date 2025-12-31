@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AlliancesService } from '../alliances/alliances.service';
-import { VikingsService, VikingsEvent, CharacterAssignmentView, VikingsRegistration, VikingsStatus } from './vikings.service';
+import { VikingsService } from './vikings.service';
+import { VikingsEvent, CharacterAssignmentView, VikingsRegistration, VikingsStatus } from './vikings.types';
 import { UserDataService } from '../user-data.service';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { switchMap, map } from 'rxjs/operators';

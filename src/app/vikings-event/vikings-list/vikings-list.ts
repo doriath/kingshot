@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { VikingsService, VikingsEvent } from '../vikings.service';
+import { VikingsService } from '../vikings.service';
+import { VikingsEvent } from '../vikings.types';
 import { UserDataService } from '../../user-data.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 

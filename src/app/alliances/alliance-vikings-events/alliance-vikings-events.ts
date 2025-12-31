@@ -2,11 +2,11 @@ import { Component, inject, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { VikingsService, VikingsEventView } from '../../vikings-event/vikings.service';
+import { VikingsService } from '../../vikings-event/vikings.service';
+import { VikingsEventView, VikingsEvent } from '../../vikings-event/vikings.types';
 import { Alliance } from '../alliances.service';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { switchMap, of } from 'rxjs'; // Import of
-import { VikingsEvent } from '../../vikings-event/vikings.service';
 
 @Component({
     selector: 'app-alliance-vikings-events',
