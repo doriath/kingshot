@@ -234,32 +234,40 @@ export class VikingsService {
 
                 if (target) {
                     const targetStatus = getCharacterStatus(target);
-                    // Determine numerator based on target status
-                    let numerator = 0;
+                    const targetConf = target.confidenceLevel ?? 0.5;
+
+                    // Get list of all incoming reinforcers
+                    const allIncoming = incomingConfidence.get(target.characterId) || [];
+
+                    // E = Sum of confidence of ALL sources (Final saturation)
+                    const E = allIncoming.reduce((sum, item) => sum + item.conf, 0);
+                    const safeE = Math.max(0.1, E); // Predictable denominator
+
+                    // Constants matching Algo
+                    const SCORE_ONLINE = 1.5;
+                    const SCORE_OFFLINE_EMPTY = 1.0;
+                    const SCORE_OFFLINE_NOT_EMPTY = 1.0;
+                    const PENALTY_OFFLINE_NOT_EMPTY = 2.0;
+
+                    // Score if target was Offline Not Empty
+                    const scoreOfflineNotEmpty = SCORE_OFFLINE_NOT_EMPTY / (PENALTY_OFFLINE_NOT_EMPTY + E);
+
+                    let primaryScore = 0;
                     if (targetStatus === 'online') {
-                        numerator = 1.3;
+                        primaryScore = SCORE_ONLINE / safeE;
                     } else if (targetStatus === 'offline_empty') {
-                        numerator = 1.0;
+                        primaryScore = SCORE_OFFLINE_EMPTY / safeE;
                     } else {
-                        // Offline Not Empty (Legacy or busy)
-                        // Formula was 1.0 / (4 + count). 
-                        // Probabilistic equivalent: E[1 / (4 + 1 + others)]
-                        // Let's stick to standard numerator logic for simplicity or handle it separately.
-                        // For offline_not_empty, base count is 4. So we treat it as if 4 people are already there.
-                        numerator = 1.0;
+                        // Offline Not Empty
+                        primaryScore = scoreOfflineNotEmpty;
                     }
 
-                    // Get list of all OTHER reinforcers' probabilities
-                    const allIncoming = incomingConfidence.get(target.characterId) || [];
-                    const otherProbs = allIncoming
-                        .filter(itm => itm.id !== c.characterId)
-                        .map(itm => itm.conf);
-
+                    // Combined Score Formula
+                    // score * confidence + (1 - confidence) * offline_not_empty_score
                     if (targetStatus === 'offline_not_empty') {
-                        // Special case: Offline Not Empty has base "4" marches
-                        scoreValue = this.calculateExpectedScore(otherProbs, numerator, 4);
+                        scoreValue = scoreOfflineNotEmpty;
                     } else {
-                        scoreValue = this.calculateExpectedScore(otherProbs, numerator, 0);
+                        scoreValue = primaryScore * targetConf + (1 - targetConf) * scoreOfflineNotEmpty;
                     }
                 }
 
@@ -286,35 +294,6 @@ export class VikingsService {
             ...event,
             characters: viewCharacters
         };
-    }
-
-    /**
-     * Calculates E[numerator / (1 + baseOffset + K)] where K is number of other successes.
-     */
-    private calculateExpectedScore(probs: number[], numerator: number, baseOffset: number): number {
-        // dp[i] = probability that exactly i people show up
-        // Initialize: dp[0] = 1 (0 people show up)
-        let dp = new Array(probs.length + 1).fill(0);
-        dp[0] = 1.0;
-
-        for (const p of probs) {
-            for (let i = dp.length - 1; i >= 1; i--) {
-                dp[i] = dp[i] * (1 - p) + dp[i - 1] * p;
-            }
-            dp[0] = dp[0] * (1 - p);
-        }
-
-        let expectedValue = 0;
-        // Verify sum of probs is ~1? (Optional check)
-
-        for (let k = 0; k < dp.length; k++) {
-            const probK = dp[k];
-            // If k others show up, total count is (1 + baseOffset + k)  [1 is ME]
-            const count = 1 + baseOffset + k;
-            expectedValue += probK * (numerator / count);
-        }
-
-        return expectedValue;
     }
 
     public generateAssignmentClipboardText(character: CharacterAssignmentView): string {
