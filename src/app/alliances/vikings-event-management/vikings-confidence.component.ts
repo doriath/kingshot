@@ -252,7 +252,7 @@ export class VikingsConfidenceComponent {
                 ...m,
                 calculatedScore: calculated,
                 storedScore: getMemberConfidence(m),
-                eventCount: relevantEvents.filter((e: VikingsEvent) => e.characters.some(c => c.characterId === m.characterId)).length
+                eventCount: relevantEvents.filter((e: VikingsEvent) => e.status === 'finished' && e.characters.some(c => c.characterId === m.characterId)).length
             };
         }).sort((a, b) => b.calculatedScore - a.calculatedScore);
     });

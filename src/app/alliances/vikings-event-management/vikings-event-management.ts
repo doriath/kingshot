@@ -46,6 +46,8 @@ interface ResolvedReinforcement {
                     <a [routerLink]="['/admin', 'alliances', evt.allianceId]" class="alliance-link">
                         [{{ evt.allianceTag }}] Server #{{ evt.server }}
                     </a>
+                    <span class="status-badge" [class]="evt.status">{{ evt.status | uppercase }}</span>
+                    <button class="status-btn" (click)="cycleStatus()">Change Status</button>
                 </div>
                 <!-- Stats Summary -->
                 <div class="stats-summary" *ngIf="stats() as s">
@@ -383,7 +385,20 @@ interface ResolvedReinforcement {
         .conf-btn { background: #673ab7; color: white; text-decoration: none; display: flex; align-items: center; }
         .simulate-btn { background: #00bcd4; color: white; }
         .show-hide-btn { background: #607d8b; color: white; }
+        .show-hide-btn { background: #607d8b; color: white; }
         .msg-btn { background: #ff9800; color: white; }
+        
+        .status-badge { 
+            display: inline-block; padding: 0.2rem 0.6rem; border-radius: 4px; font-weight: bold; margin-left: 1rem; font-size: 0.8rem; vertical-align: middle;
+        }
+        .status-badge.voting { background: #2196f3; color: white; }
+        .status-badge.finalized { background: #4caf50; color: white; }
+        .status-badge.finished { background: #9e9e9e; color: white; border: 1px solid #777; }
+
+        .status-btn {
+            background: none; border: 1px solid #555; color: #aaa; padding: 0.2rem 0.6rem; border-radius: 4px; margin-left: 0.5rem; cursor: pointer; font-size: 0.75rem; vertical-align: middle;
+        }
+        .status-btn:hover { background: #333; color: white; }
 
         .missing-members-section {
             background: #332b00; border: 1px solid #665500; border-radius: 8px; padding: 1rem; margin-bottom: 2rem;
@@ -1009,6 +1024,25 @@ export class VikingsEventManagementComponent {
         } catch (e) {
             console.error(e);
             alert('Action failed.');
+        }
+    }
+
+    public async cycleStatus() {
+        const eventId = this.eventId();
+        const event = this.event();
+        if (!eventId || !event) return;
+
+        const statuses: ('voting' | 'finalized' | 'finished')[] = ['voting', 'finalized', 'finished'];
+        const currentIdx = statuses.indexOf(event.status as any);
+        const nextStatus = statuses[(currentIdx + 1) % statuses.length];
+
+        if (!confirm(`Change event status to ${nextStatus.toUpperCase()}?`)) return;
+
+        try {
+            await this.vikingsService.updateVikingsEvent(eventId, { status: nextStatus });
+        } catch (e) {
+            console.error(e);
+            alert('Failed to update status');
         }
     }
 

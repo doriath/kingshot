@@ -35,7 +35,7 @@ export interface VikingsEvent {
     allianceTag?: string; // Optional for now to support old data if any
     server: number;
     date: any; // Timestamp
-    status: 'voting' | 'finalized' | 'past';
+    status: 'voting' | 'finalized' | 'finished' | 'past';
     characters: CharacterAssignment[];
 }
 

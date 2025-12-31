@@ -111,6 +111,11 @@ export class VikingsService {
         await import('@angular/fire/firestore').then(mod => mod.deleteDoc(docRef));
     }
 
+    async updateVikingsEvent(eventId: string, data: Partial<VikingsEvent>): Promise<void> {
+        const docRef = doc(this.firestore, `vikingsEvents/${eventId}`);
+        await import('@angular/fire/firestore').then(mod => mod.updateDoc(docRef, data));
+    }
+
     async finalizeEvent(eventId: string): Promise<void> {
         const docRef = doc(this.firestore, `vikingsEvents/${eventId}`);
         const firestore = await import('@angular/fire/firestore');
@@ -280,7 +285,7 @@ export class VikingsService {
     calculateMemberConfidence(memberId: string, pastEvents: VikingsEvent[]): number {
         // Consider last 5 events
         const recentEvents = pastEvents
-            .filter(e => e.status === 'finalized')
+            .filter(e => e.status === 'finished')
             .sort((a, b) => b.date.seconds - a.date.seconds)
             .slice(0, 5);
 
