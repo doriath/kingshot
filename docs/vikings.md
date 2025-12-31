@@ -35,7 +35,6 @@ For each event, we calculate a raw score (1.0 for Match, 0.0 for Mismatch). This
 ---
 
 ## Assignment Algorithm
-The assignment logic runs in **4 Phases** to ensure optimal distribution of reinforcements.
 
 ### Core Concepts
 - **Sources**: Players sending reinforcements.
@@ -44,28 +43,21 @@ The assignment logic runs in **4 Phases** to ensure optimal distribution of rein
 - **Capacity**: Maximum number of reinforcements a target can receive (default derived from max capacity / 150k).
 - **Farms**: Passive accounts linked to a Main account. They do not send reinforcements to general targets.
 
-### Phase 1: Farm Priorities
-*   **Goal**: Ensure farms reinforce their owners first.
-*   **Action**: If a player has linked farms, those farms use their marches to reinforce the main account immediately.
+### Scoring
 
-### Phase 2: Offline Sources
-*   **Goal**: Utilize marches from Offline (Empty) players who cannot react dynamically.
-*   **Sources**: Offline Empty players.
-*   **Targets**: Offline Empty & Offline Not Empty players.
-*   **Logic**:
-    - Prioritizes filling targets with the lowest current reinforcement count.
-    - **Restriction**: Offline Not Empty sources cannot reinforce Offline Empty targets.
+- `expected_reinforcement`: sum of confidence levels of all sources that reinforce the target.
+- score for reinforcing `online` player: `1.5 / (expected_reinforcement)`
+- score for reinforcing `offline_empty` player: `1 / (expected_reinforcement)`
+- score for reinforcing `offline_not_empty` player: `1 / (4 + expected_reinforcement)`
 
-### Phase 3: Online Sources
-*   **Goal**: Assign active players to critical targets.
-*   **Sources**: Online players.
-*   **Targets**: Online & Offline Empty players.
-*   **Logic**:
-    - **Confidence Matching**: High Confidence sources (>= 0.7) are prioritized to reinforce High Confidence targets.
-    - **Priority**: Online targets are preferred over Offline Empty targets in tie-breaks.
+### Surivival
 
-### Phase 4: Offline Not Empty Cleanup
-*   **Goal**: Use any remaining marches to top off busy players.
-*   **Sources**: Offline Empty & Offline Not Empty (Online players are excluded from reinforcing 'Offline Not Empty' targets).
-*   **Targets**: Offline Not Empty players.
-*   **Logic**: fills targets with the lowest counts first.
+If player is `online` or `offline_empty`, they will require some amount of reinforcements to survive (this should be input parameter to the algoritm, controlled by the user).
+
+### Goals
+
+- **Farm Priorities**: Ensure farms are reinforced by their owners first.
+- We want to make sure that as many `online` and `offline_empty` players are reinforced to survive.
+- Maximize the score of `online` and `offline_empty` players (targetting ~1.5 more points for `online` player  vs `offline_empty` player)
+- We should take confidence into account. The player with lower confidence should get less points (it is also ok to reinforce it with players with lower confidence).
+- Perform the assignments of `online` and `offline_empty` players first. The assignment of reinforcements for `offline_not_empty` emptys should be done last, just to have some assignment, but we do not expect them to actually be done.
