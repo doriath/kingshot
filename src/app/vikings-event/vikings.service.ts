@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { CharacterAssignment, CharacterAssignmentView, VikingsEvent, VikingsEventView, VikingsRegistration, VikingsStatus } from './vikings.types';
 import { calculateAssignments } from './vikings-assignment-logic';
-import { getCharacterStatus } from './vikings.helpers';
+import { getCharacterStatus, getMemberConfidence } from './vikings.helpers';
 
 
 @Injectable({
@@ -89,6 +89,7 @@ export class VikingsService {
                 powerLevel: m.power,
                 marchesCount: 0, // Default to 0, user will register explicit count
                 status: 'unknown',
+                confidenceLevel: getMemberConfidence(m),
                 reinforce: []
             }));
 
@@ -274,5 +275,91 @@ export class VikingsService {
         }
 
         return lines.join('\n');
+    }
+
+    calculateMemberConfidence(memberId: string, pastEvents: VikingsEvent[]): number {
+        // Consider last 5 events
+        const recentEvents = pastEvents
+            .filter(e => e.status === 'finalized')
+            .sort((a, b) => b.date.seconds - a.date.seconds)
+            .slice(0, 5);
+
+        if (recentEvents.length === 0) {
+            return 1.0; // Default
+        }
+
+        let totalScore = 0;
+        let count = 0;
+
+        for (const event of recentEvents) {
+            const char = event.characters?.find(c => c.characterId === memberId);
+            if (!char) continue;
+
+            // Only count if we have data on what they did (actualStatus)
+            // If they didn't even register (unknown status), generally ignore or treat as neutral?
+            // "if player says they will be online..." implies we look at declared status.
+
+            const declared = getCharacterStatus(char);
+            // If declared unknown/offline_not_empty (meaning they didn't sign up or said busy), 
+            // maybe we skip this event for confidence scoring?
+            // Or if they said BUSY and were BUSY, that's reliable?
+            // Re-read req: "if player says they will be online... if player says they will be offline not empty..."
+            // It seems we care about reliability of prediction.
+
+            // Let's check `actualStatus`. 
+            // If actualStatus is missing, we can't score.
+            if (!char.actualStatus || char.actualStatus === 'unknown') continue;
+
+            const actual = char.actualStatus;
+
+            // SCORING:
+            // Match: 2.0 (High confidence)
+            // Mismatch: 1.0 (Low confidence)
+
+            // Special case: "if player says online, but then offline not empty => low confidence"
+            // "if player says online, and actually online => high confidence"
+
+            let eventScore = 1.0;
+
+            if (declared === actual) {
+                eventScore = 2.0;
+            } else {
+                // Mismatch
+                // declared=online, actual=offline => 1.0
+                // declared=offline, actual=online => Maybe also 1.0? Unreliable.
+                eventScore = 1.0;
+            }
+
+            totalScore += eventScore;
+            count++;
+        }
+
+        if (count === 0) return 1.0;
+
+        return totalScore / count;
+    }
+
+    async updateAllianceMemberConfidence(allianceId: string, updates: { characterId: string; confidenceLevel: number }[]): Promise<void> {
+        const allianceRef = doc(this.firestore, `alliances/${allianceId}`);
+        await import('@angular/fire/firestore').then(mod => mod.runTransaction(this.firestore, async (transaction) => {
+            const snapshot = await transaction.get(allianceRef);
+            if (!snapshot.exists()) return;
+
+            const data = snapshot.data();
+            const members = (data['members'] || []) as any[];
+            let changed = false;
+
+            updates.forEach(u => {
+                const member = members.find(m => m.characterId === u.characterId);
+                if (member) {
+                    member.confidenceLevel = u.confidenceLevel;
+                    changed = true;
+                }
+            });
+
+            if (changed) {
+                transaction.update(allianceRef, { members });
+            }
+        }));
     }
 }

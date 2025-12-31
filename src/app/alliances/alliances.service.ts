@@ -20,6 +20,7 @@ export interface AllianceMember {
     reinforcementCapacity?: number;
     marchesCount?: number;
     quit?: boolean;
+    confidenceLevel?: number; // 1.0 to 2.0
 }
 
 @Injectable({

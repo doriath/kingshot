@@ -234,6 +234,10 @@ class VikingsAssignmentSolver {
             for (const source of availableOnlineSources) {
                 if ((this.marchesRemainingMap.get(source.characterId) || 0) <= 0) continue;
 
+                // Determine if source is High Confidence
+                const sourceConfidence = source.confidenceLevel ?? 1.0;
+                const isSourceHighConfidence = sourceConfidence >= 1.5;
+
                 const validTargets = onlineAndOfflineEmptyTargets.filter(t => {
                     if (t.characterId === source.characterId) return false;
                     if (this.assignmentsMap.get(source.characterId)?.find(a => a.characterId === t.characterId)) return false;
@@ -247,6 +251,18 @@ class VikingsAssignmentSolver {
                     const countA = this.targetReinforcementCountMap.get(a.characterId) || 0;
                     const countB = this.targetReinforcementCountMap.get(b.characterId) || 0;
                     if (countA !== countB) return countA - countB;
+
+                    // NEW: Confidence Priority
+                    // If source is high confidence, we want to prioritize high confidence targets.
+                    if (isSourceHighConfidence) {
+                        const confA = a.confidenceLevel ?? 1.0;
+                        const confB = b.confidenceLevel ?? 1.0;
+                        const isAHigh = confA >= 1.5;
+                        const isBHigh = confB >= 1.5;
+
+                        if (isAHigh && !isBHigh) return -1;
+                        if (!isAHigh && isBHigh) return 1;
+                    }
 
                     // Tie-Breaker: Prioritize Online
                     const isAOnline = a.status === 'online';

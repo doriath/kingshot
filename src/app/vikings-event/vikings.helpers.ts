@@ -17,3 +17,13 @@ export function getCharacterStatus(character: { status?: string | null }): Vikin
     // Default fallback
     return 'offline_not_empty';
 }
+
+/**
+ * Returns the confidence level of a member.
+ * Defaults to 1.0 (Low/Standard) if not set.
+ * Range: 1.0 to 2.0
+ */
+export function getMemberConfidence(member: { confidenceLevel?: number }): number {
+    return member.confidenceLevel ?? 1.0;
+}
+

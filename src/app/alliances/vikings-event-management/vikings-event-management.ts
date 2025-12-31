@@ -61,6 +61,9 @@ interface ResolvedReinforcement {
                 <button class="tool-btn add-btn" (click)="showAddModal = true">➕ Add Character</button>
                 <button class="tool-btn sync-btn" (click)="acceptAllRegs()">📥 Accept All Differences</button>
                 <button class="tool-btn meta-btn" (click)="syncAllianceMetadata()">🔄 Sync Alliance Metadata</button>
+                <a *ngIf="data()?.alliance as ally" [routerLink]="['/admin', 'alliances', ally.uuid, 'confidence']" class="tool-btn conf-btn">
+                    📈 Confidence
+                </a>
                 <button class="tool-btn simulate-btn" (click)="simulateAssignments()">🎲 Simulate Assignments</button>
                 <button class="tool-btn show-hide-btn" (click)="showAssignments = !showAssignments">
                     {{ showAssignments ? '👁️ Hide Assignments' : '👁️ Show Assignments' }}
@@ -377,6 +380,7 @@ interface ResolvedReinforcement {
         .add-btn { background: #4caf50; color: white; }
         .sync-btn { background: #2196f3; color: white; }
         .meta-btn { background: #9c27b0; color: white; }
+        .conf-btn { background: #673ab7; color: white; text-decoration: none; display: flex; align-items: center; }
         .simulate-btn { background: #00bcd4; color: white; }
         .show-hide-btn { background: #607d8b; color: white; }
         .msg-btn { background: #ff9800; color: white; }

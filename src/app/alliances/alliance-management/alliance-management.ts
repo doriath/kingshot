@@ -22,6 +22,7 @@ import { AllianceSwordlandEventsComponent } from '../alliance-swordland-events/a
                 <button class="tab-btn" [class.active]="activeTab === 'members'" (click)="activeTab = 'members'">Members</button>
                 <button class="tab-btn" [class.active]="activeTab === 'events'" (click)="activeTab = 'events'">Vikings Events</button>
                 <button class="tab-btn" [class.active]="activeTab === 'swordland'" (click)="activeTab = 'swordland'">Swordland Events</button>
+                <a [routerLink]="['confidence']" class="tab-link">📈 Vikings Confidence</a>
             </div>
 
             <section class="members-section" *ngIf="activeTab === 'members'">
@@ -200,6 +201,12 @@ import { AllianceSwordlandEventsComponent } from '../alliance-swordland-events/a
             border-bottom: 2px solid transparent;
         }
         .tab-btn.active { color: white; border-bottom-color: #2196f3; }
+        .tab-link { 
+            color: #888; text-decoration: none; padding: 0.5rem 1rem; font-size: 1rem; 
+            border-bottom: 2px solid transparent; display: flex; align-items: center; 
+        }
+        .tab-link:hover { color: white; }
+
 
         /* ... Include original form/list styles ... */
         .add-member-card { background: #2a2a2a; border: 1px solid #444; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; }

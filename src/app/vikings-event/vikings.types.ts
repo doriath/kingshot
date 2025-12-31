@@ -10,6 +10,7 @@ export interface CharacterAssignment {
     marchesCount: number;
     status: VikingsStatus | 'unknown';
     actualStatus?: VikingsStatus | 'unknown';
+    confidenceLevel?: number;
     reinforce: {
         characterId: string;
         marchType?: string;

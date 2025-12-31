@@ -69,6 +69,11 @@ export const routes: Routes = [
         pathMatch: 'full'
     },
     {
+        path: 'admin/alliances/:id/confidence',
+        loadComponent: () => import('./alliances/vikings-event-management/vikings-confidence.component').then(m => m.VikingsConfidenceComponent),
+        title: 'Manage Vikings Confidence'
+    },
+    {
         path: 'admin/alliances/:id',
         loadComponent: () => import('./alliances/alliance-management/alliance-management').then(m => m.AllianceManagementComponent)
     },
