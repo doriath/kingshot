@@ -290,7 +290,7 @@ export class VikingsService {
             .slice(0, 5);
 
         if (recentEvents.length === 0) {
-            return 1.0; // Default
+            return 0.5; // Default (Neutral/Unknown)
         }
 
         let totalScore = 0;
@@ -312,12 +312,12 @@ export class VikingsService {
             const actual = (char.actualStatus && char.actualStatus !== 'unknown') ? char.actualStatus : declared;
 
             // SCORING:
-            // Match: 2.0 (High confidence)
-            // Mismatch: 0.0 (Low confidence - penalized heavily for unreliability)
+            // Match: 1.0 (High confidence / 100%)
+            // Mismatch: 0.0 (Low confidence / 0%)
 
             let eventScore = 0.0;
             if (declared === actual) {
-                eventScore = 2.0;
+                eventScore = 1.0;
             } else {
                 eventScore = 0.0;
             }
@@ -326,7 +326,7 @@ export class VikingsService {
             count++;
         }
 
-        if (count === 0) return 1.0;
+        if (count === 0) return 0.5;
 
         return totalScore / count;
     }

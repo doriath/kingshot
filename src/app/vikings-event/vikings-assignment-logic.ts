@@ -235,8 +235,8 @@ class VikingsAssignmentSolver {
                 if ((this.marchesRemainingMap.get(source.characterId) || 0) <= 0) continue;
 
                 // Determine if source is High Confidence
-                const sourceConfidence = source.confidenceLevel ?? 1.0;
-                const isSourceHighConfidence = sourceConfidence >= 1.5;
+                const sourceConfidence = source.confidenceLevel ?? 0.5;
+                const isSourceHighConfidence = sourceConfidence >= 0.8;
 
                 const validTargets = onlineAndOfflineEmptyTargets.filter(t => {
                     if (t.characterId === source.characterId) return false;
@@ -255,10 +255,10 @@ class VikingsAssignmentSolver {
                     // NEW: Confidence Priority
                     // If source is high confidence, we want to prioritize high confidence targets.
                     if (isSourceHighConfidence) {
-                        const confA = a.confidenceLevel ?? 1.0;
-                        const confB = b.confidenceLevel ?? 1.0;
-                        const isAHigh = confA >= 1.5;
-                        const isBHigh = confB >= 1.5;
+                        const confA = a.confidenceLevel ?? 0.5;
+                        const confB = b.confidenceLevel ?? 0.5;
+                        const isAHigh = confA >= 0.8;
+                        const isBHigh = confB >= 0.8;
 
                         if (isAHigh && !isBHigh) return -1;
                         if (!isAHigh && isBHigh) return 1;

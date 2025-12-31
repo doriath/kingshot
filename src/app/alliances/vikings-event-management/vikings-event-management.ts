@@ -147,8 +147,8 @@ interface ResolvedReinforcement {
                             <td>
                                 @if (row.assignment.confidenceLevel !== undefined) {
                                     <span class="conf-badge" 
-                                          [class.high]="row.assignment.confidenceLevel >= 1.5"
-                                          [class.low]="row.assignment.confidenceLevel < 1.0">
+                                          [class.high]="row.assignment.confidenceLevel >= 0.8"
+                                          [class.low]="row.assignment.confidenceLevel < 0.5">
                                         {{ row.assignment.confidenceLevel | number:'1.1-2' }}
                                     </span>
                                 } @else {

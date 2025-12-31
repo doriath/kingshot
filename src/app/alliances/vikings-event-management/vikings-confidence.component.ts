@@ -27,9 +27,9 @@ import { CommonModule } from '@angular/common';
             <p>
                Confidence levels help prioritize reliable players for reinforcement assignments.
                <br>
-               <span class="high-conf-text">2.0</span> = High Confidence (Reliable)
+               <span class="high-conf-text">1.0</span> = High Confidence (Reliable)
                <br>
-               <span class="low-conf-text">1.0</span> = Low Confidence (Unreliable)
+               <span class="low-conf-text">0.0</span> = Low Confidence (Unreliable)
             </p>
          </div>
 
@@ -52,8 +52,8 @@ import { CommonModule } from '@angular/common';
                              <td class="col-center text-muted">{{ member.eventCount }}</td>
                              <td class="col-center">
                                 <span class="badge"
-                                      [class.badge-high]="member.calculatedScore >= 1.5"
-                                      [class.badge-low]="member.calculatedScore < 1.5">
+                                      [class.badge-high]="member.calculatedScore >= 0.8"
+                                      [class.badge-low]="member.calculatedScore < 0.5">
                                     {{ member.calculatedScore | number:'1.1-2' }}
                                 </span>
                              </td>
