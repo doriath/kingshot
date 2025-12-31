@@ -300,39 +300,26 @@ export class VikingsService {
             const char = event.characters?.find(c => c.characterId === memberId);
             if (!char) continue;
 
-            // Only count if we have data on what they did (actualStatus)
-            // If they didn't even register (unknown status), generally ignore or treat as neutral?
-            // "if player says they will be online..." implies we look at declared status.
-
             const declared = getCharacterStatus(char);
-            // If declared unknown/offline_not_empty (meaning they didn't sign up or said busy), 
-            // maybe we skip this event for confidence scoring?
-            // Or if they said BUSY and were BUSY, that's reliable?
-            // Re-read req: "if player says they will be online... if player says they will be offline not empty..."
-            // It seems we care about reliability of prediction.
 
-            // Let's check `actualStatus`. 
-            // If actualStatus is missing, we can't score.
-            if (!char.actualStatus || char.actualStatus === 'unknown') continue;
+            // We only track reliability for commitments to be active/useful (Online or Offline Empty)
+            // If they said they are 'offline_not_empty' (busy/full) or 'unknown' (did not register), 
+            // we treat this as neutral (skip).
+            if (declared !== 'online' && declared !== 'offline_empty') continue;
 
-            const actual = char.actualStatus;
+            // If actualStatus is not set, we assume they did what they said (implicit match)
+            // If it IS set, we use it.
+            const actual = (char.actualStatus && char.actualStatus !== 'unknown') ? char.actualStatus : declared;
 
             // SCORING:
             // Match: 2.0 (High confidence)
-            // Mismatch: 1.0 (Low confidence)
+            // Mismatch: 0.0 (Low confidence - penalized heavily for unreliability)
 
-            // Special case: "if player says online, but then offline not empty => low confidence"
-            // "if player says online, and actually online => high confidence"
-
-            let eventScore = 1.0;
-
+            let eventScore = 0.0;
             if (declared === actual) {
                 eventScore = 2.0;
             } else {
-                // Mismatch
-                // declared=online, actual=offline => 1.0
-                // declared=offline, actual=online => Maybe also 1.0? Unreliable.
-                eventScore = 1.0;
+                eventScore = 0.0;
             }
 
             totalScore += eventScore;

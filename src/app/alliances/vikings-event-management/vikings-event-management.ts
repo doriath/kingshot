@@ -28,6 +28,7 @@ interface ResolvedReinforcement {
     marchType?: string;
     status: VikingsStatus | 'unknown';
     scoreValue?: number;
+    confidenceLevel?: number;
 }
 
 @Component({
@@ -111,6 +112,7 @@ interface ResolvedReinforcement {
                             <th>Character</th>
                             <th>Type</th>
                             <th>Power</th>
+                            <th>Confidence</th>
                             <th>Score</th>
                             <th>Current Assignment</th>
                             <th>Registration (User Submitted)</th>
@@ -142,6 +144,17 @@ interface ResolvedReinforcement {
                                 }
                             </td>
                             <td>{{ row.assignment.powerLevel | number }}</td>
+                            <td>
+                                @if (row.assignment.confidenceLevel !== undefined) {
+                                    <span class="conf-badge" 
+                                          [class.high]="row.assignment.confidenceLevel >= 1.5"
+                                          [class.low]="row.assignment.confidenceLevel < 1.0">
+                                        {{ row.assignment.confidenceLevel | number:'1.1-2' }}
+                                    </span>
+                                } @else {
+                                    <span class="conf-badge neutral">-</span>
+                                }
+                            </td>
                             <td>{{ (row.assignment.score || 0) | number:'1.2-2' }}</td>
                             <td>
                                 <div class="status-pill" [class]="row.assignment.status">
@@ -163,6 +176,11 @@ interface ResolvedReinforcement {
                                                 <div class="reinforce-item">
                                                     <span class="status-dot" [class]="item.status" [title]="item.status"></span>
                                                     🛡️ {{ item.name }} {{ item.marchType ? '(' + item.marchType + ')' : '' }}
+                                                    @if (item.confidenceLevel !== undefined) {
+                                                        <span class="mini-conf" [class.high]="item.confidenceLevel >= 1.5" [class.low]="item.confidenceLevel < 1.0">
+                                                            {{ item.confidenceLevel | number:'1.1-1' }}
+                                                        </span>
+                                                    }
                                                     @if (item.scoreValue) {
                                                         <span class="score-badge">({{ item.scoreValue | number:'1.2-2' }})</span>
                                                     }
@@ -177,6 +195,11 @@ interface ResolvedReinforcement {
                                                 <div class="reinforce-item">
                                                     <span class="status-dot" [class]="item.status" [title]="item.status"></span>
                                                     🛡️ {{ item.name }} {{ item.marchType ? '(' + item.marchType + ')' : '' }}
+                                                    @if (item.confidenceLevel !== undefined) {
+                                                        <span class="mini-conf" [class.high]="item.confidenceLevel >= 1.5" [class.low]="item.confidenceLevel < 1.0">
+                                                            {{ item.confidenceLevel | number:'1.1-1' }}
+                                                        </span>
+                                                    }
                                                 </div>
                                             }
                                         </div>
@@ -446,6 +469,16 @@ interface ResolvedReinforcement {
         .status-pill.not_available, .status-pill.offline_not_empty { background: rgba(244, 67, 54, 0.2); color: #e57373; }
         .status-pill.unknown { background: #444; color: #aaa; }
 
+        .conf-badge { font-weight: bold; font-size: 0.85rem; padding: 0.2rem 0.5rem; border-radius: 4px; display: inline-block; }
+        .conf-badge.high { color: #81c784; background: rgba(76, 175, 80, 0.1); border: 1px solid #2e7d32; }
+        .conf-badge.low { color: #e57373; background: rgba(244, 67, 54, 0.1); border: 1px solid #c62828; }
+        .conf-badge.low { color: #e57373; background: rgba(244, 67, 54, 0.1); border: 1px solid #c62828; }
+        .conf-badge.neutral { color: #aaa; }
+
+        .mini-conf { font-size: 0.7rem; padding: 0 0.3rem; border-radius: 3px; border: 1px solid #444; color: #aaa; background: #333; margin-left: 0.3rem; font-weight: bold; }
+        .mini-conf.high { color: #81c784; border-color: #2e7d32; background: rgba(76, 175, 80, 0.1); }
+        .mini-conf.low { color: #e57373; border-color: #c62828; background: rgba(244, 67, 54, 0.1); }
+
         .verification-badge { display: inline-block; font-size: 0.75rem; padding: 0.1rem 0.4rem; border-radius: 4px; margin-left: 0.5rem; background: #3d2b2b; color: #e57373; border: 1px solid #e57373; }
         .verification-badge.verified { background: #2b3d2b; color: #81c784; border: 1px solid #81c784; }
 
@@ -702,21 +735,30 @@ export class VikingsEventManagementComponent {
 
 
 
-            // Status Map for Reinforcements
+            // Status & Confidence Map for Reinforcements
             const statusMap = new Map<string, string>();
+            const confidenceMap = new Map<string, number | undefined>();
             const incomingReinforcementMap = new Map<string, ResolvedReinforcement[]>();
 
             assignments.forEach(c => {
                 statusMap.set(c.characterId, c.status);
+                confidenceMap.set(c.characterId, c.confidenceLevel);
+
                 // Build incoming map
                 if (c.reinforce) {
                     c.reinforce.forEach(r => {
                         const targetId = r.characterId;
                         const sourceName = nameMap.get(c.characterId) || `ID: ${c.characterId}`;
                         const sourceStatus = getCharacterStatus(c);
+                        const sourceConfidence = c.confidenceLevel;
 
                         const list = incomingReinforcementMap.get(targetId) || [];
-                        list.push({ name: sourceName, status: sourceStatus, marchType: r.marchType });
+                        list.push({
+                            name: sourceName,
+                            status: sourceStatus,
+                            marchType: r.marchType,
+                            confidenceLevel: sourceConfidence
+                        });
                         incomingReinforcementMap.set(targetId, list);
                     });
                 }
@@ -727,7 +769,8 @@ export class VikingsEventManagementComponent {
                 const name = nameMap.get(r.characterId) || `ID: ${r.characterId}`;
                 const rawStatus = statusMap.get(r.characterId);
                 const status = getCharacterStatus({ status: rawStatus });
-                return { name, marchType: r.marchType, status, scoreValue: r.scoreValue };
+                const confidenceLevel = confidenceMap.get(r.characterId);
+                return { name, marchType: r.marchType, status, scoreValue: r.scoreValue, confidenceLevel };
             });
 
             // Resolve Reinforced By (Incoming)
@@ -1075,13 +1118,15 @@ export class VikingsEventManagementComponent {
                 const marchDiff = member.marchesCount !== undefined && member.marchesCount !== char.marchesCount;
                 const mainDiff = member.mainCharacterId !== char.mainCharacterId;
                 const capDiff = member.reinforcementCapacity !== char.reinforcementCapacity;
+                const confDiff = member.confidenceLevel !== char.confidenceLevel;
 
-                if (marchDiff || mainDiff || capDiff) {
+                if (marchDiff || mainDiff || capDiff || confDiff) {
                     updateCount++;
-                    const updated = {
+                    const updated: CharacterAssignment = {
                         ...char,
                         mainCharacterId: member.mainCharacterId,
-                        reinforcementCapacity: member.reinforcementCapacity
+                        reinforcementCapacity: member.reinforcementCapacity,
+                        confidenceLevel: member.confidenceLevel
                     };
                     if (member.marchesCount !== undefined) {
                         updated.marchesCount = member.marchesCount;
