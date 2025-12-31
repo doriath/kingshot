@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { CharacterAssignment, CharacterAssignmentView, VikingsEvent, VikingsEventView, VikingsRegistration, VikingsStatus } from './vikings.types';
 import { calculateAssignments } from './vikings-assignment-logic';
+import { getCharacterStatus } from './vikings.helpers';
 
 
 @Injectable({
@@ -221,9 +222,10 @@ export class VikingsService {
 
                 if (target) {
                     const count = incomingCounts.get(target.characterId) || 1; // Avoid div/0 if logical inconsistency
-                    if (target.status === 'online') {
+                    const targetStatus = getCharacterStatus(target);
+                    if (targetStatus === 'online') {
                         scoreValue = 1.3 / count;
-                    } else if (target.status === 'offline_empty') {
+                    } else if (targetStatus === 'offline_empty') {
                         scoreValue = 1.0 / count;
                     } else {
                         // Offline Not Empty

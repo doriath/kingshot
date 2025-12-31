@@ -1,348 +1,322 @@
 import { CharacterAssignment } from './vikings.types';
+import { getCharacterStatus } from './vikings.helpers';
 
 export function calculateAssignments(allCharacters: CharacterAssignment[]): CharacterAssignment[] {
-    // --- Setup and Helper structures ---
+    return new VikingsAssignmentSolver(allCharacters).solve();
+}
 
-    // Clone characters to work with
-    const workingCharacters = allCharacters.map(c => ({ ...c }));
-    // console.log('Starting calculateAssignments with', workingCharacters.length, 'characters');
+class VikingsAssignmentSolver {
+    private workingCharacters: CharacterAssignment[];
 
-    // Map to track assignments: targetId -> list of sourceIds
-    const assignmentsMap = new Map<string, { characterId: string; marchType?: string }[]>();
+    // State Maps
+    private assignmentsMap = new Map<string, { characterId: string; marchType?: string }[]>();
+    private marchesRemainingMap = new Map<string, number>();
+    private targetReinforcementCountMap = new Map<string, number>();
+    private farmsMap = new Map<string, CharacterAssignment[]>(); // ownerId -> list of farms
 
-    // Map to track remaining marches for each source: sourceId -> count
-    const marchesRemainingMap = new Map<string, number>();
+    // Categorized Players
+    private onlinePlayers: CharacterAssignment[] = [];
+    private offlineEmptyPlayers: CharacterAssignment[] = [];
+    private offlineNotEmptyPlayers: CharacterAssignment[] = [];
 
-    // Separating lists
-    const onlinePlayers: CharacterAssignment[] = [];
-    const offlineEmptyPlayers: CharacterAssignment[] = [];
-    const offlineNotEmptyPlayers: CharacterAssignment[] = [];
-    // Farms are identified by having a mainCharacterId. They are PASSIVE (do not reinforce).
-    // However, we need to know who owns them to prioritize.
+    constructor(inputCharacters: CharacterAssignment[]) {
+        // Clone characters to work with
+        this.workingCharacters = inputCharacters.map(c => ({ ...c }));
+    }
 
-    // Helper to find owner
-    const farmsMap = new Map<string, CharacterAssignment[]>(); // ownerId -> list of farms
+    public solve(): CharacterAssignment[] {
+        this.initialize();
+        this.phase1_FarmPriorities();
+        this.phase2_OfflineSources();
+        this.phase3_OnlineSources();
+        this.phase4_OfflineNotEmptyCleanup();
+        return this.finalize();
+    }
 
-    workingCharacters.forEach(c => {
-        assignmentsMap.set(c.characterId, []);
+    private initialize() {
+        this.workingCharacters.forEach(c => {
+            this.assignmentsMap.set(c.characterId, []);
+            this.targetReinforcementCountMap.set(c.characterId, 0);
 
-        // Clamp marches count (1 to 6)
-        let count = c.marchesCount;
-        if (count === 0) count = 6;
-        count = Math.max(1, Math.min(6, count));
+            // Clamp marches count (1 to 6)
+            let count = c.marchesCount;
+            if (count === 0) count = 6;
+            count = Math.max(1, Math.min(6, count));
 
-        // EXPLICITLY FORCE 0 for Passive accounts (Farms, Unknown)
-        // 'offline_not_empty' are NOW valid sources (Phase 4), so we do NOT force them to 0.
-        if (c.mainCharacterId) {
-            count = 0;
-        }
+            // EXPLICITLY FORCE 0 for Passive accounts (Farms)
+            // 'offline_not_empty' are NOW valid sources (Phase 4), so we do NOT force them to 0.
+            if (this.isFarm(c)) {
+                count = 0;
+            }
 
-        marchesRemainingMap.set(c.characterId, count);
+            this.marchesRemainingMap.set(c.characterId, count);
 
-        // Identify Farms
-        if (c.mainCharacterId) {
-            const ownerId = c.mainCharacterId;
-            const farms = farmsMap.get(ownerId) || [];
-            farms.push(c);
-            farmsMap.set(ownerId, farms);
-        }
+            // Identify Farms
+            if (c.mainCharacterId) {
+                const ownerId = c.mainCharacterId;
+                const farms = this.farmsMap.get(ownerId) || [];
+                farms.push(c);
+                this.farmsMap.set(ownerId, farms);
+            }
 
-        // Categorize by Status
-        if (c.status === 'online') {
-            onlinePlayers.push(c);
-        } else if (c.status === 'offline_empty') {
-            offlineEmptyPlayers.push(c);
-        } else {
-            c.status = 'offline_not_empty';
-            offlineNotEmptyPlayers.push(c);
-        }
-    });
+            // Categorize by Status
+            const normalizedStatus = getCharacterStatus(c);
+            c.status = normalizedStatus; // Update the character status to the normalized one
 
-    // Helper to assign MARCH
-    const assign = (sourceId: string, targetId: string): boolean => {
+            if (normalizedStatus === 'online') {
+                this.onlinePlayers.push(c);
+            } else if (normalizedStatus === 'offline_empty') {
+                this.offlineEmptyPlayers.push(c);
+            } else {
+                this.offlineNotEmptyPlayers.push(c);
+            }
+        });
+    }
+
+    // --- Helpers ---
+
+    private isFarm(c: CharacterAssignment): boolean {
+        return !!c.mainCharacterId;
+    }
+
+    private assign(sourceId: string, targetId: string): boolean {
         if (sourceId === targetId) return false;
 
-        const currentAssignments = assignmentsMap.get(sourceId) || [];
+        const currentAssignments = this.assignmentsMap.get(sourceId) || [];
         // Check if already assigned
         if (currentAssignments.find(a => a.characterId === targetId)) return false;
 
         // Check if source has marches
-        const currentRem = marchesRemainingMap.get(sourceId) || 0;
-        if (currentRem <= 0) return false; // Should be checked by caller but safety check
+        const currentRem = this.marchesRemainingMap.get(sourceId) || 0;
+        if (currentRem <= 0) return false;
 
         currentAssignments.push({ characterId: targetId });
-        assignmentsMap.set(sourceId, currentAssignments);
-        marchesRemainingMap.set(sourceId, currentRem - 1);
+        this.assignmentsMap.set(sourceId, currentAssignments);
+        this.marchesRemainingMap.set(sourceId, currentRem - 1);
         return true;
-    };
+    }
 
-    // Optimized helper for greedy search
-    // We need a map of Target -> Count to avoid O(N^2) in the greedy loop
-    const targetReinforcementCountMap = new Map<string, number>();
-    workingCharacters.forEach(c => targetReinforcementCountMap.set(c.characterId, 0));
-
-    const assignWithCountUpdate = (sourceId: string, targetId: string): boolean => {
+    private tryAssign(sourceId: string, targetId: string): boolean {
         // Check Capacity Limit
-        const target = workingCharacters.find(c => c.characterId === targetId);
+        const target = this.workingCharacters.find(c => c.characterId === targetId);
         if (target && target.reinforcementCapacity !== undefined) {
             const maxCapacity = Math.floor(target.reinforcementCapacity / 150000);
-            const currentCount = targetReinforcementCountMap.get(targetId) || 0;
+            const currentCount = this.targetReinforcementCountMap.get(targetId) || 0;
             if (currentCount >= maxCapacity) {
                 return false;
             }
         }
 
-        if (assign(sourceId, targetId)) {
-            targetReinforcementCountMap.set(targetId, (targetReinforcementCountMap.get(targetId) || 0) + 1);
+        if (this.assign(sourceId, targetId)) {
+            this.targetReinforcementCountMap.set(targetId, (this.targetReinforcementCountMap.get(targetId) || 0) + 1);
             return true;
         }
         return false;
-    };
+    }
 
+    private isValidData(c: CharacterAssignment): boolean {
+        // Helper if we need generic validation
+        return true;
+    }
 
-    // --- PHASE 1: Farm Priorities ---
-    // Iterate all players. If they have farms, assign to farms first.
+    // --- Constraint Checks ---
 
-    // Define Source Pools
-    // Rule: Farms DO NOT reinforce anyone. 
-    // So we filter pools to exclude anyone who IS a farm (has mainCharacterId).
-    const isFarm = (c: CharacterAssignment) => !!c.mainCharacterId;
+    private meetsFarmConstraints(target: CharacterAssignment): boolean {
+        // Farm Constraint: owner assignment + others < extraMarches check?
+        // Logic from original: 
+        // if (total - (isOwnerAssigned ? 1 : 0) >= t.extraMarches) return false;
 
-    const onlineSources = onlinePlayers.filter(c => !isFarm(c));
-    const offlineSources = [...offlineEmptyPlayers].filter(c => !isFarm(c));
+        if (target.mainCharacterId && target.extraMarches !== undefined && target.extraMarches >= 0) {
+            const isOwnerAssigned = this.assignmentsMap.get(target.mainCharacterId)?.find(a => a.characterId === target.characterId);
+            const total = this.targetReinforcementCountMap.get(target.characterId) || 0;
+            const othersCount = total - (isOwnerAssigned ? 1 : 0);
+            if (othersCount >= target.extraMarches) return false;
+        }
+        return true;
+    }
 
-    const allSources = [...onlineSources, ...offlineSources];
+    // --- PHASES ---
 
-    for (const source of allSources) {
-        const myFarms = farmsMap.get(source.characterId);
-        if (myFarms && myFarms.length > 0) {
-            for (const farm of myFarms) {
-                // Constraint: Respect farm capacity & extraMarches.
-                // Owner dumps as much as possible until farm is full or logic limits.
-                // Assuming we fill it up to capacity if we can.
+    private phase1_FarmPriorities() {
+        // Iterate all players. If they have farms, assign to farms first.
+        // Farms DO NOT reinforce anyone. 
+        const onlineSources = this.onlinePlayers.filter(c => !this.isFarm(c));
+        const offlineSources = [...this.offlineEmptyPlayers].filter(c => !this.isFarm(c));
+        const allSources = [...onlineSources, ...offlineSources];
 
-                while ((marchesRemainingMap.get(source.characterId) || 0) > 0) {
-                    if (!assignWithCountUpdate(source.characterId, farm.characterId)) {
-                        break; // Already assigned or error
+        for (const source of allSources) {
+            const myFarms = this.farmsMap.get(source.characterId);
+            if (myFarms && myFarms.length > 0) {
+                for (const farm of myFarms) {
+                    while ((this.marchesRemainingMap.get(source.characterId) || 0) > 0) {
+                        if (!this.tryAssign(source.characterId, farm.characterId)) {
+                            break;
+                        }
+                        break; // Move to next farm after one assignment? Logic implies one march per target.
                     }
-                    // Only 1 march per farm per source logic?
-                    // If distinct reinforcement slots are allowed, we could send multiple?
-                    // Existing logic assumes one march per source-target pair.
-                    // "assign" returns false if already assigned.
-                    break;
                 }
             }
         }
     }
 
+    private phase2_OfflineSources() {
+        // Sources: Offline Sources (Empty - Farms/NA/Unknown)
+        // Targets: Offline Empty + Offline Not Empty
 
-    // --- PHASE 2: Offline Sources Assignment ---
-    // Sources: Offline Sources (Empty - Farms/NA/Unknown)
-    // Targets: Offline Empty + Offline Not Empty
-    // Logic: Greedy Least-Reinforced. Tie-breaker: Offline Empty.
+        const offlineSources = [...this.offlineEmptyPlayers].filter(c => !this.isFarm(c));
+        const offlineTargets = [...this.offlineEmptyPlayers, ...this.offlineNotEmptyPlayers];
 
-    const offlineTargets = [...offlineEmptyPlayers, ...offlineNotEmptyPlayers];
-    const availableOfflineSources = offlineSources.filter(s => (marchesRemainingMap.get(s.characterId) || 0) > 0);
+        const availableOfflineSources = offlineSources.filter(s => (this.marchesRemainingMap.get(s.characterId) || 0) > 0);
+        let improvementMade = true;
 
-    let offlineImprovementMade = true;
+        // Randomize
+        availableOfflineSources.sort(() => 0.5 - Math.random());
 
-    // Randomize sources
-    availableOfflineSources.sort(() => 0.5 - Math.random());
+        while (improvementMade) {
+            improvementMade = false;
 
-    while (offlineImprovementMade) {
-        offlineImprovementMade = false;
+            for (const source of availableOfflineSources) {
+                if ((this.marchesRemainingMap.get(source.characterId) || 0) <= 0) continue;
 
-        for (const source of availableOfflineSources) {
-            if ((marchesRemainingMap.get(source.characterId) || 0) <= 0) continue;
+                // Find valid targets
+                const validTargets = offlineTargets.filter(t => {
+                    if (t.characterId === source.characterId) return false;
+                    if (this.assignmentsMap.get(source.characterId)?.find(a => a.characterId === t.characterId)) return false;
+                    if (!this.meetsFarmConstraints(t)) return false;
 
-            // Find best target
-            const validTargets = offlineTargets.filter(t => {
-                if (t.characterId === source.characterId) return false;
-                if (assignmentsMap.get(source.characterId)?.find(a => a.characterId === t.characterId)) return false;
-
-                // Farm Constraint
-                if (t.mainCharacterId) {
-                    if (t.extraMarches !== undefined && t.extraMarches >= 0) {
-                        const isOwnerAssigned = assignmentsMap.get(t.mainCharacterId)?.find(a => a.characterId === t.characterId);
-                        const total = targetReinforcementCountMap.get(t.characterId) || 0;
-                        const othersCount = total - (isOwnerAssigned ? 1 : 0);
-                        if (othersCount >= t.extraMarches) return false;
+                    // RESTRICTION: Offline Not Empty sources (and Unknown/Fallback) can ONLY target Offline Not Empty
+                    if (source.status === 'offline_not_empty' && t.status === 'offline_empty') {
+                        return false;
                     }
-                }
+                    return true;
+                });
 
-                // RESTRICTION: Offline Not Empty sources (and Unknown/Fallback) can ONLY target Offline Not Empty
-                if (source.status === 'offline_not_empty' && t.status === 'offline_empty') {
-                    return false;
-                }
+                if (validTargets.length === 0) continue;
 
-                return true;
-            });
+                // Sort targets
+                validTargets.sort((a, b) => {
+                    const countA = this.targetReinforcementCountMap.get(a.characterId) || 0;
+                    const countB = this.targetReinforcementCountMap.get(b.characterId) || 0;
+                    if (countA !== countB) return countA - countB;
 
-            if (validTargets.length === 0) {
-                // console.log(`[Phase 2] No valid targets for ${source.characterId}`);
-                continue;
-            }
+                    // Tie-Breaker: Prioritize Offline Empty
+                    const isAEmpty = a.status === 'offline_empty';
+                    const isBEmpty = b.status === 'offline_empty';
+                    if (isAEmpty && !isBEmpty) return -1;
+                    if (!isAEmpty && isBEmpty) return 1;
+                    return 0;
+                });
 
-            // Sort by Count ASC, then Offline Empty Priority
-            validTargets.sort((a, b) => {
-                const countA = targetReinforcementCountMap.get(a.characterId) || 0;
-                const countB = targetReinforcementCountMap.get(b.characterId) || 0;
-                if (countA !== countB) return countA - countB;
-
-                // Tie-Breaker: Prioritize Offline Empty
-                const isAEmpty = a.status === 'offline_empty';
-                const isBEmpty = b.status === 'offline_empty';
-                if (isAEmpty && !isBEmpty) return -1;
-                if (!isAEmpty && isBEmpty) return 1;
-                return 0; // Random/Stable
-            });
-
-            // if (source.status === 'unknown') {
-            //    console.log(`[Phase 2] Unknown source ${source.characterId} sees ${validTargets.length} targets. First: ${validTargets[0].characterId} (${validTargets[0].status})`);
-            // }
-
-            // Iterate through candidates until one works
-            for (const target of validTargets) {
-                if (assignWithCountUpdate(source.characterId, target.characterId)) {
-                    offlineImprovementMade = true;
-                    // if (source.status === 'unknown') console.log(`[Phase 2] Assigned Unknown ${source.characterId} -> ${target.characterId}`);
-                    break; // Move to next source
+                // Try assigning
+                for (const target of validTargets) {
+                    if (this.tryAssign(source.characterId, target.characterId)) {
+                        improvementMade = true;
+                        break;
+                    }
                 }
             }
         }
     }
 
+    private phase3_OnlineSources() {
+        // Sources: Online Sources
+        // Targets Pool: Online Players + Offline Empty Players
 
-    // --- PHASE 3: Online Sources Assignment ---
-    // Sources: Online Sources
-    // Targets Pool: Online Players + Offline Empty Players
+        const onlineSources = this.onlinePlayers.filter(c => !this.isFarm(c));
+        const onlineAndOfflineEmptyTargets = [...this.onlinePlayers, ...this.offlineEmptyPlayers];
+        const availableOnlineSources = onlineSources.filter(s => (this.marchesRemainingMap.get(s.characterId) || 0) > 0);
 
-    const onlineAndOfflineEmptyTargets = [...onlinePlayers, ...offlineEmptyPlayers];
-    const availableOnlineSources = onlineSources.filter(s => (marchesRemainingMap.get(s.characterId) || 0) > 0);
+        let improvementMade = true;
+        while (improvementMade) {
+            improvementMade = false;
+            availableOnlineSources.sort(() => 0.5 - Math.random());
 
-    // Logic: Greedy Least-Reinforced
-    let improvementMade = true;
-    while (improvementMade) {
-        improvementMade = false;
+            for (const source of availableOnlineSources) {
+                if ((this.marchesRemainingMap.get(source.characterId) || 0) <= 0) continue;
 
-        // Randomize sources order per round
-        availableOnlineSources.sort(() => 0.5 - Math.random());
+                const validTargets = onlineAndOfflineEmptyTargets.filter(t => {
+                    if (t.characterId === source.characterId) return false;
+                    if (this.assignmentsMap.get(source.characterId)?.find(a => a.characterId === t.characterId)) return false;
+                    if (!this.meetsFarmConstraints(t)) return false;
+                    return true;
+                });
 
-        for (const source of availableOnlineSources) {
-            if ((marchesRemainingMap.get(source.characterId) || 0) <= 0) continue;
+                if (validTargets.length === 0) continue;
 
-            // 1. Identify target in pool with LOWEST reinforcement count
-            const validTargets = onlineAndOfflineEmptyTargets.filter(t => {
-                if (t.characterId === source.characterId) return false;
-                if (assignmentsMap.get(source.characterId)?.find(a => a.characterId === t.characterId)) return false;
+                validTargets.sort((a, b) => {
+                    const countA = this.targetReinforcementCountMap.get(a.characterId) || 0;
+                    const countB = this.targetReinforcementCountMap.get(b.characterId) || 0;
+                    if (countA !== countB) return countA - countB;
 
-                // Farm Constraint Check
-                if (t.mainCharacterId) {
-                    if (t.extraMarches !== undefined && t.extraMarches >= 0) {
-                        const isOwnerAssigned = assignmentsMap.get(t.mainCharacterId)?.find(a => a.characterId === t.characterId);
-                        const total = targetReinforcementCountMap.get(t.characterId) || 0;
-                        const othersCount = total - (isOwnerAssigned ? 1 : 0);
-                        if (othersCount >= t.extraMarches) return false;
+                    // Tie-Breaker: Prioritize Online
+                    const isAOnline = a.status === 'online';
+                    const isBOnline = b.status === 'online';
+                    if (isAOnline && !isBOnline) return -1;
+                    if (!isAOnline && isBOnline) return 1;
+                    return 0;
+                });
+
+                for (const target of validTargets) {
+                    if (this.tryAssign(source.characterId, target.characterId)) {
+                        improvementMade = true;
+                        break;
                     }
-                }
-                return true;
-            });
-
-            if (validTargets.length === 0) continue;
-
-            // Sort by Count ASC, then Online Priority
-            validTargets.sort((a, b) => {
-                const countA = targetReinforcementCountMap.get(a.characterId) || 0;
-                const countB = targetReinforcementCountMap.get(b.characterId) || 0;
-                if (countA !== countB) return countA - countB;
-
-                // Tie-Breaker: Prioritize Online
-                const isAOnline = a.status === 'online';
-                const isBOnline = b.status === 'online';
-                if (isAOnline && !isBOnline) return -1;
-                if (!isAOnline && isBOnline) return 1;
-                return 0;
-            });
-
-            for (const target of validTargets) {
-                if (assignWithCountUpdate(source.characterId, target.characterId)) {
-                    improvementMade = true;
-                    break;
                 }
             }
         }
     }
 
-    // --- PHASE 4: Offline Not Empty Reassignment (Final Cleanup) ---
-    // Sources: ALL players with remaining marches (Online, Offline Empty, Offline Not Empty)
-    // Targets: Offline Not Empty
-    // Logic: Greedy Least-Reinforced.
+    private phase4_OfflineNotEmptyCleanup() {
+        // Sources: ALL players with remaining marches (Online, Offline Empty, Offline Not Empty)
+        // Targets: Offline Not Empty
 
-    const offlineNotEmptyTargets = [...offlineNotEmptyPlayers];
+        const offlineNotEmptyTargets = [...this.offlineNotEmptyPlayers];
 
-    // Use ALL valid sources that have marches remaining EXCEPT online players
-    // Excluding farms/unknown (already filtered in earlier lists or by check)
-    // CHANGE: Online players are strictly forbidden from reinforcing Offline Not Empty.
-    const allRemainingSources = workingCharacters.filter(s =>
-        !isFarm(s) && s.status !== 'online' && (marchesRemainingMap.get(s.characterId) || 0) > 0
-    );
+        // CHANGE: Online players are strictly forbidden from reinforcing Offline Not Empty.
+        const allRemainingSources = this.workingCharacters.filter(s =>
+            !this.isFarm(s) && s.status !== 'online' && (this.marchesRemainingMap.get(s.characterId) || 0) > 0
+        );
 
-    let phase4ImprovementMade = true;
-    while (phase4ImprovementMade) {
-        phase4ImprovementMade = false;
+        let improvementMade = true;
+        while (improvementMade) {
+            improvementMade = false;
+            allRemainingSources.sort(() => 0.5 - Math.random());
 
-        allRemainingSources.sort(() => 0.5 - Math.random());
+            for (const source of allRemainingSources) {
+                if ((this.marchesRemainingMap.get(source.characterId) || 0) <= 0) continue;
 
-        for (const source of allRemainingSources) {
-            if ((marchesRemainingMap.get(source.characterId) || 0) <= 0) continue;
+                const validTargets = offlineNotEmptyTargets.filter(t => {
+                    if (t.characterId === source.characterId) return false;
+                    if (this.assignmentsMap.get(source.characterId)?.find(a => a.characterId === t.characterId)) return false;
+                    if (!this.meetsFarmConstraints(t)) return false;
+                    return true;
+                });
 
-            const validTargets = offlineNotEmptyTargets.filter(t => {
-                if (t.characterId === source.characterId) return false;
-                if (assignmentsMap.get(source.characterId)?.find(a => a.characterId === t.characterId)) return false;
+                if (validTargets.length === 0) continue;
 
-                // Farm Constraint
-                if (t.mainCharacterId) {
-                    if (t.extraMarches !== undefined && t.extraMarches >= 0) {
-                        const isOwnerAssigned = assignmentsMap.get(t.mainCharacterId)?.find(a => a.characterId === t.characterId);
-                        const total = targetReinforcementCountMap.get(t.characterId) || 0;
-                        const othersCount = total - (isOwnerAssigned ? 1 : 0);
-                        if (othersCount >= t.extraMarches) return false;
+                validTargets.sort((a, b) => {
+                    const countA = this.targetReinforcementCountMap.get(a.characterId) || 0;
+                    const countB = this.targetReinforcementCountMap.get(b.characterId) || 0;
+                    return countA - countB;
+                });
+
+                for (const target of validTargets) {
+                    if (this.tryAssign(source.characterId, target.characterId)) {
+                        improvementMade = true;
+                        break;
                     }
-                }
-                return true;
-            });
-
-            if (validTargets.length === 0) continue;
-
-            // Sort by Count ASC
-            validTargets.sort((a, b) => {
-                const countA = targetReinforcementCountMap.get(a.characterId) || 0;
-                const countB = targetReinforcementCountMap.get(b.characterId) || 0;
-                return countA - countB;
-            });
-
-            // Sort by Count ASC
-            validTargets.sort((a, b) => {
-                const countA = targetReinforcementCountMap.get(a.characterId) || 0;
-                const countB = targetReinforcementCountMap.get(b.characterId) || 0;
-                return countA - countB;
-            });
-
-            for (const target of validTargets) {
-                if (assignWithCountUpdate(source.characterId, target.characterId)) {
-                    // console.log(`Phase 4 Assigned ${source.characterId} to ${target.characterId}`);
-                    phase4ImprovementMade = true;
-                    break;
                 }
             }
         }
     }
 
-    // --- Convert to Output Format (Scores REMOVED) ---
-    return workingCharacters.map(c => ({
-        ...c,
-        marchesCount: (c.marchesCount === 0) ? 6 : Math.max(1, Math.min(6, c.marchesCount)),
-        // score: scoresMap.get(c.characterId) || 0, // removed
-        reinforce: assignmentsMap.get(c.characterId) || []
-    }));
+    private finalize(): CharacterAssignment[] {
+        return this.workingCharacters.map(c => ({
+            ...c,
+            // Restore original marches count or logic max? Logic says max(1, min(6)).
+            // But we modified it for matching.
+            marchesCount: (c.marchesCount === 0) ? 6 : Math.max(1, Math.min(6, c.marchesCount)),
+            reinforce: this.assignmentsMap.get(c.characterId) || []
+        }));
+    }
 }

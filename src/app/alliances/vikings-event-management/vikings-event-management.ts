@@ -4,6 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { VikingsService } from '../../vikings-event/vikings.service';
 import { VikingsEventView, CharacterAssignment, CharacterAssignmentView, VikingsRegistration, VikingsStatus } from '../../vikings-event/vikings.types';
+import { getCharacterStatus } from '../../vikings-event/vikings.helpers';
 import { AlliancesService, AllianceMember, Alliance } from '../alliances.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { switchMap, map } from 'rxjs/operators';
@@ -652,7 +653,7 @@ export class VikingsEventManagementComponent {
                     c.reinforce.forEach(r => {
                         const targetId = r.characterId;
                         const sourceName = nameMap.get(c.characterId) || `ID: ${c.characterId}`;
-                        const sourceStatus = (c.status || 'unknown') as any;
+                        const sourceStatus = getCharacterStatus(c);
 
                         const list = incomingReinforcementMap.get(targetId) || [];
                         list.push({ name: sourceName, status: sourceStatus, marchType: r.marchType });
@@ -664,7 +665,8 @@ export class VikingsEventManagementComponent {
             // Resolve Reinforcements (Outgoing)
             const resolvedReinforcements: ResolvedReinforcement[] = (a.reinforce || []).map(r => {
                 const name = nameMap.get(r.characterId) || `ID: ${r.characterId}`;
-                const status = (statusMap.get(r.characterId) || 'unknown') as any;
+                const rawStatus = statusMap.get(r.characterId);
+                const status = getCharacterStatus({ status: rawStatus });
                 return { name, marchType: r.marchType, status, scoreValue: r.scoreValue };
             });
 
