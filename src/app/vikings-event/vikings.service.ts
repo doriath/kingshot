@@ -259,7 +259,7 @@ export class VikingsService {
     }
 
     public generateAssignmentClipboardText(character: CharacterAssignmentView): string {
-        const lines = [`Player ${character.characterName} reinforces:`];
+        const lines = [`Player ${character.characterName} reinforces (Player, Power):`];
 
         if (!character.reinforce || character.reinforce.length === 0) {
             lines.push('No assignments.');
