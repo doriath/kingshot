@@ -47,6 +47,14 @@ interface ResolvedReinforcement {
                         [{{ evt.allianceTag }}] Server #{{ evt.server }}
                     </a>
                 </div>
+                <!-- Stats Summary -->
+                <div class="stats-summary" *ngIf="stats() as s">
+                    <div class="stat-pill total">Total: {{ s.total }}</div>
+                    <div class="stat-pill online">Online: {{ s.online }}</div>
+                    <div class="stat-pill offline_empty">Offline (Empty): {{ s.offline_empty }}</div>
+                    <div class="stat-pill offline_not_empty">Offline (Not Empty): {{ s.offline_not_empty }}</div>
+                    <div class="stat-pill unknown" *ngIf="s.unknown > 0">Unknown: {{ s.unknown }}</div>
+                </div>
             </header>
 
             <div class="toolbar">
@@ -54,6 +62,9 @@ interface ResolvedReinforcement {
                 <button class="tool-btn sync-btn" (click)="acceptAllRegs()">📥 Accept All Differences</button>
                 <button class="tool-btn meta-btn" (click)="syncAllianceMetadata()">🔄 Sync Alliance Metadata</button>
                 <button class="tool-btn simulate-btn" (click)="simulateAssignments()">🎲 Simulate Assignments</button>
+                <button class="tool-btn show-hide-btn" (click)="showAssignments = !showAssignments">
+                    {{ showAssignments ? '👁️ Hide Assignments' : '👁️ Show Assignments' }}
+                </button>
                 <button class="tool-btn msg-btn" (click)="showMessagingView = true">📨 Messaging View</button>
             </div>
 
@@ -139,30 +150,32 @@ interface ResolvedReinforcement {
                                     Marches: {{ row.assignment.marchesCount }} | 
                                     Cap: {{ row.assignment.reinforcementCapacity ? (row.assignment.reinforcementCapacity | number) : '-' }}
                                 </div>
-                                @if (row.resolvedReinforcements && row.resolvedReinforcements.length > 0) {
-                                    <div class="reinforcements-list">
-                                        <div class="reinforce-header">Reinforces:</div>
-                                        @for (item of row.resolvedReinforcements; track $index) {
-                                            <div class="reinforce-item">
-                                                <span class="status-dot" [class]="item.status" [title]="item.status"></span>
-                                                🛡️ {{ item.name }} {{ item.marchType ? '(' + item.marchType + ')' : '' }}
-                                                @if (item.scoreValue) {
-                                                    <span class="score-badge">({{ item.scoreValue | number:'1.2-2' }})</span>
-                                                }
-                                            </div>
-                                        }
-                                    </div>
-                                }
-                                @if (row.reinforcedBy && row.reinforcedBy.length > 0) {
-                                    <div class="reinforcements-list incoming">
-                                        <div class="reinforce-header">Reinforced By:</div>
-                                        @for (item of row.reinforcedBy; track $index) {
-                                            <div class="reinforce-item">
-                                                <span class="status-dot" [class]="item.status" [title]="item.status"></span>
-                                                🛡️ {{ item.name }} {{ item.marchType ? '(' + item.marchType + ')' : '' }}
-                                            </div>
-                                        }
-                                    </div>
+                                @if (showAssignments) {
+                                    @if (row.resolvedReinforcements && row.resolvedReinforcements.length > 0) {
+                                        <div class="reinforcements-list">
+                                            <div class="reinforce-header">Reinforces:</div>
+                                            @for (item of row.resolvedReinforcements; track $index) {
+                                                <div class="reinforce-item">
+                                                    <span class="status-dot" [class]="item.status" [title]="item.status"></span>
+                                                    🛡️ {{ item.name }} {{ item.marchType ? '(' + item.marchType + ')' : '' }}
+                                                    @if (item.scoreValue) {
+                                                        <span class="score-badge">({{ item.scoreValue | number:'1.2-2' }})</span>
+                                                    }
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                    @if (row.reinforcedBy && row.reinforcedBy.length > 0) {
+                                        <div class="reinforcements-list incoming">
+                                            <div class="reinforce-header">Reinforced By:</div>
+                                            @for (item of row.reinforcedBy; track $index) {
+                                                <div class="reinforce-item">
+                                                    <span class="status-dot" [class]="item.status" [title]="item.status"></span>
+                                                    🛡️ {{ item.name }} {{ item.marchType ? '(' + item.marchType + ')' : '' }}
+                                                </div>
+                                            }
+                                        </div>
+                                    }
                                 }
                             </td>
                             <td>
@@ -351,12 +364,21 @@ interface ResolvedReinforcement {
         .alliance-link { color: #888; text-decoration: none; transition: color 0.2s; }
         .alliance-link:hover { color: #2196f3; text-decoration: underline; }
 
+        .stats-summary { display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap; }
+        .stat-pill { padding: 0.3rem 0.8rem; border-radius: 16px; font-weight: bold; font-size: 0.85rem; border: 1px solid transparent; }
+        .stat-pill.total { background: #333; color: #fff; border-color: #555; }
+        .stat-pill.online { background: rgba(76, 175, 80, 0.1); color: #81c784; border-color: #81c784; }
+        .stat-pill.offline_empty { background: rgba(255, 152, 0, 0.1); color: #ffb74d; border-color: #ffb74d; }
+        .stat-pill.offline_not_empty { background: rgba(244, 67, 54, 0.1); color: #e57373; border-color: #e57373; }
+        .stat-pill.unknown { background: #444; color: #aaa; border-color: #666; }
+
         .toolbar { display: flex; gap: 1rem; margin-bottom: 1.5rem; }
         .tool-btn { border: none; padding: 0.6rem 1.2rem; border-radius: 4px; font-weight: bold; cursor: pointer; }
         .add-btn { background: #4caf50; color: white; }
         .sync-btn { background: #2196f3; color: white; }
         .meta-btn { background: #9c27b0; color: white; }
         .simulate-btn { background: #00bcd4; color: white; }
+        .show-hide-btn { background: #607d8b; color: white; }
         .msg-btn { background: #ff9800; color: white; }
 
         .missing-members-section {
@@ -589,6 +611,25 @@ export class VikingsEventManagementComponent {
         });
     });
 
+    public stats = computed(() => {
+        const rows = this.rows();
+        const s = {
+            online: 0,
+            offline_empty: 0,
+            offline_not_empty: 0,
+            unknown: 0,
+            total: rows.length
+        };
+        rows.forEach(r => {
+            const status = r.assignment.status;
+            if (status === 'online') s.online++;
+            else if (status === 'offline_empty') s.offline_empty++;
+            else if (status === 'offline_not_empty') s.offline_not_empty++;
+            else s.unknown++;
+        });
+        return s;
+    });
+
     // Process rows primarily for display
     public rows = computed(() => {
         const data = this.data();
@@ -708,6 +749,9 @@ export class VikingsEventManagementComponent {
 
     public newReinforcementCapacity = 0;
     public newExtraMarches = 0;
+
+    // View State
+    public showAssignments = true;
 
     // Autocomplete State
     public mainCharSearch = '';
