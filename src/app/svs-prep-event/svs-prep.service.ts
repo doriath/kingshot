@@ -136,4 +136,135 @@ export class SvSPrepService {
         const q = query(regsCollection, where('eventId', '==', eventId));
         return collectionData(q, { idField: 'id' }) as Observable<SvSPrepRegistration[]>;
     }
+
+    /**
+     * Calculates optimal assignments using Max Flow algorithm (Edmonds-Karp).
+     * 
+     * @param candidates List of registrations to consider for assignment
+     * @param slots List of available time slots
+     * @param preferencesAccessor Function to get preferred slots for a candidate
+     * @returns A map of slot -> characterId
+     */
+    calculateOptimalAssignments(
+        candidates: SvSPrepRegistration[],
+        slots: string[],
+        preferencesAccessor: (reg: SvSPrepRegistration) => string[]
+    ): { [slot: string]: string } {
+        // 1. Build the Flow Network
+        // Nodes: Source, Sink, Candidates (C), Slots (S)
+        // Edges: 
+        //   Source -> Candidate (cap 1)
+        //   Candidate -> Slot (cap 1) if slot is in preferences
+        //   Slot -> Sink (cap 1)
+
+        const source = 'SOURCE';
+        const sink = 'SINK';
+        const capacity: { [key: string]: number } = {};
+        const graph: { [key: string]: string[] } = {
+            [source]: [],
+            [sink]: []
+        };
+
+        // Helper to add edge
+        const addEdge = (u: string, v: string, cap: number) => {
+            if (!graph[u]) graph[u] = [];
+            if (!graph[v]) graph[v] = [];
+            graph[u].push(v);
+            graph[v].push(u); // Residual reverse edge
+            capacity[`${u}->${v}`] = cap;
+            capacity[`${v}->${u}`] = 0; // Initial reverse capacity
+        };
+
+        // Build Graph
+        candidates.forEach(c => {
+            const cid = 'C:' + c.characterId;
+            addEdge(source, cid, 1);
+
+            const prefs = preferencesAccessor(c);
+            prefs.forEach(slot => {
+                if (slots.includes(slot)) {
+                    const sid = 'S:' + slot;
+                    addEdge(cid, sid, 1);
+                }
+            });
+        });
+
+        slots.forEach(slot => {
+            const sid = 'S:' + slot;
+            addEdge(sid, sink, 1);
+        });
+
+        // 2. Edmonds-Karp Max Flow
+        const flow: { [key: string]: number } = {};
+
+        // Initialize flow to 0
+        // (Implicitly 0 if undefined)
+
+        while (true) {
+            const parent: { [key: string]: string | null } = {};
+            const queue: string[] = [source];
+            parent[source] = source;
+
+            // BFS to find augmenting path
+            let pathFound = false;
+            while (queue.length > 0) {
+                const u = queue.shift()!;
+                if (u === sink) {
+                    pathFound = true;
+                    break;
+                }
+
+                for (const v of graph[u]) {
+                    if (parent[v] === undefined) { // Not visited
+                        const cap = capacity[`${u}->${v}`] || 0;
+                        const f = flow[`${u}->${v}`] || 0;
+                        if (cap - f > 0) {
+                            parent[v] = u;
+                            queue.push(v);
+                        }
+                    }
+                }
+                if (pathFound) break; // Optimization
+            }
+
+            if (!pathFound) break;
+
+            // Augment flow
+            let pathFlow = Infinity;
+            let v = sink;
+            while (v !== source) {
+                const u = parent[v]!;
+                const cap = capacity[`${u}->${v}`] || 0;
+                const f = flow[`${u}->${v}`] || 0;
+                pathFlow = Math.min(pathFlow, cap - f);
+                v = u;
+            }
+
+            v = sink;
+            while (v !== source) {
+                const u = parent[v]!;
+                flow[`${u}->${v}`] = (flow[`${u}->${v}`] || 0) + pathFlow;
+                flow[`${v}->${u}`] = (flow[`${v}->${u}`] || 0) - pathFlow;
+                v = u;
+            }
+        }
+
+        // 3. Extract Assignments
+        const assignments: { [slot: string]: string } = {};
+        candidates.forEach(c => {
+            const cid = 'C:' + c.characterId;
+            // Find the slot this candidate pushed flow to
+            // It will be an edge C->S where flow == 1
+            const prefs = preferencesAccessor(c);
+            for (const slot of prefs) {
+                const sid = 'S:' + slot;
+                if ((flow[`${cid}->${sid}`] || 0) === 1) {
+                    assignments[slot] = c.characterId;
+                    break;
+                }
+            }
+        });
+
+        return assignments;
+    }
 }

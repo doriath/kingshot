@@ -295,32 +295,33 @@ export class AdminSvsPrepManagementComponent {
       Object.values(assignments[currentType]).forEach((cid) => assignedInThisType.add(cid as string));
     }
 
-    // Iterate slots
-    for (const slot of slots) {
-      // Skip if already assigned
-      if (assignments[currentType][slot]) continue;
+    // Identify candidates and available slots
+    const candidates = regs.filter(r => {
+      // Must NOT be already assigned in THIS type
+      if (assignedInThisType.has(r.characterId)) return false;
 
-      // Find candidates
-      const candidates = regs.filter(r => {
-        // Must NOT be assigned in THIS type
-        if (assignedInThisType.has(r.characterId)) return false;
+      // Must have preferences for this type
+      const pref = r.preferences.find(p => p.boostType === currentType);
+      return pref && pref.slots.length > 0;
+    });
 
+    const availableSlots = slots.filter(s => !assignments[currentType][s]);
+
+    // Use Max Flow for optimal assignment
+    const newAssignments = this.svsService.calculateOptimalAssignments(
+      candidates,
+      availableSlots,
+      (r) => {
         const pref = r.preferences.find(p => p.boostType === currentType);
-        return pref?.slots.includes(slot);
-      });
+        return pref ? pref.slots : [];
+      }
+    );
 
-      if (candidates.length === 0) continue;
-
-      // Sort candidates
-      // Prioritize people who have FEWER options? Or just random/stable ID?
-      // For now, stable sort by ID.
-      candidates.sort((a, b) => a.characterId.localeCompare(b.characterId));
-
-      // Pick best candidate
-      const chosen = candidates[0];
-      assignments[currentType][slot] = chosen.characterId;
-      assignedInThisType.add(chosen.characterId);
-    }
+    // Apply assignments
+    Object.entries(newAssignments).forEach(([slot, charId]) => {
+      assignments[currentType][slot] = charId;
+      assignedInThisType.add(charId);
+    });
 
     // Save
     try {
