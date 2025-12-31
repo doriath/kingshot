@@ -423,3 +423,30 @@ li:last-child {
     border-color: #ffaa00;
     color: #ffaa00;
 }
+
+/* Status Dots */
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+.status-dot.online {
+    background: #81c784;
+    box-shadow: 0 0 4px #81c784;
+}
+
+.status-dot.offline_empty {
+    background: #ffb74d;
+}
+
+.status-dot.offline_not_empty {
+    background: #e57373;
+}
+
+.status-dot.unknown {
+    background: #666;
+}

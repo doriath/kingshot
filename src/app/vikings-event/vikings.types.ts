@@ -24,6 +24,7 @@ export interface CharacterAssignmentView extends Omit<CharacterAssignment, 'rein
         powerLevel?: number;
         marchType?: string;
         scoreValue?: number;
+        status?: VikingsStatus | 'unknown';
     }[];
     score?: number;
 }

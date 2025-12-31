@@ -82,7 +82,10 @@
             <div class="player-card active-user-card" [class.expanded]="expandedPlayerId() === character.characterId"
                 (click)="toggleCharacter(character.characterId)">
                 <div class="player-header">
-                    <span class="player-name">{{ character.characterName }}</span>
+                    <div style="display: flex; align-items: center;">
+                        <span class="status-dot" [class]="character.status" [title]="character.status"></span>
+                        <span class="player-name">{{ character.characterName }}</span>
+                    </div>
                     <div class="header-right">
                         <span class="player-power">Power: {{ character.powerLevel | number }}</span>
                         <span class="expand-icon">
@@ -107,7 +110,10 @@
                     <ul>
                         @for (target of character.reinforce; track target.characterId) {
                         <li>
-                            <span class="target-name">{{ target.characterName }}</span>
+                            <div style="display: flex; align-items: center;">
+                                <span class="status-dot" [class]="target.status" [title]="target.status"></span>
+                                <span class="target-name">{{ target.characterName }}</span>
+                            </div>
                             <div class="target-info">
                                 @if (target.marchType) {
                                 <span class="march-type">{{ target.marchType }}</span>
@@ -133,7 +139,10 @@
             <div class="player-card" [class.expanded]="expandedPlayerId() === character.characterId"
                 (click)="toggleCharacter(character.characterId)">
                 <div class="player-header">
-                    <span class="player-name">{{ character.characterName }}</span>
+                    <div style="display: flex; align-items: center;">
+                        <span class="status-dot" [class]="character.status" [title]="character.status"></span>
+                        <span class="player-name">{{ character.characterName }}</span>
+                    </div>
                     <div class="header-right">
                         <span class="player-power">Power: {{ character.powerLevel | number }}</span>
                         <span class="expand-icon">
@@ -158,7 +167,10 @@
                     <ul>
                         @for (target of character.reinforce; track target.characterId) {
                         <li>
-                            <span class="target-name">{{ target.characterName }}</span>
+                            <div style="display: flex; align-items: center;">
+                                <span class="status-dot" [class]="target.status" [title]="target.status"></span>
+                                <span class="target-name">{{ target.characterName }}</span>
+                            </div>
                             <div class="target-info">
                                 @if (target.marchType) {
                                 <span class="march-type">{{ target.marchType }}</span>

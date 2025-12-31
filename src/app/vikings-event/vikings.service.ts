@@ -230,10 +230,10 @@ export class VikingsService {
             // Re-calculate scores for outgoing reinforcements
             const viewReinforce = (c.reinforce || []).map(r => {
                 const target = characterMap.get(r.characterId);
+                const targetStatus: VikingsStatus | 'unknown' = target ? getCharacterStatus(target) : 'unknown';
                 let scoreValue = 0;
 
                 if (target) {
-                    const targetStatus = getCharacterStatus(target);
                     const targetConf = target.confidenceLevel ?? 0.5;
 
                     // Get list of all incoming reinforcers
@@ -276,7 +276,8 @@ export class VikingsService {
                     marchType: r.marchType,
                     scoreValue: scoreValue,
                     characterName: target?.characterName || 'Unknown',
-                    powerLevel: target?.powerLevel
+                    powerLevel: target?.powerLevel,
+                    status: targetStatus
                 };
             });
 
@@ -285,6 +286,7 @@ export class VikingsService {
 
             return {
                 ...c,
+                status: getCharacterStatus(c),
                 reinforce: viewReinforce,
                 score: totalScore
             };
