@@ -20,6 +20,7 @@ interface ManagementRow {
     mainCharacterName?: string; // Resolved name of the main character
     resolvedReinforcements?: ResolvedReinforcement[]; // Resolved names and status of reinforcement targets
     reinforcedBy?: ResolvedReinforcement[]; // Resolved names and status of characters reinforcing THIS character
+    expectedMarches?: number; // Expected number of incoming reinforcements
     actualStatus?: VikingsStatus | 'unknown'; // Actual status of the character during the event
 }
 
@@ -112,8 +113,8 @@ interface ResolvedReinforcement {
                             <th>Character</th>
                             <th>Type</th>
                             <th>Power</th>
-                            <th>Confidence</th>
-                            <th>Score</th>
+                            <th>Power</th>
+                            <th>Stats</th>
                             <th>Current Assignment</th>
                             <th>Registration (User Submitted)</th>
                             <th>Actions</th>
@@ -145,17 +146,31 @@ interface ResolvedReinforcement {
                             </td>
                             <td>{{ row.assignment.powerLevel | number }}</td>
                             <td>
+                                <!-- Confidence -->
                                 @if (row.assignment.confidenceLevel !== undefined) {
                                     <span class="conf-badge" 
-                                          [class.high]="row.assignment.confidenceLevel >= 0.8"
+                                          [class.high]="row.assignment.confidenceLevel >= 0.7"
                                           [class.low]="row.assignment.confidenceLevel < 0.5">
-                                        {{ row.assignment.confidenceLevel | number:'1.1-2' }}
+                                        Conf: {{ row.assignment.confidenceLevel | number:'1.2-2' }}
                                     </span>
                                 } @else {
-                                    <span class="conf-badge neutral">-</span>
+                                    <span class="conf-badge neutral">Conf: -</span>
                                 }
+                                
+                                <!-- Expected Marches -->
+                                @if (row.expectedMarches !== undefined) {
+                                    <br>
+                                    <span class="surv-badge"
+                                          [class.good]="row.expectedMarches >= (row.assignment.reinforcementCapacity || 0)"
+                                          [class.ok]="row.expectedMarches >= ((row.assignment.reinforcementCapacity || 1) - 1) && row.expectedMarches < (row.assignment.reinforcementCapacity || 0)"
+                                          [class.bad]="row.expectedMarches < ((row.assignment.reinforcementCapacity || 1) - 1)">
+                                        Exp: {{ row.expectedMarches | number:'1.1-1' }}
+                                    </span>
+                                }
+
+                                <!-- Score -->
+                                <span class="score-info" *ngIf="row.assignment.score">(Exp Sc: {{ row.assignment.score | number:'1.2-2' }})</span>
                             </td>
-                            <td>{{ (row.assignment.score || 0) | number:'1.2-2' }}</td>
                             <td>
                                 <div class="status-pill" [class]="row.assignment.status">
                                     {{ row.assignment.status | uppercase }}
@@ -399,6 +414,8 @@ interface ResolvedReinforcement {
         .stat-pill.offline_empty { background: rgba(255, 152, 0, 0.1); color: #ffb74d; border-color: #ffb74d; }
         .stat-pill.offline_not_empty { background: rgba(244, 67, 54, 0.1); color: #e57373; border-color: #e57373; }
         .stat-pill.unknown { background: #444; color: #aaa; border-color: #666; }
+        
+        /* Removed surv-config styles */
 
         .toolbar { display: flex; gap: 1rem; margin-bottom: 1.5rem; }
         .tool-btn { border: none; padding: 0.6rem 1.2rem; border-radius: 4px; font-weight: bold; cursor: pointer; }
@@ -477,7 +494,15 @@ interface ResolvedReinforcement {
 
         .mini-conf { font-size: 0.7rem; padding: 0 0.3rem; border-radius: 3px; border: 1px solid #444; color: #aaa; background: #333; margin-left: 0.3rem; font-weight: bold; }
         .mini-conf.high { color: #81c784; border-color: #2e7d32; background: rgba(76, 175, 80, 0.1); }
+        .mini-conf.high { color: #81c784; border-color: #2e7d32; background: rgba(76, 175, 80, 0.1); }
         .mini-conf.low { color: #e57373; border-color: #c62828; background: rgba(244, 67, 54, 0.1); }
+
+        .surv-badge { font-weight: bold; font-size: 0.85rem; padding: 0.2rem 0.5rem; border-radius: 4px; display: inline-block; margin-top: 0.3rem; }
+        .surv-badge.good { background: rgba(76, 175, 80, 0.1); color: #81c784; border: 1px solid #2e7d32; }
+        .surv-badge.ok { background: rgba(255, 152, 0, 0.1); color: #ffb74d; border: 1px solid #ef6c00; }
+        .surv-badge.bad { background: rgba(244, 67, 54, 0.1); color: #e57373; border: 1px solid #c62828; }
+        
+        .score-info { font-size: 0.75rem; color: #888; display: block; margin-top: 0.2rem; }
 
         .verification-badge { display: inline-block; font-size: 0.75rem; padding: 0.1rem 0.4rem; border-radius: 4px; margin-left: 0.5rem; background: #3d2b2b; color: #e57373; border: 1px solid #e57373; }
         .verification-badge.verified { background: #2b3d2b; color: #81c784; border: 1px solid #81c784; }
@@ -776,6 +801,10 @@ export class VikingsEventManagementComponent {
             // Resolve Reinforced By (Incoming)
             const reinforcedBy = incomingReinforcementMap.get(a.characterId) || [];
 
+            // Calculate Expected Marches
+            // Sum of incoming confidence levels
+            const expectedMarches = reinforcedBy.reduce((sum, r) => sum + (r.confidenceLevel !== undefined ? r.confidenceLevel : 0.5), 0);
+
             return {
                 assignment: a,
                 registration: r,
@@ -786,6 +815,7 @@ export class VikingsEventManagementComponent {
                 mainCharacterName,
                 resolvedReinforcements,
                 reinforcedBy,
+                expectedMarches,
                 actualStatus: a.actualStatus
             } as ManagementRow;
         }).sort((a, b) => b.assignment.powerLevel - a.assignment.powerLevel); // Sort by power
@@ -1069,6 +1099,8 @@ export class VikingsEventManagementComponent {
             alert('Action failed.');
         }
     }
+
+
 
     public async cycleStatus() {
         const eventId = this.eventId();

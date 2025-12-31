@@ -236,7 +236,7 @@ class VikingsAssignmentSolver {
 
                 // Determine if source is High Confidence
                 const sourceConfidence = source.confidenceLevel ?? 0.5;
-                const isSourceHighConfidence = sourceConfidence >= 0.8;
+                const isSourceHighConfidence = sourceConfidence >= 0.7;
 
                 const validTargets = onlineAndOfflineEmptyTargets.filter(t => {
                     if (t.characterId === source.characterId) return false;
@@ -257,8 +257,8 @@ class VikingsAssignmentSolver {
                     if (isSourceHighConfidence) {
                         const confA = a.confidenceLevel ?? 0.5;
                         const confB = b.confidenceLevel ?? 0.5;
-                        const isAHigh = confA >= 0.8;
-                        const isBHigh = confB >= 0.8;
+                        const isAHigh = confA >= 0.7;
+                        const isBHigh = confB >= 0.7;
 
                         if (isAHigh && !isBHigh) return -1;
                         if (!isAHigh && isBHigh) return 1;

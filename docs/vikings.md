@@ -7,27 +7,30 @@ The Vikings Event management system helps alliances optimize their reinforcement
 The **Confidence Level** is a metric used to gauge how reliable a player is in fulfilling their reinforcement duties. It helps the algorithm prioritize reliable players for critical reinforcements.
 
 ### Calculation Rules
-- **Range**: `0.0` (0%) to `1.0` (100%).
-- **Default**: New players start with a probability of `0.5` (50%).
-- **Scope**: Only events with the status **'FINISHED'** are considered. 'VOTING' or 'FINALIZED' events do not affect the score.
-- **History**: The calculation considers the last **5** finished events.
+The confidence calculation uses **Weighted History** (Time Decay) and **Bayesian Smoothing**.
+
+1.  **Time Decay**: Recent events are weighted more heavily than older events.
+    - Decay Factor $\lambda = 0.9$
+    - Weights for last 5 events (newest to oldest): `1.0, 0.9, 0.81, 0.73, 0.66`
+
+2.  **Bayesian Smoothing**: To prevent extreme scores from sparse data (e.g., a new player with 1 event getting 100%), we use a **Uniform Prior** ($\alpha=1, \beta=1$).
+    - This effectively adds 1 "Virtual Success" and 1 "Virtual Failure" to the weighted average.
+    - Formula:
+      $$ P = \frac{\text{WeightedScore} + 1}{\text{TotalWeight} + 2} $$
+    - **Result**: A new player with 1 perfect event gets a score of $\approx 0.66$ (Neutral), requiring consistent performance to reach High Confidence.
 
 ### Scoring Logic
-For each finished event, a player receives a score based on the accuracy of their declared status versus their actual contribution:
+For each event, we calculate a raw score (1.0 for Match, 0.0 for Mismatch). This raw score is then weighted and smoothed.
 
-1.  **Implicit Match (High Score)**:
-    - If the admin has **not** set an "Actual Status" for the player, it is assumed the player performed as expected.
-    - Score: **1.0** (100%)
+- **Match (1.0)**: Actual Status matches Declared Status (or Implicit Match).
+- **Mismatch (0.0)**: Actual Status differs from Declared Status.
 
-2.  **Explicit Match (High Score)**:
-    - If "Actual Status" IS set and **matches** the declared status.
-    - Score: **1.0** (100%)
+**Note**: Events where the player declared themselves as `offline_not_empty` (Busy) or `unknown` (did not register) are **ignored**.
 
-3.  **Mismatch (Low Score)**:
-    - If "Actual Status" IS set and **does not match** the declared status.
-    - Score: **0.0** (0%)
-
-**Note**: Events where the player declared themselves as `offline_not_empty` (Busy) or `unknown` (did not register) are **ignored** and do not affect the average score, as these statuses do not promise active participation.
+### Thresholds
+- **High Confidence**: Score **>= 0.7** (70%)
+- **Low Confidence**: Score **< 0.5** (50%)
+- **Neutral**: Between 0.5 and 0.7.
 
 ---
 
@@ -58,7 +61,7 @@ The assignment logic runs in **4 Phases** to ensure optimal distribution of rein
 *   **Sources**: Online players.
 *   **Targets**: Online & Offline Empty players.
 *   **Logic**:
-    - **Confidence Matching**: High Confidence sources (>= 0.8) are prioritized to reinforce High Confidence targets.
+    - **Confidence Matching**: High Confidence sources (>= 0.7) are prioritized to reinforce High Confidence targets.
     - **Priority**: Online targets are preferred over Offline Empty targets in tie-breaks.
 
 ### Phase 4: Offline Not Empty Cleanup

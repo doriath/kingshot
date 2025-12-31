@@ -209,13 +209,19 @@ export class VikingsService {
         }
 
         // --- DYNAMIC SCORE CALCULATION ---
-        // 1. Calculate incoming counts
-        const incomingCounts = new Map<string, number>();
+        // 1. Build map of Incoming Reinforcers (Confidence Levels) per Target
+        const incomingConfidence = new Map<string, { id: string; conf: number }[]>();
+
         if (event.characters) {
             event.characters.forEach(source => {
-                source.reinforce.forEach(target => {
-                    incomingCounts.set(target.characterId, (incomingCounts.get(target.characterId) || 0) + 1);
-                });
+                const sourceConf = source.confidenceLevel !== undefined ? source.confidenceLevel : 0.5;
+                if (source.reinforce) {
+                    source.reinforce.forEach(target => {
+                        const list = incomingConfidence.get(target.characterId) || [];
+                        list.push({ id: source.characterId, conf: sourceConf });
+                        incomingConfidence.set(target.characterId, list);
+                    });
+                }
             });
         }
 
@@ -227,15 +233,33 @@ export class VikingsService {
                 let scoreValue = 0;
 
                 if (target) {
-                    const count = incomingCounts.get(target.characterId) || 1; // Avoid div/0 if logical inconsistency
                     const targetStatus = getCharacterStatus(target);
+                    // Determine numerator based on target status
+                    let numerator = 0;
                     if (targetStatus === 'online') {
-                        scoreValue = 1.3 / count;
+                        numerator = 1.3;
                     } else if (targetStatus === 'offline_empty') {
-                        scoreValue = 1.0 / count;
+                        numerator = 1.0;
                     } else {
-                        // Offline Not Empty
-                        scoreValue = 1.0 / (4 + count);
+                        // Offline Not Empty (Legacy or busy)
+                        // Formula was 1.0 / (4 + count). 
+                        // Probabilistic equivalent: E[1 / (4 + 1 + others)]
+                        // Let's stick to standard numerator logic for simplicity or handle it separately.
+                        // For offline_not_empty, base count is 4. So we treat it as if 4 people are already there.
+                        numerator = 1.0;
+                    }
+
+                    // Get list of all OTHER reinforcers' probabilities
+                    const allIncoming = incomingConfidence.get(target.characterId) || [];
+                    const otherProbs = allIncoming
+                        .filter(itm => itm.id !== c.characterId)
+                        .map(itm => itm.conf);
+
+                    if (targetStatus === 'offline_not_empty') {
+                        // Special case: Offline Not Empty has base "4" marches
+                        scoreValue = this.calculateExpectedScore(otherProbs, numerator, 4);
+                    } else {
+                        scoreValue = this.calculateExpectedScore(otherProbs, numerator, 0);
                     }
                 }
 
@@ -264,6 +288,35 @@ export class VikingsService {
         };
     }
 
+    /**
+     * Calculates E[numerator / (1 + baseOffset + K)] where K is number of other successes.
+     */
+    private calculateExpectedScore(probs: number[], numerator: number, baseOffset: number): number {
+        // dp[i] = probability that exactly i people show up
+        // Initialize: dp[0] = 1 (0 people show up)
+        let dp = new Array(probs.length + 1).fill(0);
+        dp[0] = 1.0;
+
+        for (const p of probs) {
+            for (let i = dp.length - 1; i >= 1; i--) {
+                dp[i] = dp[i] * (1 - p) + dp[i - 1] * p;
+            }
+            dp[0] = dp[0] * (1 - p);
+        }
+
+        let expectedValue = 0;
+        // Verify sum of probs is ~1? (Optional check)
+
+        for (let k = 0; k < dp.length; k++) {
+            const probK = dp[k];
+            // If k others show up, total count is (1 + baseOffset + k)  [1 is ME]
+            const count = 1 + baseOffset + k;
+            expectedValue += probK * (numerator / count);
+        }
+
+        return expectedValue;
+    }
+
     public generateAssignmentClipboardText(character: CharacterAssignmentView): string {
         const lines = [`Player ${character.characterName} reinforces (Player, Power):`];
 
@@ -284,51 +337,53 @@ export class VikingsService {
 
     calculateMemberConfidence(memberId: string, pastEvents: VikingsEvent[]): number {
         // Consider last 5 events
+        // Sort: Most recent first (index 0 is newest)
         const recentEvents = pastEvents
             .filter(e => e.status === 'finished')
             .sort((a, b) => b.date.seconds - a.date.seconds)
             .slice(0, 5);
 
         if (recentEvents.length === 0) {
-            return 0.5; // Default (Neutral/Unknown)
+            // Bayesian prior (1, 1) means 1 success, 1 failure => 0.5
+            return 0.5;
         }
 
-        let totalScore = 0;
-        let count = 0;
+        let totalWeight = 0;
+        let weightedScore = 0;
 
-        for (const event of recentEvents) {
+        // Decay Factor
+        const lambda = 0.9;
+
+        // Bayesian Prior (Uniform)
+        const alpha = 1.0; // Pseudo-count for Success
+        const beta = 1.0;  // Pseudo-count for Failure
+
+        recentEvents.forEach((event, index) => {
             const char = event.characters?.find(c => c.characterId === memberId);
-            if (!char) continue;
+            if (!char) return;
 
             const declared = getCharacterStatus(char);
 
-            // We only track reliability for commitments to be active/useful (Online or Offline Empty)
-            // If they said they are 'offline_not_empty' (busy/full) or 'unknown' (did not register), 
-            // we treat this as neutral (skip).
-            if (declared !== 'online' && declared !== 'offline_empty') continue;
+            // Skip irrelevant statuses
+            if (declared !== 'online' && declared !== 'offline_empty') return;
 
-            // If actualStatus is not set, we assume they did what they said (implicit match)
-            // If it IS set, we use it.
             const actual = (char.actualStatus && char.actualStatus !== 'unknown') ? char.actualStatus : declared;
 
-            // SCORING:
-            // Match: 1.0 (High confidence / 100%)
-            // Mismatch: 0.0 (Low confidence / 0%)
+            // SCORING: 1.0 (Match) vs 0.0 (Mismatch)
+            const eventScore = (declared === actual) ? 1.0 : 0.0;
 
-            let eventScore = 0.0;
-            if (declared === actual) {
-                eventScore = 1.0;
-            } else {
-                eventScore = 0.0;
-            }
+            // Weight decreases for older events: 1, 0.9, 0.81...
+            const weight = Math.pow(lambda, index);
 
-            totalScore += eventScore;
-            count++;
-        }
+            weightedScore += (eventScore * weight);
+            totalWeight += weight;
+        });
 
-        if (count === 0) return 0.5;
+        // If no relevant participation found (despite events existing), treat as new.
+        if (totalWeight === 0) return 0.5;
 
-        return totalScore / count;
+        // Formula: (WeightedScore + Alpha) / (TotalWeight + Alpha + Beta)
+        return (weightedScore + alpha) / (totalWeight + alpha + beta);
     }
 
     async updateAllianceMemberConfidence(allianceId: string, updates: { characterId: string; confidenceLevel: number }[]): Promise<void> {

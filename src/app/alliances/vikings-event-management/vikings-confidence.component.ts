@@ -52,7 +52,7 @@ import { CommonModule } from '@angular/common';
                              <td class="col-center text-muted">{{ member.eventCount }}</td>
                              <td class="col-center">
                                 <span class="badge"
-                                      [class.badge-high]="member.calculatedScore >= 0.8"
+                                      [class.badge-high]="member.calculatedScore >= 0.7"
                                       [class.badge-low]="member.calculatedScore < 0.5">
                                     {{ member.calculatedScore | number:'1.1-2' }}
                                 </span>
