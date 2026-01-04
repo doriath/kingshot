@@ -165,6 +165,53 @@ export class VikingsEventComponent {
         }
     }
 
+    // Reinforced By Reverse Mapping
+    public reinforcedByMap = computed(() => {
+        const event = this.eventData();
+        const map = new Map<string, { name: string; power: number; status: VikingsStatus | 'unknown' }[]>();
+
+        if (!event || !event.characters) return map;
+
+        event.characters.forEach(source => {
+            if (source.reinforce) {
+                source.reinforce.forEach(target => {
+                    const list = map.get(target.characterId) || [];
+                    list.push({
+                        name: source.characterName,
+                        power: source.powerLevel,
+                        status: source.status
+                    });
+                    map.set(target.characterId, list);
+                });
+            }
+        });
+        return map;
+    });
+
+    public showReinforcedByModal = signal<string | null>(null);
+
+    public currentReinforcedByList = computed(() => {
+        const id = this.showReinforcedByModal();
+        if (!id) return [];
+        return this.reinforcedByMap().get(id) || [];
+    });
+
+    public currentReinforcedByName = computed(() => {
+        const id = this.showReinforcedByModal();
+        if (!id) return '';
+        const char = this.eventData()?.characters.find(c => c.characterId === id);
+        return char?.characterName || 'Unknown';
+    });
+
+    public openReinforcedBy(characterId: string, event: Event) {
+        event.stopPropagation();
+        this.showReinforcedByModal.set(characterId);
+    }
+
+    public closeReinforcedBy() {
+        this.showReinforcedByModal.set(null);
+    }
+
     // Notification state
     public notificationMessage = signal<string | null>(null);
 

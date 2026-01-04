@@ -103,9 +103,14 @@
                 @if (expandedPlayerId() === character.characterId) {
                 <div class="assignments-details">
                     <div class="details-header">
-                        <h3>Reinforce Priorities:</h3>
-                        <button class="copy-btn" (click)="copyAssignments(character, $event)"
-                            title="Copy to clipboard">📋</button>
+                        <h3>Priorities</h3>
+                        <div class="header-actions">
+                            <button class="action-btn" (click)="copyAssignments(character, $event)"
+                                title="Copy to clipboard">📋 Copy</button>
+                            <button class="action-btn secondary"
+                                (click)="openReinforcedBy(character.characterId, $event)"
+                                title="See who reinforces this player">🛡️ Reinforced By</button>
+                        </div>
                     </div>
                     <ul>
                         @for (target of character.reinforce; track target.characterId) {
@@ -160,9 +165,14 @@
                 @if (expandedPlayerId() === character.characterId) {
                 <div class="assignments-details">
                     <div class="details-header">
-                        <h3>Reinforce Priorities:</h3>
-                        <button class="copy-btn" (click)="copyAssignments(character, $event)"
-                            title="Copy to clipboard">📋</button>
+                        <h3>Priorities</h3>
+                        <div class="header-actions">
+                            <button class="action-btn" (click)="copyAssignments(character, $event)"
+                                title="Copy to clipboard">📋 Copy</button>
+                            <button class="action-btn secondary"
+                                (click)="openReinforcedBy(character.characterId, $event)"
+                                title="See who reinforces this player">🛡️ Reinforced By</button>
+                        </div>
                     </div>
                     <ul>
                         @for (target of character.reinforce; track target.characterId) {
@@ -198,6 +208,34 @@
     <div class="loading-state">
         <p>Loading event data or no active event found...</p>
         <p class="hint">Ensure the event ID is correct and the event exists.</p>
+    </div>
+    }
+
+    @if (showReinforcedByModal()) {
+    <div class="modal-backdrop" (click)="closeReinforcedBy()">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+                <h3>Reinforced By: {{ currentReinforcedByName() }}</h3>
+                <button class="close-btn" (click)="closeReinforcedBy()">×</button>
+            </div>
+            <div class="modal-body">
+                @if (currentReinforcedByList().length > 0) {
+                <ul class="reinforced-list">
+                    @for (source of currentReinforcedByList(); track $index) {
+                    <li>
+                        <div style="display: flex; align-items: center;">
+                            <span class="status-dot" [class]="source.status" [title]="source.status"></span>
+                            <span class="source-name">{{ source.name }}</span>
+                        </div>
+                        <span class="source-power">{{ source.power | number }}</span>
+                    </li>
+                    }
+                </ul>
+                } @else {
+                <div class="no-data-small">No one is reinforcing this player.</div>
+                }
+            </div>
+        </div>
     </div>
     }
 </div>
