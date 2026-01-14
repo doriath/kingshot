@@ -58,8 +58,8 @@ import { VikingsEventView, CharacterAssignmentView, VikingsStatus } from '../../
                     @for (char of characters(); track char.characterId) {
                         <div class="char-card" (click)="handleCharClick(char)">
                             <div class="char-name">{{ char.characterName }}</div>
-                            <div class="status-indicator" [class]="char.actualStatus || char.status">
-                                {{ (char.actualStatus || char.status) || 'UNKNOWN' }}
+                            <div class="status-indicator" [class]="char.status">
+                                {{ char.status | uppercase }}
                             </div>
                         </div>
                     }
@@ -137,8 +137,7 @@ export class VikingsAvailabilityComponent {
         const evt = this.event();
         if (!char || !evt || !evt.id) return;
 
-        // Skip if status is already the same (optimization)
-        const currentStatus = char.actualStatus || char.status;
+        const currentStatus = char.status;
         if (currentStatus === status) {
             if (this.selectedChar()) this.closePopup();
             return;
@@ -148,8 +147,7 @@ export class VikingsAvailabilityComponent {
             if (c.characterId === char.characterId) {
                 return {
                     ...c,
-                    actualStatus: status,
-                    status: c.status
+                    status: status as VikingsStatus
                 };
             }
             return c;
