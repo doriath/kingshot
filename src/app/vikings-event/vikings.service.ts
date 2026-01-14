@@ -81,19 +81,29 @@ export class VikingsService {
         // Mapped from AllianceMember to CharacterAssignment
         const characters: CharacterAssignment[] = (alliance.members || [])
             .filter((m: any) => !m.quit)
-            .map((m: any) => ({
-                characterId: m.characterId,
-                characterName: m.name,
-                mainCharacterId: m.mainCharacterId, // Copy from alliance member
-                reinforcementCapacity: m.reinforcementCapacity,
-                powerLevel: m.power,
-                marchesCount: 0, // Default to 0, user will register explicit count
-                status: 'unknown',
-                confidenceLevel: getMemberConfidence(m),
-                reinforce: []
-            }));
+            .map((m: any) => {
+                const char: any = {
+                    characterId: m.characterId,
+                    characterName: m.name,
+                    // Handle optional fields safely
+                    reinforcementCapacity: m.reinforcementCapacity ?? null, // Use null for Firestore if needed, or specific default
+                    powerLevel: m.power,
+                    marchesCount: 0,
+                    status: 'unknown',
+                    confidenceLevel: getMemberConfidence(m),
+                    reinforce: []
+                };
 
-        const event: VikingsEvent = {
+                // Optional fields that we want to save ONLY if they exist (but not undefined)
+                if (m.mainCharacterId !== undefined) char.mainCharacterId = m.mainCharacterId;
+
+                // Ensure no undefined values slip through (general safety)
+                Object.keys(char).forEach(key => char[key] === undefined && delete char[key]);
+
+                return char as CharacterAssignment;
+            });
+
+        const event: any = {
             allianceId: alliance.uuid,
             allianceTag: alliance.tag,
             server: alliance.server,
@@ -101,6 +111,9 @@ export class VikingsService {
             status: 'voting',
             characters: characters
         };
+
+        // Final safety check for the event object itself
+        Object.keys(event).forEach(key => event[key] === undefined && delete event[key]);
 
         const eventsCollection = collection(this.firestore, 'vikingsEvents');
         await import('@angular/fire/firestore').then(mod => mod.addDoc(eventsCollection, event));

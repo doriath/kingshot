@@ -1,0 +1,1 @@
+export const IMGBB_API_KEY = 'PUT KEY HERE';

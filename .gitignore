@@ -41,3 +41,4 @@ solver/target
 
 # Secrets
 src/app/secrets.ts
+.direnv
