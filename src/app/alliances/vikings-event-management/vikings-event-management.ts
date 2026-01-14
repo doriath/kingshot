@@ -63,6 +63,7 @@ interface ResolvedReinforcement {
 
             <div class="toolbar">
                 <button class="tool-btn add-btn" (click)="showAddModal = true">➕ Add Character</button>
+                <a *ngIf="data()?.event as evt" [routerLink]="['/admin', 'vikingsEvents', evt.id, 'availability']" class="tool-btn status-btn-link">📅 Availability</a>
                 <button class="tool-btn sync-btn" (click)="acceptAllRegs()">📥 Accept All Differences</button>
                 <button class="tool-btn meta-btn" (click)="syncAllianceMetadata()">🔄 Sync Alliance Metadata</button>
                 <a *ngIf="data()?.alliance as ally" [routerLink]="['/admin', 'alliances', ally.uuid, 'confidence']" class="tool-btn conf-btn">
@@ -427,6 +428,7 @@ interface ResolvedReinforcement {
         .show-hide-btn { background: #607d8b; color: white; }
         .show-hide-btn { background: #607d8b; color: white; }
         .msg-btn { background: #ff9800; color: white; }
+        .status-btn-link { background: #e91e63; color: white; text-decoration: none; display: flex; align-items: center; }
         
         .status-badge { 
             display: inline-block; padding: 0.2rem 0.6rem; border-radius: 4px; font-weight: bold; margin-left: 1rem; font-size: 0.8rem; vertical-align: middle;

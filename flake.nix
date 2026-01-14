@@ -5,6 +5,7 @@
     nixpkgs.url = "github:NixOS/nixpkgs";
     rust-overlay.url = "github:oxalica/rust-overlay";
     flake-utils.url = "github:numtide/flake-utils";
+    antigravity-nix.url = "github:jacopone/antigravity-nix";
   };
 
   outputs =
@@ -13,6 +14,7 @@
       nixpkgs,
       flake-utils,
       rust-overlay,
+      antigravity-nix,
       ...
     }:
     flake-utils.lib.eachDefaultSystem (
@@ -39,6 +41,7 @@
             pkgs.wasm-pack
             pkgs.gcc
             rust
+            antigravity-nix.packages.${system}.default
           ];
         };
       }
