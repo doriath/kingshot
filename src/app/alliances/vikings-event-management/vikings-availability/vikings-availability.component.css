@@ -1,14 +1,16 @@
 .availability-container {
-    padding: 2rem;
+    padding: 1rem;
+    /* Compact padding */
     color: #eee;
-    max-width: 1200px;
+    max-width: 800px;
+    /* Reduced max width for list focus */
     margin: 0 auto;
 }
 
 header {
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
     border-bottom: 1px solid #444;
-    padding-bottom: 1rem;
+    padding-bottom: 0.5rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -17,32 +19,36 @@ header {
 h1 {
     margin: 0;
     color: #ffca28;
+    font-size: 1.2rem;
+    /* Compact header */
 }
 
 .back-btn {
     background: #444;
     color: white;
     text-decoration: none;
-    padding: 0.5rem 1rem;
+    padding: 0.4rem 0.8rem;
     border-radius: 4px;
     font-weight: bold;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.3rem;
 }
 
 .back-btn:hover {
     background: #555;
 }
 
+/* Controls */
 .controls {
     margin-bottom: 1rem;
     display: flex;
-    gap: 1rem;
-    flex-wrap: wrap;
+    flex-direction: column;
+    /* Stack on mobile by default */
+    gap: 0.5rem;
     background: #2a2a2a;
-    padding: 1rem;
+    padding: 0.8rem;
     border-radius: 8px;
     border: 1px solid #444;
 }
@@ -51,13 +57,14 @@ h1 {
     display: flex;
     gap: 0.5rem;
     align-items: center;
+    flex-wrap: wrap;
 }
 
 .mode-label {
     color: #888;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: bold;
-    margin-right: 0.5rem;
+    margin-right: 0.2rem;
     text-transform: uppercase;
 }
 
@@ -65,12 +72,16 @@ h1 {
     border: 1px solid #555;
     background: #333;
     color: #aaa;
-    padding: 0.5rem 1rem;
+    padding: 0.3rem 0.6rem;
+    /* Compact buttons */
     border-radius: 4px;
     cursor: pointer;
     font-weight: bold;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     transition: all 0.2s;
+    flex: 1;
+    /* Stretch buttons */
+    white-space: nowrap;
 }
 
 .mode-btn:hover {
@@ -79,8 +90,8 @@ h1 {
 }
 
 .mode-btn.active {
-    transform: scale(1.05);
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    transform: scale(1.02);
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
     color: white;
     border-color: transparent;
 }
@@ -105,69 +116,83 @@ h1 {
     background: #2196f3;
 }
 
-.grid-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 1rem;
-}
-
-.char-card {
-    background: #2a2a2a;
-    border: 1px solid #444;
-    border-radius: 8px;
-    padding: 1rem;
-    cursor: pointer;
-    transition: transform 0.1s, box-shadow 0.1s;
-    text-align: center;
+/* List View */
+.list-container {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: space-between;
-    height: 120px;
+    gap: 0.5rem;
+    /* Gap between rows */
 }
 
-.char-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+.char-row {
+    background: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 6px;
+    padding: 0.6rem;
+    cursor: pointer;
+    transition: background 0.1s;
+}
+
+.char-row:hover {
+    background: #333;
     border-color: #666;
+}
+
+.row-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.char-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
 }
 
 .char-name {
     font-weight: bold;
-    font-size: 0.95rem;
-    margin-bottom: 0.5rem;
-    word-break: break-word;
+    font-size: 0.9rem;
+    color: #fff;
 }
 
-.status-indicator {
-    padding: 0.3rem 0.8rem;
-    border-radius: 16px;
-    font-size: 0.8rem;
+.char-power {
+    font-size: 0.75rem;
+    color: #aaa;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.status-badge {
+    padding: 0.2rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
     font-weight: bold;
     text-transform: uppercase;
-    margin-top: auto;
-    width: 100%;
+    min-width: 80px;
+    text-align: center;
 }
 
-.status-indicator.online {
+.status-badge.online {
     background: rgba(76, 175, 80, 0.2);
     color: #81c784;
     border: 1px solid #2e7d32;
 }
 
-.status-indicator.offline_empty {
+.status-badge.offline_empty {
     background: rgba(255, 152, 0, 0.2);
     color: #ffb74d;
     border: 1px solid #ef6c00;
 }
 
-.status-indicator.offline_not_empty {
+.status-badge.offline_not_empty {
     background: rgba(244, 67, 54, 0.2);
     color: #e57373;
     border: 1px solid #c62828;
 }
 
-.status-indicator.unknown {
+.status-badge.unknown {
     background: #444;
     color: #aaa;
     border: 1px solid #666;
@@ -180,27 +205,31 @@ h1 {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(0, 0, 0, 0.8);
+    /* Darker background */
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 1000;
+    padding: 1rem;
 }
 
 .popup {
     background: #222;
     border: 1px solid #555;
     border-radius: 8px;
-    padding: 2rem;
-    width: 300px;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
-    animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    padding: 1.5rem;
+    width: 100%;
+    max-width: 320px;
+    /* Small popup */
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+    animation: popIn 0.2s ease-out;
 }
 
 @keyframes popIn {
     from {
         opacity: 0;
-        transform: scale(0.8);
+        transform: scale(0.9);
     }
 
     to {
@@ -210,32 +239,26 @@ h1 {
 }
 
 .popup h2 {
-    margin-top: 0;
+    margin: 0 0 1rem 0;
     color: #fff;
     text-align: center;
-    margin-bottom: 1.5rem;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
 }
 
 .options-list {
     display: flex;
     flex-direction: column;
-    gap: 0.8rem;
+    gap: 0.6rem;
 }
 
 .option-btn {
     border: none;
-    padding: 1rem;
+    padding: 0.8rem;
     border-radius: 6px;
     font-weight: bold;
     cursor: pointer;
-    font-size: 1rem;
+    font-size: 0.9rem;
     color: white;
-    transition: filter 0.2s;
-}
-
-.option-btn:hover {
-    filter: brightness(1.2);
 }
 
 .option-btn.online {
@@ -252,12 +275,24 @@ h1 {
 
 .option-btn.cancel {
     background: #444;
-    margin-top: 0.5rem;
+    margin-top: 0.4rem;
 }
 
 .loading {
     text-align: center;
     color: #888;
-    margin-top: 4rem;
-    font-size: 1.2rem;
+    margin-top: 3rem;
+    font-size: 1rem;
+}
+
+@media (min-width: 600px) {
+    .controls {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .list-container {
+        gap: 0.8rem;
+    }
 }

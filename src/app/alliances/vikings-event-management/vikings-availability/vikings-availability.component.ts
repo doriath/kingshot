@@ -54,12 +54,17 @@ import { VikingsEventView, CharacterAssignmentView, VikingsStatus } from '../../
                     </div>
                 </div>
 
-                <div class="grid-container">
+                <div class="list-container">
                     @for (char of characters(); track char.characterId) {
-                        <div class="char-card" (click)="handleCharClick(char)">
-                            <div class="char-name">{{ char.characterName }}</div>
-                            <div class="status-indicator" [class]="char.status">
-                                {{ char.status | uppercase }}
+                        <div class="char-row" (click)="handleCharClick(char)">
+                            <div class="row-content">
+                                <div class="char-info">
+                                    <span class="char-name">{{ char.characterName }}</span>
+                                    <span class="char-power">⚔️ {{ (char.powerLevel / 1000000) | number:'1.1-1' }}M</span>
+                                </div>
+                                <div class="status-badge" [class]="char.status">
+                                    {{ char.status | uppercase }}
+                                </div>
                             </div>
                         </div>
                     }
@@ -107,7 +112,9 @@ export class VikingsAvailabilityComponent {
 
     public characters = computed(() => {
         const e = this.event();
-        return e ? e.characters : [];
+        if (!e) return [];
+        // Sort by powerLevel descending
+        return [...e.characters].sort((a, b) => (b.powerLevel || 0) - (a.powerLevel || 0));
     });
 
     public selectedChar = signal<CharacterAssignmentView | null>(null);
