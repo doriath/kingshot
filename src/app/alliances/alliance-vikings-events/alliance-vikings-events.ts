@@ -6,7 +6,7 @@ import { VikingsService } from '../../vikings-event/vikings.service';
 import { VikingsEventView, VikingsEvent } from '../../vikings-event/vikings.types';
 import { Alliance } from '../alliances.service';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
-import { switchMap, of } from 'rxjs'; // Import of
+import { switchMap, of, map } from 'rxjs'; // Import of
 
 @Component({
     selector: 'app-alliance-vikings-events',
@@ -35,11 +35,7 @@ import { switchMap, of } from 'rxjs'; // Import of
                     </div>
                     <div class="event-actions">
                          <a class="action-btn manage-btn" [routerLink]="['/admin/vikingsEvents', event.id, 'manage']">Manage</a>
-                        @if (event.status === 'voting') {
-                            <button class="action-btn simulate-btn" (click)="simulateEvent(event)">Simulate</button>
-                            <a class="action-btn preview-btn" [routerLink]="['/vikings', event.id]" [queryParams]="{preview: true}" target="_blank">Preview</a>
-                            <button class="action-btn finalize-btn" (click)="finalizeEvent(event)">Finalize Assignments</button>
-                        }
+
                         <button class="action-btn delete-btn" (click)="deleteEvent(event)">🗑️</button>
                     </div>
                 </div>
@@ -96,12 +92,7 @@ import { switchMap, of } from 'rxjs'; // Import of
         }
         .manage-btn { background: #9c27b0; color: white; }
         .manage-btn:hover { background: #7b1fa2; }
-        .finalize-btn { background: #ff9800; color: white; }
-        .finalize-btn:hover { background: #f57c00; }
-        .simulate-btn { background: #00bcd4; color: white; }
-        .simulate-btn:hover { background: #0097a7; }
-        .preview-btn { background: #607d8b; color: white; }
-        .preview-btn:hover { background: #455a64; }
+
         .delete-btn { background: transparent; }
         .delete-btn:hover { background: rgba(255, 0, 0, 0.2); }
     `],
@@ -118,7 +109,13 @@ export class AllianceVikingsEventsComponent {
         toObservable(this.alliance).pipe(
             switchMap(ally => {
                 if (!ally) return of([]);
-                return this.vikingsService.getVikingsEvent(ally.uuid);
+                return this.vikingsService.getVikingsEvent(ally.uuid).pipe(
+                    map(events => events.sort((a, b) => {
+                        const tA = a.date?.seconds || 0;
+                        const tB = b.date?.seconds || 0;
+                        return tB - tA;
+                    }))
+                );
             })
         ),
         { initialValue: [] }
@@ -149,24 +146,5 @@ export class AllianceVikingsEventsComponent {
         }
     }
 
-    public async finalizeEvent(event: any) {
-        if (!confirm('Finalize this event? Assignments will be locked.')) return;
-        try {
-            await this.vikingsService.finalizeEvent(event.id);
-        } catch (err) {
-            console.error(err);
-            alert('Failed to finalize event.');
-        }
-    }
 
-    public async simulateEvent(event: any) {
-        if (!confirm('Simulate assignments for this event? This will overwrite current temporary assignments.')) return;
-        try {
-            await this.vikingsService.simulateAssignments(event.id);
-            alert('Assignments simulated! Use Default/Preview to view them.');
-        } catch (err) {
-            console.error(err);
-            alert('Failed to simulate assignments.');
-        }
-    }
 }

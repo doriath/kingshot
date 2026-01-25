@@ -3,7 +3,7 @@ import { Firestore, collection, collectionData, query, where, doc, docData } fro
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { CharacterAssignment, CharacterAssignmentView, VikingsEvent, VikingsEventView, VikingsRegistration, VikingsStatus } from './vikings.types';
-import { calculateAssignments } from './vikings-assignment-logic';
+import { calculateAssignments, getAvailableAlgorithms, AssignmentAlgorithm } from './vikings-assignment-logic';
 import { getCharacterStatus, getMemberConfidence } from './vikings.helpers';
 
 
@@ -149,7 +149,7 @@ export class VikingsService {
         });
     }
 
-    async simulateAssignments(eventId: string): Promise<void> {
+    async simulateAssignments(eventId: string, algorithmName: string = 'greedy'): Promise<void> {
         const docRef = doc(this.firestore, `vikingsEvents/${eventId}`);
         const firestore = await import('@angular/fire/firestore');
         const snap = await firestore.getDoc(docRef);
@@ -161,7 +161,7 @@ export class VikingsService {
         const event = snap.data() as VikingsEvent;
         const allCharacters = event.characters || [];
 
-        const updatedCharacters = this.calculateAssignments(allCharacters);
+        const updatedCharacters = this.calculateAssignments(allCharacters, algorithmName);
 
         await firestore.updateDoc(docRef, {
             // status remains unchanged (e.g., 'voting')
@@ -169,8 +169,12 @@ export class VikingsService {
         });
     }
 
-    calculateAssignments(allCharacters: CharacterAssignment[]): CharacterAssignment[] {
-        return calculateAssignments(allCharacters);
+    calculateAssignments(allCharacters: CharacterAssignment[], algorithmName: string = 'greedy'): CharacterAssignment[] {
+        return calculateAssignments(allCharacters, algorithmName);
+    }
+
+    getAvailableAlgorithms(): AssignmentAlgorithm[] {
+        return getAvailableAlgorithms();
     }
 
     async updateEventCharacters(eventId: string, characters: CharacterAssignment[]): Promise<void> {

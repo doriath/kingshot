@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { VikingsService } from '../../vikings-event/vikings.service';
 import { VikingsEventView, CharacterAssignment, CharacterAssignmentView, VikingsRegistration, VikingsStatus } from '../../vikings-event/vikings.types';
 import { getCharacterStatus } from '../../vikings-event/vikings.helpers';
+import { AssignmentAlgorithm } from '../../vikings-event/vikings-assignment-logic';
 import { AlliancesService, AllianceMember, Alliance } from '../alliances.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { switchMap, map } from 'rxjs/operators';
@@ -353,6 +354,29 @@ interface ResolvedReinforcement {
                 </div>
             </div>
 
+            <!-- Simulation Modal -->
+            <div class="modal-backdrop" *ngIf="showSimulationModal">
+                <div class="modal">
+                    <h3>🎲 Simulate Assignments</h3>
+                    <p>Select an algorithm to distribute reinforcements:</p>
+                    <div class="form-group">
+                        <label>Algorithm</label>
+                        <select [(ngModel)]="selectedAlgorithmName">
+                            @for (algo of availableAlgorithms; track algo.name) {
+                                <option [value]="algo.name">{{ algo.name | titlecase }}</option>
+                            }
+                        </select>
+                        <div class="help-text" *ngIf="selectedAlgorithmDescription">
+                            {{ selectedAlgorithmDescription }}
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button (click)="runSimulation()">Run Simulation</button>
+                        <button (click)="showSimulationModal = false; selectedAlgorithmName = 'greedy'">Cancel</button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Messaging View Overlay -->
             <div class="messaging-view-overlay" *ngIf="showMessagingView">
                 <div class="mv-header">
@@ -634,6 +658,8 @@ interface ResolvedReinforcement {
 
         /* Status Dot specific for table */
         .mv-table .status-dot { margin: 0 auto; display: block; }
+        
+        .help-text { font-size: 0.8rem; color: #888; margin-top: 0.3rem; font-style: italic; }
     `],
     imports: [CommonModule, RouterLink, FormsModule]
 })
@@ -843,6 +869,15 @@ export class VikingsEventManagementComponent {
 
     public newReinforcementCapacity = 0;
     public newExtraMarches = 0;
+
+    // Simulation State
+    public showSimulationModal = false;
+    public availableAlgorithms: AssignmentAlgorithm[] = [];
+    public selectedAlgorithmName = 'greedy';
+
+    public get selectedAlgorithmDescription(): string {
+        return this.availableAlgorithms.find(a => a.name === this.selectedAlgorithmName)?.description || '';
+    }
 
     // View State
     public showAssignments = true;
@@ -1123,14 +1158,22 @@ export class VikingsEventManagementComponent {
         }
     }
 
-    public async simulateAssignments() {
-        if (!confirm('Simulate assignments for this event? This will overwrite current temporary assignments.')) return;
+    public simulateAssignments() {
+        this.availableAlgorithms = this.vikingsService.getAvailableAlgorithms();
+        this.selectedAlgorithmName = 'greedy'; // Default
+        this.showSimulationModal = true;
+    }
+
+    public async runSimulation() {
+        if (!confirm('This will overwrite current temporary assignments. Continue?')) return;
+
         const eventId = this.eventId();
         if (!eventId) return;
 
         try {
-            await this.vikingsService.simulateAssignments(eventId);
+            await this.vikingsService.simulateAssignments(eventId, this.selectedAlgorithmName);
             alert('Assignments simulated!');
+            this.showSimulationModal = false;
         } catch (err) {
             console.error(err);
             alert('Failed to simulate assignments.');

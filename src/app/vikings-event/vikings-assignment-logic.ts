@@ -1,12 +1,17 @@
 import { CharacterAssignment, VikingsStatus } from './vikings.types';
 import { getCharacterStatus } from './vikings.helpers';
 
-export function calculateAssignments(allCharacters: CharacterAssignment[]): CharacterAssignment[] {
-    return new VikingsAssignmentSolver(allCharacters).solve();
+export interface AssignmentAlgorithm {
+    name: string;
+    description: string;
+    solve(characters: CharacterAssignment[]): CharacterAssignment[];
 }
 
-class VikingsAssignmentSolver {
-    private workingCharacters: CharacterAssignment[];
+export class GreedyAssignmentAlgorithm implements AssignmentAlgorithm {
+    name = 'greedy';
+    description = 'Greedy allocation strategy prioritizing high confidence and online players.';
+
+    private workingCharacters: CharacterAssignment[] = [];
 
     // State
     private assignmentsMap = new Map<string, { characterId: string; marchType?: string }[]>(); // Source -> Targets
@@ -27,11 +32,10 @@ class VikingsAssignmentSolver {
     private readonly SCORE_OFFLINE_NOT_EMPTY = 1.0;
     private readonly PENALTY_OFFLINE_NOT_EMPTY = 3.0;
 
-    constructor(inputCharacters: CharacterAssignment[]) {
+    public solve(inputCharacters: CharacterAssignment[]): CharacterAssignment[] {
+        // Deep copy input
         this.workingCharacters = inputCharacters.map(c => ({ ...c }));
-    }
 
-    public solve(): CharacterAssignment[] {
         this.initialize();
         this.phase1_Farms();
         this.phase_MixedStrategy();
@@ -39,6 +43,17 @@ class VikingsAssignmentSolver {
     }
 
     private initialize() {
+        // Reset State
+        this.assignmentsMap.clear();
+        this.marchesRemainingMap.clear();
+        this.marchesSentMap.clear();
+        this.incomingReinforcementMap.clear();
+        this.incomingCountMap.clear();
+        this.farmsMap.clear();
+        this.onlinePlayers = [];
+        this.offlineEmptyPlayers = [];
+        this.offlineNotEmptyPlayers = [];
+
         this.workingCharacters.forEach(c => {
             this.assignmentsMap.set(c.characterId, []);
             this.incomingReinforcementMap.set(c.characterId, 0);
@@ -284,4 +299,18 @@ class VikingsAssignmentSolver {
             reinforce: this.assignmentsMap.get(c.characterId) || []
         }));
     }
+}
+
+// Registry
+const ALGORITHMS: { [key: string]: AssignmentAlgorithm } = {
+    'greedy': new GreedyAssignmentAlgorithm()
+};
+
+export function getAvailableAlgorithms(): AssignmentAlgorithm[] {
+    return Object.values(ALGORITHMS);
+}
+
+export function calculateAssignments(allCharacters: CharacterAssignment[], algorithmName: string = 'greedy'): CharacterAssignment[] {
+    const algo = ALGORITHMS[algorithmName] || ALGORITHMS['greedy'];
+    return algo.solve(allCharacters);
 }
