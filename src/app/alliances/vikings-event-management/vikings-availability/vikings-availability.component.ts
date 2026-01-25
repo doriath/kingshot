@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, signal, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -6,6 +6,8 @@ import { map, switchMap } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { VikingsService } from '../../../vikings-event/vikings.service';
 import { VikingsEventView, CharacterAssignmentView, VikingsStatus } from '../../../vikings-event/vikings.types';
+import { AdminBreadcrumbService } from '../../../admin-layout/admin-breadcrumb.service';
+import { AlliancesService } from '../../alliances.service';
 
 @Component({
     selector: 'app-vikings-availability',
@@ -14,7 +16,7 @@ import { VikingsEventView, CharacterAssignmentView, VikingsStatus } from '../../
             @if (event(); as evt) {
                 <header>
                     <h1>⚔️ Availability: {{ evt.date.toDate() | date:'mediumDate' }}</h1>
-                    <a [routerLink]="['/admin', 'vikingsEvents', evt.id, 'manage']" class="back-btn">
+                    <a [routerLink]="['/admin', 'alliances', evt.allianceId, 'vikings', evt.id, 'manage']" class="back-btn">
                         ⬅ Back to Manage
                     </a>
                 </header>
@@ -95,6 +97,8 @@ import { VikingsEventView, CharacterAssignmentView, VikingsStatus } from '../../
 export class VikingsAvailabilityComponent {
     private route = inject(ActivatedRoute);
     private vikingsService = inject(VikingsService);
+    private alliancesService = inject(AlliancesService);
+    private breadcrumbService = inject(AdminBreadcrumbService);
 
     // Fetch Event ID
     private eventId = toSignal(this.route.paramMap.pipe(map(p => p.get('id'))));
@@ -105,7 +109,23 @@ export class VikingsAvailabilityComponent {
             map(p => p.get('id')),
             switchMap(id => {
                 if (!id) return of(null);
-                return this.vikingsService.getVikingsEventById(id);
+                return this.vikingsService.getVikingsEventById(id).pipe(
+                    switchMap(evt => {
+                        if (!evt) return of(null);
+                        // Ideally fetch alliance to get name for breadcrumb
+                        return this.alliancesService.getAlliance(evt.allianceId).pipe(
+                            map(ally => {
+                                if (ally) {
+                                    this.breadcrumbService.setLabel(ally.uuid, `[${ally.tag}] ${ally.name || 'Unknown'}`);
+                                }
+                                if (evt.id) {
+                                    this.breadcrumbService.setLabel(evt.id, `Vikings (${evt.date?.toDate ? evt.date.toDate().toLocaleDateString() : 'Event'})`); // Shared label with manage page
+                                }
+                                return evt;
+                            })
+                        );
+                    })
+                );
             })
         )
     );

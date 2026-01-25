@@ -1,6 +1,7 @@
-import { Component, inject, computed, signal } from '@angular/core';
+import { Component, inject, computed, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { AdminBreadcrumbService } from '../../admin-layout/admin-breadcrumb.service';
 import { FormsModule } from '@angular/forms';
 import { VikingsService } from '../../vikings-event/vikings.service';
 import { VikingsEventView, CharacterAssignment, CharacterAssignmentView, VikingsRegistration, VikingsStatus } from '../../vikings-event/vikings.types';
@@ -39,11 +40,6 @@ interface ResolvedReinforcement {
         <div class="manage-container" *ngIf="data() as d">
             <ng-container *ngIf="d.event as evt">
             <header>
-                <div class="breadcrumbs">
-                    <a routerLink="/admin/alliances">Alliances</a> &gt; 
-                    <span>Events</span> &gt;
-                    <span>Manage</span>
-                </div>
                 <h1>⚔️ Manage Assignments: {{ evt.date.toDate() | date:'medium' }}</h1>
                 <div class="subtitle">
                     <a [routerLink]="['/admin', 'alliances', evt.allianceId]" class="alliance-link">
@@ -64,7 +60,7 @@ interface ResolvedReinforcement {
 
             <div class="toolbar">
                 <button class="tool-btn add-btn" (click)="showAddModal = true">➕ Add Character</button>
-                <a *ngIf="data()?.event as evt" [routerLink]="['/admin', 'vikingsEvents', evt.id, 'availability']" class="tool-btn status-btn-link">📅 Availability</a>
+                <a *ngIf="data()?.event as evt" [routerLink]="['/admin', 'alliances', evt.allianceId, 'vikings', evt.id, 'availability']" class="tool-btn status-btn-link">📅 Availability</a>
                 <button class="tool-btn sync-btn" (click)="acceptAllRegs()">📥 Accept All Differences</button>
                 <button class="tool-btn meta-btn" (click)="syncAllianceMetadata()">🔄 Sync Alliance Metadata</button>
                 <a *ngIf="data()?.alliance as ally" [routerLink]="['/admin', 'alliances', ally.uuid, 'confidence']" class="tool-btn conf-btn">
@@ -686,6 +682,7 @@ export class VikingsEventManagementComponent {
     private route = inject(ActivatedRoute);
     private vikingsService = inject(VikingsService);
     private alliancesService = inject(AlliancesService);
+    private breadcrumbService = inject(AdminBreadcrumbService);
 
     public eventId = toSignal(this.route.paramMap.pipe(map(p => p.get('id'))));
 
@@ -705,7 +702,21 @@ export class VikingsEventManagementComponent {
                             this.vikingsService.getEventRegistrations(event.id!),
                             this.alliancesService.getAlliance(event.allianceId)
                         ]).pipe(
-                            map(([regs, alliance]) => ({ event, regs, alliance }))
+                            map(([regs, alliance]) => {
+                                // Set Breadcrumbs
+                                if (alliance) {
+                                    this.breadcrumbService.setLabel(alliance.uuid, `[${alliance.tag}] ${alliance.name || 'Unknown'}`);
+                                }
+                                if (event && event.id) {
+                                    // Format date for display
+                                    const dateStr = event.date?.toDate ? event.date.toDate().toLocaleDateString() : 'Event';
+                                    // Using event.id as the segment key
+                                    this.breadcrumbService.setLabel(event.id, `Vikings (${dateStr})`);
+
+                                    // Also set 'vikings' segment label if needed, though 'Vikings' heuristic handles it.
+                                }
+                                return { event, regs, alliance };
+                            })
                         );
                     })
                 );

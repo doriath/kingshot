@@ -1,0 +1,45 @@
+<div class="admin-shell">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h2>👑 Admin</h2>
+        </div>
+        <nav class="sidebar-nav">
+            <a routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item">
+                <span>🛡️</span> Alliances
+            </a>
+            @if (userData.isGlobalAdmin()) {
+            <a routerLink="/admin/characters" routerLinkActive="active" class="nav-item">
+                <span>🧙‍♂️</span> Characters
+            </a>
+            }
+            <a routerLink="/admin/svs-prep" routerLinkActive="active" class="nav-item">
+                <span>⚔️</span> SvS Prep
+            </a>
+
+            <div class="divider"></div>
+
+            <a routerLink="/" class="nav-item back-home">
+                <span>🏠</span> Return Home
+            </a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <div class="top-bar">
+            <div class="breadcrumbs">
+                @for (crumb of breadcrumbs(); track crumb.url) {
+                @if (!crumb.isLast) {
+                <a [routerLink]="crumb.url" class="breadcrumb-link">{{ crumb.label }}</a>
+                <span class="separator">/</span>
+                } @else {
+                <span class="breadcrumb-current">{{ crumb.label }}</span>
+                }
+                }
+            </div>
+        </div>
+
+        <div class="content-area">
+            <router-outlet></router-outlet>
+        </div>
+    </main>
+</div>

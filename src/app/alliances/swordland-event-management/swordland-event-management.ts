@@ -1,9 +1,10 @@
 import { Component, inject, computed, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { SwordlandService, SwordlandParticipant, SwordlandEvent, SwordlandBuilding } from '../../swordland-event/swordland.service';
 import { AlliancesService, AllianceMember } from '../alliances.service';
+import { AdminBreadcrumbService } from '../../admin-layout/admin-breadcrumb.service';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { switchMap, map } from 'rxjs/operators';
 import { of } from 'rxjs';
@@ -13,11 +14,6 @@ import { of } from 'rxjs';
   template: `
     <div class="manage-container" *ngIf="event() as evt">
       <header>
-        <div class="breadcrumbs">
-          <a routerLink="/admin/alliances">Alliances</a> &gt;
-          <span>Events</span> &gt;
-          <span>Manage</span>
-        </div>
         <h1>⚔️ Swordland Manager</h1>
         <div class="subtitle">[{{ evt.allianceName }}] Server #{{ evt.server }} - Legion {{ evt.legion }}</div>
         <div class="date">{{ evt.date.toDate() | date:'medium' }}</div>
@@ -234,12 +230,13 @@ import { of } from 'rxjs';
     .search-item:hover { background: #333; color: white; }
     .selected-member { margin-top: 0.5rem; color: #81c784; font-size: 0.9rem; }
   `],
-  imports: [CommonModule, RouterLink, FormsModule]
+  imports: [CommonModule, FormsModule]
 })
 export class SwordlandEventManagementComponent {
   private route = inject(ActivatedRoute);
   private swordlandService = inject(SwordlandService);
   private alliancesService = inject(AlliancesService);
+  private breadcrumbService = inject(AdminBreadcrumbService);
 
   public eventId = toSignal(this.route.paramMap.pipe(map(p => p.get('id'))));
 
@@ -248,7 +245,21 @@ export class SwordlandEventManagementComponent {
       map(p => p.get('id')),
       switchMap(id => {
         if (!id) return of(undefined);
-        return this.swordlandService.getEventById(id);
+        return this.swordlandService.getEventById(id).pipe(
+          map(evt => {
+            if (evt) {
+              this.breadcrumbService.setLabel(evt.id!, `Swordland (Legion ${evt.legion})`);
+              // We also need alliance label, but we don't have alliance object loaded here yet?
+              // Actually we assume it might be loaded or we can fetch it. Alliance Name is on the event object!
+              // evt.allianceName is available. We assume evt.allianceId is valid.
+              if (evt.allianceId && evt.allianceName) {
+                // We might not have the TAG here, so we use Name.
+                this.breadcrumbService.setLabel(evt.allianceId, evt.allianceName);
+              }
+            }
+            return evt;
+          })
+        );
       })
     )
   );

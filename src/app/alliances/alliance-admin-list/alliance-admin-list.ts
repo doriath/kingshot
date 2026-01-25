@@ -12,11 +12,6 @@ import { switchMap, of } from 'rxjs';
     template: `
         <div class="admin-container">
             <h1>🛡️ Alliance Administration</h1>
-            @if (userData.isGlobalAdmin()) {
-                <div class="global-actions">
-                    <a routerLink="/admin/characters" class="manage-btn global-btn">Manage Characters</a>
-                </div>
-            }
             <p>Manage your alliances.</p>
 
             <div class="alliance-list">

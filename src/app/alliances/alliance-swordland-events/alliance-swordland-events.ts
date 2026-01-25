@@ -42,7 +42,7 @@ import { Timestamp } from '@angular/fire/firestore';
             <span class="legion-badge">Legion {{ event.legion }}</span>
           </div>
           <div class="event-actions">
-            <a class="action-btn manage-btn" [routerLink]="['/admin/swordlandEvents', event.id, 'manage']">Manage</a>
+            <a class="action-btn manage-btn" [routerLink]="['/admin', 'alliances', alliance().uuid, 'swordland', event.id, 'manage']">Manage</a>
             <button class="action-btn delete-btn" (click)="deleteEvent(event)">🗑️</button>
           </div>
         </div>
@@ -58,7 +58,7 @@ import { Timestamp } from '@angular/fire/firestore';
             <span class="legion-badge">Legion {{ event.legion }}</span>
           </div>
           <div class="event-actions">
-            <a class="action-btn manage-btn" [routerLink]="['/admin/swordlandEvents', event.id, 'manage']">Manage</a>
+            <a class="action-btn manage-btn" [routerLink]="['/admin', 'alliances', alliance().uuid, 'swordland', event.id, 'manage']">Manage</a>
             <button class="action-btn delete-btn" (click)="deleteEvent(event)">🗑️</button>
           </div>
         </div>

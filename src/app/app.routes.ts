@@ -37,60 +37,61 @@ export const routes: Routes = [
         loadComponent: () => import('./manage-characters/manage-characters').then(m => m.ManageCharactersComponent),
         title: 'Manage Characters'
     },
-    {
-        path: 'admin/characters',
-        loadComponent: () => import('./admin-characters/admin-characters').then(m => m.AdminCharactersComponent),
-        title: 'Admin: Character Approvals'
-    },
-    {
-        path: 'vikings',
-        loadComponent: () => import('./vikings-event/vikings-list/vikings-list').then(m => m.VikingsListComponent),
-        title: 'Vikings Events List'
-    },
-    {
-        path: 'vikings/guide',
-        loadComponent: () => import('./vikings-event/vikings-guide/vikings-guide').then(m => m.VikingsGuideComponent),
-        title: 'Vikings Event Guide'
-    },
-    {
-        path: 'vikings/:id',
-        loadComponent: () => import('./vikings-event/vikings-event').then(m => m.VikingsEventComponent),
-        title: 'Vikings Event Details'
-    },
-
-    // Alliance Admin Routes
+    // Admin Routes
     {
         path: 'admin',
-        loadComponent: () => import('./alliances/alliance-admin-list/alliance-admin-list').then(m => m.AllianceAdminListComponent),
-    },
-    {
-        path: 'admin/alliances',
-        redirectTo: 'admin',
-        pathMatch: 'full'
-    },
-    {
-        path: 'admin/alliances/:id/confidence',
-        loadComponent: () => import('./alliances/vikings-event-management/vikings-confidence.component').then(m => m.VikingsConfidenceComponent),
-        title: 'Manage Vikings Confidence'
-    },
-    {
-        path: 'admin/alliances/:id',
-        loadComponent: () => import('./alliances/alliance-management/alliance-management').then(m => m.AllianceManagementComponent)
-    },
-    {
-        path: 'admin/vikingsEvents/:id/availability',
-        loadComponent: () => import('./alliances/vikings-event-management/vikings-availability/vikings-availability.component').then(m => m.VikingsAvailabilityComponent),
-        title: 'Vikings Availability'
-    },
-    {
-        path: 'admin/vikingsEvents/:id/manage',
-        loadComponent: () => import('./alliances/vikings-event-management/vikings-event-management').then(m => m.VikingsEventManagementComponent),
-        title: 'Manage Vikings Event'
-    },
-    {
-        path: 'admin/swordlandEvents/:id/manage',
-        loadComponent: () => import('./alliances/swordland-event-management/swordland-event-management').then(m => m.SwordlandEventManagementComponent),
-        title: 'Manage Swordland Event'
+        loadComponent: () => import('./admin-layout/admin-layout').then(m => m.AdminLayoutComponent),
+        children: [
+            {
+                path: '',
+                loadComponent: () => import('./alliances/alliance-admin-list/alliance-admin-list').then(m => m.AllianceAdminListComponent),
+                title: 'Admin Dashboard'
+            },
+            {
+                path: 'characters',
+                loadComponent: () => import('./admin-characters/admin-characters').then(m => m.AdminCharactersComponent),
+                title: 'Admin: Character Approvals'
+            },
+            {
+                path: 'alliances',
+                redirectTo: '',
+                pathMatch: 'full'
+            },
+            {
+                path: 'alliances/:id/confidence',
+                loadComponent: () => import('./alliances/vikings-event-management/vikings-confidence.component').then(m => m.VikingsConfidenceComponent),
+                title: 'Manage Vikings Confidence'
+            },
+            {
+                path: 'alliances/:id',
+                loadComponent: () => import('./alliances/alliance-management/alliance-management').then(m => m.AllianceManagementComponent)
+            },
+            {
+                path: 'alliances/:allianceId/vikings/:id/manage',
+                loadComponent: () => import('./alliances/vikings-event-management/vikings-event-management').then(m => m.VikingsEventManagementComponent),
+                title: 'Manage Vikings Event'
+            },
+            {
+                path: 'alliances/:allianceId/vikings/:id/availability',
+                loadComponent: () => import('./alliances/vikings-event-management/vikings-availability/vikings-availability.component').then(m => m.VikingsAvailabilityComponent),
+                title: 'Vikings Availability'
+            },
+            {
+                path: 'alliances/:allianceId/swordland/:id/manage',
+                loadComponent: () => import('./alliances/swordland-event-management/swordland-event-management').then(m => m.SwordlandEventManagementComponent),
+                title: 'Manage Swordland Event'
+            },
+            {
+                path: 'svs-prep',
+                loadComponent: () => import('./svs-prep-event/admin-svs-prep/admin-svs-prep').then(m => m.AdminSvsPrepComponent),
+                title: 'Admin: SvS Preparation'
+            },
+            {
+                path: 'svs-prep/:id',
+                loadComponent: () => import('./svs-prep-event/admin-svs-prep-management/admin-svs-prep-management').then(m => m.AdminSvsPrepManagementComponent),
+                title: 'Manage SvS Prep Event'
+            }
+        ]
     },
     // SvS Prep Routes
     {
@@ -98,16 +99,8 @@ export const routes: Routes = [
         loadComponent: () => import('./svs-prep-event/svs-prep/svs-prep').then(m => m.SvsPrepComponent),
         title: 'SvS Preparation'
     },
-    {
-        path: 'admin/svs-prep',
-        loadComponent: () => import('./svs-prep-event/admin-svs-prep/admin-svs-prep').then(m => m.AdminSvsPrepComponent),
-        title: 'Admin: SvS Preparation'
-    },
-    {
-        path: 'admin/svs-prep/:id',
-        loadComponent: () => import('./svs-prep-event/admin-svs-prep-management/admin-svs-prep-management').then(m => m.AdminSvsPrepManagementComponent),
-        title: 'Manage SvS Prep Event'
-    },
+    // Note: SvS Admin prep routes moved into admin children above
+
     ...BEAR_ROUTES,
     ...MISC_ROUTES,
 ];

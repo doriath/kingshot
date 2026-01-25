@@ -9,13 +9,13 @@ import { of } from 'rxjs';
 import { AllianceVikingsEventsComponent } from '../alliance-vikings-events/alliance-vikings-events';
 import { AllianceSwordlandEventsComponent } from '../alliance-swordland-events/alliance-swordland-events';
 import { TcLevelPipe } from '../tc-level.pipe';
+import { AdminBreadcrumbService } from '../../admin-layout/admin-breadcrumb.service';
 
 @Component({
     selector: 'app-alliance-management',
     template: `
         <div class="manage-container" *ngIf="alliance() as ally">
             <header>
-                <a routerLink="/admin/alliances" class="back-link">← Back to Alliances</a>
                 <h1>Manage: [{{ ally.tag }}] {{ ally.name }}</h1>
             </header>
 
@@ -426,6 +426,7 @@ import { TcLevelPipe } from '../tc-level.pipe';
 export class AllianceManagementComponent {
     private route = inject(ActivatedRoute);
     private alliancesService = inject(AlliancesService);
+    private breadcrumbService = inject(AdminBreadcrumbService);
 
     public activeTab: 'members' | 'events' | 'swordland' = 'members';
 
@@ -449,7 +450,12 @@ export class AllianceManagementComponent {
             switchMap(id => {
                 if (!id) return of(null);
                 return this.alliancesService.getAlliance(id).pipe(
-                    map(ally => ally ? { ...ally, uuid: id } : null)
+                    map(ally => ally ? { ...ally, uuid: id } : null),
+                    tap(ally => {
+                        if (ally) {
+                            this.breadcrumbService.setLabel(ally.uuid, `${ally.tag}`);
+                        }
+                    })
                 ); // Pass uuid too? Alliance interface has uuid.
             })
         )

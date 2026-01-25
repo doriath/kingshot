@@ -34,7 +34,7 @@ import { switchMap, of, map } from 'rxjs'; // Import of
                         <span class="status-badge" [class]="event.status">{{ event.status | uppercase }}</span>
                     </div>
                     <div class="event-actions">
-                         <a class="action-btn manage-btn" [routerLink]="['/admin/vikingsEvents', event.id, 'manage']">Manage</a>
+                         <a class="action-btn manage-btn" [routerLink]="['/admin', 'alliances', alliance().uuid, 'vikings', event.id, 'manage']">Manage</a>
 
                         <button class="action-btn delete-btn" (click)="deleteEvent(event)">🗑️</button>
                     </div>
