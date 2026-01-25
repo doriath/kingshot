@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { AlliancesService, Alliance, AllianceMember } from '../alliances.service';
@@ -8,6 +8,7 @@ import { switchMap, map, tap } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { AllianceVikingsEventsComponent } from '../alliance-vikings-events/alliance-vikings-events';
 import { AllianceSwordlandEventsComponent } from '../alliance-swordland-events/alliance-swordland-events';
+import { TcLevelPipe } from '../tc-level.pipe';
 
 @Component({
     selector: 'app-alliance-management',
@@ -43,6 +44,10 @@ import { AllianceSwordlandEventsComponent } from '../alliance-swordland-events/a
                                 <input [(ngModel)]="newMemberPower" name="power" type="number" placeholder="e.g. 1000000" required>
                             </div>
                             <div class="form-group">
+                                <label>Town Center Level</label>
+                                <input [(ngModel)]="newMemberTownCenterLevel" name="townCenterLevel" type="number" placeholder="e.g. 30 (1-40)" min="1" max="40">
+                            </div>
+                            <div class="form-group">
                                 <label>Reinforcement Capacity (Optional)</label>
                                 <input [(ngModel)]="newMemberReinforcementCapacity" name="reinforcementCapacity" type="number" placeholder="e.g. 500000">
                             </div>
@@ -76,17 +81,27 @@ import { AllianceSwordlandEventsComponent } from '../alliance-swordland-events/a
 
                 <div class="members-list">
                     <h3>Members ({{ members().length || 0 }})</h3>
+
+                    <div class="search-bar">
+                        <input 
+                            [ngModel]="searchQuery()" 
+                            (ngModelChange)="searchQuery.set($event)" 
+                            placeholder="Search by name or ID..." 
+                            class="search-input"
+                        >
+                    </div>
                     
                     <div class="list-header">
                         <span>#</span>
                         <span>Name/ID</span>
                         <span>Power</span>
+                        <span>TC</span>
                         <span>Cap</span>
                         <span>Marches</span>
                         <span>Actions</span>
                     </div>
                     
-                    @for (member of members(); track member.characterId; let i = $index) {
+                    @for (member of filteredMembers(); track member.characterId; let i = $index) {
                     <div class="member-row">
                         <span class="member-pos">{{ i + 1 }}</span>
                         <span class="member-name">
@@ -102,6 +117,7 @@ import { AllianceSwordlandEventsComponent } from '../alliance-swordland-events/a
                             <div class="id-subline">{{ member.characterId }}</div>
                         </span>
                         <span class="member-power">{{ member.power | number }}</span>
+                        <span class="member-tc" [title]="'Level ' + (member.townCenterLevel || '?')">{{ member.townCenterLevel | tcLevel }}</span>
                         <span class="member-cap">{{ member.reinforcementCapacity ? (member.reinforcementCapacity | number) : '-' }}</span>
                         <span class="member-marches">{{ member.marchesCount !== undefined ? member.marchesCount : '-' }}</span>
                         <span class="member-actions">
@@ -140,6 +156,10 @@ import { AllianceSwordlandEventsComponent } from '../alliance-swordland-events/a
                     <div class="form-group">
                         <label>Power</label>
                         <input type="number" [(ngModel)]="editingMember_.power" placeholder="Power">
+                    </div>
+                    <div class="form-group">
+                        <label>Town Center Level</label>
+                        <input type="number" [(ngModel)]="editingMember_.townCenterLevel" placeholder="TC Level (1-40)" min="1" max="40">
                     </div>
                     <div class="form-group">
                         <label>Reinforcement Capacity</label>
@@ -223,14 +243,26 @@ import { AllianceSwordlandEventsComponent } from '../alliance-swordland-events/a
 
         .members-list { background: #222; border-radius: 8px; overflow-x: auto; }
         .members-list h3 { padding: 1rem; margin: 0; background: #333; font-size: 1rem; }
+        
+        .search-bar { padding: 1rem; border-bottom: 1px solid #333; }
+        .search-input { 
+            width: 100%; 
+            padding: 0.6rem; 
+            background: #1a1a1a; 
+            border: 1px solid #444; 
+            border-radius: 4px; 
+            color: white; 
+            font-size: 0.9rem;
+        }
+        .search-input:focus { border-color: #2196f3; outline: none; }
 
         .list-header { 
-            display: grid; grid-template-columns: 50px 3fr 1.2fr 1fr 0.8fr 100px; 
-            padding: 0.8rem 1rem; background: #2a2a2a; color: #aaa; font-size: 0.85rem; font-weight: bold; min-width: 600px;
+            display: grid; grid-template-columns: 50px 3fr 1.2fr 0.8fr 1fr 0.8fr 100px; 
+            padding: 0.8rem 1rem; background: #2a2a2a; color: #aaa; font-size: 0.85rem; font-weight: bold; min-width: 650px;
         }
         .member-row {
-            display: grid; grid-template-columns: 50px 3fr 1.2fr 1fr 0.8fr 100px;
-            padding: 0.8rem 1rem; border-bottom: 1px solid #333; align-items: center; min-width: 600px;
+            display: grid; grid-template-columns: 50px 3fr 1.2fr 0.8fr 1fr 0.8fr 100px;
+            padding: 0.8rem 1rem; border-bottom: 1px solid #333; align-items: center; min-width: 650px;
         }
         .member-row:last-child { border-bottom: none; }
         .member-name { font-weight: 500; color: white; }
@@ -239,6 +271,7 @@ import { AllianceSwordlandEventsComponent } from '../alliance-swordland-events/a
         
         .member-pos { color: #888; font-weight: bold; }
         .member-power { color: #ffb74d; }
+        .member-tc { color: #4fc3f7; font-weight: bold; font-family: monospace; }
         .member-cap { color: #81c784; font-size: 0.9rem; }
         .member-marches { color: #ce93d8; font-size: 0.9rem; }
         
@@ -292,8 +325,82 @@ import { AllianceSwordlandEventsComponent } from '../alliance-swordland-events/a
         .save-btn { background: #2196f3; color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 4px; cursor: pointer; font-weight: bold; }
         .cancel-btn { background: transparent; color: #aaa; border: 1px solid #555; padding: 0.6rem 1.2rem; border-radius: 4px; cursor: pointer; }
         .cancel-btn:hover { color: white; border-color: #888; }
+
+        /* Mobile Optimization */
+        @media (max-width: 768px) {
+            .manage-container { padding: 0.5rem; }
+            h1 { font-size: 1.25rem; }
+            
+            .tab-btn, .tab-link { padding: 0.5rem; font-size: 0.9rem; }
+            .tabs { gap: 0.5rem; flex-wrap: wrap; }
+
+            .members-list { overflow-x: visible; }
+            
+            /* Hide Table Header on Mobile */
+            .list-header { display: none; }
+
+            /* Card Layout for Rows */
+            .member-row {
+                display: block; /* Simpler block layout */
+                position: relative;
+                background: #2a2a2a;
+                margin-bottom: 0.5rem; /* Reduced margin */
+                border: 1px solid #444;
+                border-radius: 8px;
+                padding: 0.8rem; /* Reduced padding */
+                padding-right: 3rem; /* Space for absolute button */
+                min-width: auto;
+            }
+
+            .member-pos { display: none; }
+            
+            .member-name { 
+                font-size: 1rem;
+                margin-bottom: 0.3rem;
+                display: block;
+            }
+            .id-subline { font-size: 0.75rem; }
+            
+            /* Absolute Position Actions */
+            .member-actions {
+                position: absolute;
+                top: 0.5rem;
+                right: 0.5rem;
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+                width: auto;
+            }
+            .action-btn { 
+                background: #333; 
+                padding: 0.4rem; 
+                border-radius: 4px;
+                font-size: 1.1rem;
+                width: 32px;
+                height: 32px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            /* Stats Grid */
+            .member-power::before { content: 'Power: '; color: #888; font-size: 0.75rem; }
+            .member-tc::before { content: 'TC: '; color: #888; font-size: 0.75rem; }
+            .member-cap::before { content: 'Cap: '; color: #888; font-size: 0.75rem; }
+            .member-marches::before { content: 'Marches: '; color: #888; font-size: 0.75rem; }
+
+            .member-power, .member-tc, .member-cap, .member-marches {
+                font-size: 0.85rem;
+                display: inline-block;
+                width: 48%; /* 2 cols */
+                margin-top: 0.3rem;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+        }
     `],
-    imports: [CommonModule, RouterLink, FormsModule, AllianceVikingsEventsComponent, AllianceSwordlandEventsComponent]
+    imports: [CommonModule, RouterLink, FormsModule, AllianceVikingsEventsComponent, AllianceSwordlandEventsComponent, TcLevelPipe]
 })
 export class AllianceManagementComponent {
     private route = inject(ActivatedRoute);
@@ -304,6 +411,7 @@ export class AllianceManagementComponent {
     public newMemberName = '';
     public newMemberId = '';
     public newMemberPower: number | null = null;
+    public newMemberTownCenterLevel: number | null = null;
     public newMemberReinforcementCapacity: number | null = null;
     public newMemberMarchesCount: number | null = null;
     public newMemberMainId: string | null = null;
@@ -341,6 +449,20 @@ export class AllianceManagementComponent {
         { initialValue: [] }
     );
 
+    public searchQuery = signal('');
+
+    public filteredMembers = computed(() => {
+        const query = this.searchQuery().toLowerCase().trim();
+        const list = this.members();
+
+        if (!query) return list;
+
+        return list.filter(m =>
+            m.name.toLowerCase().includes(query) ||
+            m.characterId.includes(query)
+        );
+    });
+
     public isValidMember(): boolean {
         return !!this.newMemberName && !!this.newMemberId && (this.newMemberPower !== null && this.newMemberPower >= 0);
     }
@@ -353,6 +475,7 @@ export class AllianceManagementComponent {
             characterId: this.newMemberId,
             name: this.newMemberName,
             power: Number(this.newMemberPower),
+            ...(this.newMemberTownCenterLevel ? { townCenterLevel: Number(this.newMemberTownCenterLevel) } : {}),
 
             ...(this.newMemberMainId ? { mainCharacterId: this.newMemberMainId } : {}),
             ...(this.newMemberReinforcementCapacity ? { reinforcementCapacity: Number(this.newMemberReinforcementCapacity) } : {}),
@@ -367,6 +490,7 @@ export class AllianceManagementComponent {
             this.newMemberName = '';
             this.newMemberId = '';
             this.newMemberPower = null;
+            this.newMemberTownCenterLevel = null;
             this.newMemberMainId = null;
             this.newMemberReinforcementCapacity = null;
             this.newMemberMarchesCount = null;
@@ -399,6 +523,7 @@ export class AllianceManagementComponent {
             characterId: em.characterId, // ID is key, cannot change
             name: em.name,
             power: Number(em.power),
+            ...(em.townCenterLevel ? { townCenterLevel: Number(em.townCenterLevel) } : {}),
 
             ...(em.mainCharacterId ? { mainCharacterId: em.mainCharacterId } : {}),
             ...(em.reinforcementCapacity ? { reinforcementCapacity: Number(em.reinforcementCapacity) } : {}),
@@ -417,7 +542,7 @@ export class AllianceManagementComponent {
     }
 
     public async removeMember(member: AllianceMember) {
-        if (!confirm(`Are you sure you want to remove ${member.name}?`)) return;
+        if (!confirm(`Are you sure you want to remove ${member.name} ? `)) return;
 
         const ally = this.alliance();
         if (!ally) return;

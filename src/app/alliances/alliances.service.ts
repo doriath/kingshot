@@ -20,6 +20,7 @@ export interface AllianceMember {
     reinforcementCapacity?: number;
     marchesCount?: number;
     quit?: boolean;
+    townCenterLevel?: number; // 1-40
     confidenceLevel?: number; // 1.0 to 2.0
 }
 
