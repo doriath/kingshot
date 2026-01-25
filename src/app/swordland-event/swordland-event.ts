@@ -6,15 +6,12 @@ import { SwordlandService, SwordlandEvent } from './swordland.service';
 import { UserDataService } from '../user-data.service';
 import { SwordlandDetailComponent } from './swordland-detail/swordland-detail';
 
-interface GroupedByAlliance {
+interface SwordlandGroup {
+  groupKey: string;
   allianceId: string;
   allianceName: string;
-  events: SwordlandEvent[];
-}
-
-interface GroupedByServer {
   server: number;
-  alliances: GroupedByAlliance[];
+  events: SwordlandEvent[];
 }
 
 @Component({
@@ -34,36 +31,44 @@ export class SwordlandEventComponent {
   selectedEvent = signal<SwordlandEvent | null>(null);
 
   groupedEvents = computed(() => {
-    const rawEvents = this.events();
-    const serverMap = new Map<number, Map<string, SwordlandEvent[]>>();
+    const allEvents = this.events();
+    const now = new Date().getTime();
+    const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
+
+    // Filter out events that started more than 2 hours ago
+    const rawEvents = allEvents.filter(event => {
+      const startTime = event.date.toDate().getTime();
+      return now < startTime + TWO_HOURS_MS;
+    });
+
+    const groupMap = new Map<string, SwordlandGroup>();
 
     for (const event of rawEvents) {
-      if (!serverMap.has(event.server)) {
-        serverMap.set(event.server, new Map());
+      // Group key: combination of server and allianceId
+      // We use server first to make sorting easier logically if needed, but the key structure is internal
+      const key = `${event.server}_${event.allianceId}`;
+
+      if (!groupMap.has(key)) {
+        groupMap.set(key, {
+          groupKey: key,
+          allianceId: event.allianceId,
+          allianceName: event.allianceName || 'Unknown Alliance',
+          server: event.server,
+          events: []
+        });
       }
-      const allianceMap = serverMap.get(event.server)!;
-      // Grouping by allianceId (assuming we have it)
-      if (!allianceMap.has(event.allianceId)) {
-        allianceMap.set(event.allianceId, []);
-      }
-      allianceMap.get(event.allianceId)!.push(event);
+      groupMap.get(key)!.events.push(event);
     }
 
-    const result: GroupedByServer[] = [];
-    const sortedServers = Array.from(serverMap.keys()).sort((a, b) => a - b);
+    const result: SwordlandGroup[] = Array.from(groupMap.values());
 
-    for (const server of sortedServers) {
-      const allianceMap = serverMap.get(server)!;
-      const alliances: GroupedByAlliance[] = [];
-
-      for (const [allianceId, events] of allianceMap.entries()) {
-        const allianceName = events[0].allianceName || 'Unknown Alliance';
-        alliances.push({ allianceId, allianceName, events });
+    // Sort by server then alliance name
+    result.sort((a, b) => {
+      if (a.server !== b.server) {
+        return a.server - b.server;
       }
-
-      alliances.sort((a, b) => a.allianceName.localeCompare(b.allianceName));
-      result.push({ server, alliances });
-    }
+      return a.allianceName.localeCompare(b.allianceName);
+    });
 
     return result;
   });

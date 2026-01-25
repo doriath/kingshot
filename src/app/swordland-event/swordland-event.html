@@ -12,24 +12,18 @@
   <div class="event-list-container">
     <h2>Active Swordland Events</h2>
 
-    @for (serverGroup of groupedEvents(); track serverGroup.server) {
-    <div class="server-group" [class.highlight]="isUserServer(serverGroup.server)">
-      <h3>Server {{ serverGroup.server }}</h3>
+    @for (group of groupedEvents(); track group.groupKey) {
+    <div class="server-group" [class.highlight]="isUserServer(group.server)"> <!-- Keeping class name for style consistency or update CSS? reusing server-group for now -->
+      <h3>{{ group.allianceName }} <span class="server-badge">#{{ group.server }}</span></h3>
 
-      @for (allianceGroup of serverGroup.alliances; track allianceGroup.allianceId) {
-      <div class="alliance-group" [class.highlight]="isUserAlliance(allianceGroup.allianceName)">
-        <h4>{{ allianceGroup.allianceName }}</h4>
-
-        <div class="events-grid">
-          @for (event of allianceGroup.events; track event.id) {
-          <div class="event-card clickable" (click)="selectEvent(event)">
-            <p><strong>Legion:</strong> {{ event.legion }}</p>
-            <p><strong>Date:</strong> {{ event.date?.seconds * 1000 | date:'short' }}</p>
-          </div>
-          }
+      <div class="events-grid">
+        @for (event of group.events; track event.id) {
+        <div class="event-card clickable" (click)="selectEvent(event)">
+          <p><strong>Legion:</strong> {{ event.legion }}</p>
+          <p><strong>Date:</strong> {{ event.date?.seconds * 1000 | date:'short' }}</p>
         </div>
+        }
       </div>
-      }
     </div>
     } @empty {
     <p>No active events found.</p>

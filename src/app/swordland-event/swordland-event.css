@@ -13,15 +13,19 @@
   background-color: rgba(255, 255, 255, 0.05);
 }
 
-.alliance-group {
-  margin-left: 1rem;
-  margin-bottom: 1.5rem;
-  padding: 0.5rem;
-  border-left: 2px solid transparent;
+.server-badge {
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  color: #aaa;
+  margin-left: 0.5rem;
+  vertical-align: middle;
 }
 
-.alliance-group.highlight {
-  border-left-color: var(--success-color, #4caf50);
+.server-group.highlight .server-badge {
+  background-color: rgba(0, 0, 0, 0.2);
+  color: #fff;
 }
 
 .events-grid {
@@ -36,15 +40,22 @@
   border: 1px solid #444;
   border-radius: 8px;
   cursor: pointer;
-  width: 200px;
+  width: 100%;
   transition: transform 0.2s, box-shadow 0.2s;
   color: #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .event-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
   background-color: #333;
+}
+
+.event-card p {
+  margin: 0;
 }
 
 .section-divider {

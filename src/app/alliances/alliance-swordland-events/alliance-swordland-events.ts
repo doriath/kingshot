@@ -1,4 +1,4 @@
-import { Component, inject, input } from '@angular/core';
+import { Component, inject, input, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -34,7 +34,8 @@ import { Timestamp } from '@angular/fire/firestore';
       <div class="events-list">
         <h3>Manage Events</h3>
 
-        @for (event of allianceEvents(); track event.id) {
+        <h4>Upcoming Events</h4>
+        @for (event of upcomingEvents(); track event.id) {
         <div class="event-row">
           <div class="event-info">
             <span class="event-date">{{ event.date.toDate() | date:'medium' }}</span>
@@ -46,7 +47,23 @@ import { Timestamp } from '@angular/fire/firestore';
           </div>
         </div>
         } @empty {
-        <div class="empty-state">No events found for this alliance.</div>
+        <div class="empty-state">No upcoming events.</div>
+        }
+
+        <h4 style="margin-top: 2rem; color: #aaa;">Past Events</h4>
+        @for (event of pastEvents(); track event.id) {
+        <div class="event-row past-event">
+          <div class="event-info">
+            <span class="event-date">{{ event.date.toDate() | date:'medium' }}</span>
+            <span class="legion-badge">Legion {{ event.legion }}</span>
+          </div>
+          <div class="event-actions">
+            <a class="action-btn manage-btn" [routerLink]="['/admin/swordlandEvents', event.id, 'manage']">Manage</a>
+            <button class="action-btn delete-btn" (click)="deleteEvent(event)">🗑️</button>
+          </div>
+        </div>
+        } @empty {
+        <div class="empty-state">No past events.</div>
         }
       </div>
     </div>
@@ -110,7 +127,7 @@ export class AllianceSwordlandEventsComponent {
   public newEventDate = '';
   public newEventLegion: 1 | 2 = 1;
 
-  public allianceEvents = toSignal(
+  public events = toSignal(
     toObservable(this.alliance).pipe(
       switchMap(ally => {
         if (!ally) return of([]);
@@ -119,6 +136,24 @@ export class AllianceSwordlandEventsComponent {
     ),
     { initialValue: [] }
   );
+
+  public upcomingEvents = computed(() => {
+    const now = new Date().getTime();
+    const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
+    return this.events().filter(e => {
+      const startTime = e.date.toDate().getTime();
+      return now < startTime + TWO_HOURS_MS;
+    });
+  });
+
+  public pastEvents = computed(() => {
+    const now = new Date().getTime();
+    const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
+    return this.events().filter(e => {
+      const startTime = e.date.toDate().getTime();
+      return now >= startTime + TWO_HOURS_MS;
+    }).sort((a, b) => b.date.seconds - a.date.seconds); // Sort past events descending
+  });
 
   public async createEvent() {
     if (!this.newEventDate) return;
