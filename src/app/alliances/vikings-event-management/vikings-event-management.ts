@@ -109,9 +109,6 @@ interface ResolvedReinforcement {
                     <thead>
                         <tr>
                             <th>Character</th>
-                            <th>Type</th>
-                            <th>Power</th>
-                            <th>Power</th>
                             <th>Stats</th>
                             <th>Current Assignment</th>
                             <th>Registration (User Submitted)</th>
@@ -124,14 +121,7 @@ interface ResolvedReinforcement {
                             <td>
                                 <div class="char-name">{{ row.assignment.characterName }}</div>
                                 <div class="char-id">{{ row.assignment.characterId }}</div>
-                                @if (row.isRemovedFromAlliance) {
-                                    <div class="removed-badge">🚫 Left Alliance</div>
-                                }
-                                @if (row.isQuit) {
-                                    <div class="quit-badge">🛑 Quit</div>
-                                }
-                            </td>
-                            <td>
+                                <div class="char-power">⚡ {{ formatPower(row.assignment.powerLevel) }}</div>
                                 @if (row.assignment.mainCharacterId) {
                                     <div class="farm-badge">🚜 Farm</div>
                                     <div class="main-char-link">Main: {{ row.mainCharacterName }}</div>
@@ -141,8 +131,13 @@ interface ResolvedReinforcement {
                                 } @else {
                                     <div class="main-badge">👑 Main</div>
                                 }
+                                @if (row.isRemovedFromAlliance) {
+                                    <div class="removed-badge">🚫 Left Alliance</div>
+                                }
+                                @if (row.isQuit) {
+                                    <div class="quit-badge">🛑 Quit</div>
+                                }
                             </td>
-                            <td>{{ row.assignment.powerLevel | number }}</td>
                             <td>
                                 <!-- Confidence -->
                                 @if (row.assignment.confidenceLevel !== undefined) {
@@ -517,6 +512,7 @@ interface ResolvedReinforcement {
         
         .char-name { font-weight: bold; color: white; }
         .char-id { color: #888; font-size: 0.8rem; font-family: monospace; }
+        .char-power { color: #ffd54f; font-size: 0.8rem; font-weight: bold; margin-top: 0.2rem; }
         
         .status-pill {
             display: inline-block; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.75rem; font-weight: bold; margin-bottom: 0.3rem;
@@ -685,6 +681,14 @@ export class VikingsEventManagementComponent {
     private breadcrumbService = inject(AdminBreadcrumbService);
 
     public eventId = toSignal(this.route.paramMap.pipe(map(p => p.get('id'))));
+
+    public formatPower(power: number | undefined): string {
+        if (power === undefined || power === null) return '-';
+        if (power >= 1_000_000_000) return (power / 1_000_000_000).toFixed(1) + ' B';
+        if (power >= 1_000_000) return (power / 1_000_000).toFixed(1) + ' M';
+        if (power >= 1_000) return (power / 1_000).toFixed(1) + ' k';
+        return power.toString();
+    }
 
     // Combined data source
     public data = toSignal(
