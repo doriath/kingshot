@@ -83,12 +83,16 @@ import { TcLevelPipe } from '../tc-level.pipe';
                     <h3>Members ({{ members().length || 0 }})</h3>
 
                     <div class="search-bar">
-                        <input 
-                            [ngModel]="searchQuery()" 
-                            (ngModelChange)="searchQuery.set($event)" 
-                            placeholder="Search by name or ID..." 
-                            class="search-input"
-                        >
+                        <div class="input-with-action">
+                            <input 
+                                [ngModel]="searchQuery()" 
+                                (ngModelChange)="searchQuery.set($event)" 
+                                placeholder="Search by name or ID..." 
+                                class="search-input"
+                                #searchInput
+                            >
+                            <button class="icon-btn small-btn" (click)="searchQuery.set(''); searchInput.focus()" title="Clear Search">❌</button>
+                        </div>
                     </div>
                     
                     <div class="list-header">
@@ -116,7 +120,7 @@ import { TcLevelPipe } from '../tc-level.pipe';
                             </div>
                             <div class="id-subline">{{ member.characterId }}</div>
                         </span>
-                        <span class="member-power">{{ member.power | number }}</span>
+                        <span class="member-power">{{ (member.power / 1000000) | number:'1.0-2' }} M</span>
                         <span class="member-tc" [title]="'Level ' + (member.townCenterLevel || '?')">{{ member.townCenterLevel | tcLevel }}</span>
                         <span class="member-cap">{{ member.reinforcementCapacity ? (member.reinforcementCapacity | number) : '-' }}</span>
                         <span class="member-marches">{{ member.marchesCount !== undefined ? member.marchesCount : '-' }}</span>
@@ -143,7 +147,10 @@ import { TcLevelPipe } from '../tc-level.pipe';
             @if (isEditModalOpen && editingMember_) {
             <div class="modal-backdrop">
                 <div class="modal">
-                    <h3>Edit Member: {{ editingMember_.name }}</h3>
+                    <div class="modal-header">
+                        <h3>Edit Member: {{ editingMember_.name }}</h3>
+                        <button class="save-btn small-save-btn" (click)="saveEdit()">Save</button>
+                    </div>
                     <div class="form-group">
                         <label>Name</label>
                         <input [(ngModel)]="editingMember_.name" placeholder="Name">
@@ -154,8 +161,14 @@ import { TcLevelPipe } from '../tc-level.pipe';
                         <input [value]="editingMember_.characterId" disabled title="ID cannot be changed directly">
                     </div>
                     <div class="form-group">
-                        <label>Power</label>
-                        <input type="number" [(ngModel)]="editingMember_.power" placeholder="Power">
+                        <label>Power (Millions)</label>
+                        <div class="input-with-action">
+                             <input type="number" 
+                                    [(ngModel)]="editingPowerMillions" 
+                                    placeholder="Power in Millions (e.g. 213.5)" 
+                                    #powerInput>
+                             <button class="icon-btn small-btn" (click)="editingPowerMillions = null; powerInput.focus()" title="Clear">❌</button>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>Town Center Level</label>
@@ -175,7 +188,7 @@ import { TcLevelPipe } from '../tc-level.pipe';
                             <option [ngValue]="undefined">-- None (Regular Account) --</option>
                             @for (m of members(); track m.characterId) {
                                 @if (m.characterId !== editingMember_.characterId) {
-                                    <option [value]="m.characterId">{{ m.name }} ({{ m.power | number }})</option>
+                                    <option [value]="m.characterId">{{ m.name }} ({{ (m.power / 1000000) | number:'1.0-2' }} M)</option>
                                 }
                             }
                         </select>
@@ -203,6 +216,10 @@ import { TcLevelPipe } from '../tc-level.pipe';
         .checkbox-group { display: flex; align-items: center; }
         .checkbox-group label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: #ccc; font-size: 0.9rem; }
         .checkbox-group input { width: auto; margin: 0; }
+        
+        .input-with-action { display: flex; gap: 0.5rem; align-items: center; }
+        .small-btn { font-size: 0.8rem; padding: 0.4rem; border: 1px solid #444; border-radius: 4px; background: #333; color: #ccc; }
+        .small-btn:hover { background: #444; color: white; }
 
         .back-link { color: #aaa; text-decoration: none; font-size: 0.9rem; }
         .back-link:hover { color: white; }
@@ -275,7 +292,7 @@ import { TcLevelPipe } from '../tc-level.pipe';
         .member-cap { color: #81c784; font-size: 0.9rem; }
         .member-marches { color: #ce93d8; font-size: 0.9rem; }
         
-        .icon-btn { background: none; border: none; cursor: pointer; font-size: 1rem; opacity: 0.7; }
+        .icon-btn { background: none; border: none; cursor: pointer; font-size: 1rem; opacity: 0.7; transition: opacity 0.2s; }
         .icon-btn:hover { opacity: 1; }
 
         .alt-badge {
@@ -318,11 +335,15 @@ import { TcLevelPipe } from '../tc-level.pipe';
             border: 1px solid #444;
             box-shadow: 0 4px 20px rgba(0,0,0,0.5);
         }
-        .modal h3 { margin-top: 0; color: #ffca28; margin-bottom: 1.5rem; }
+        .modal-header {
+            display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;
+        }
+        .modal h3 { margin: 0; color: #ffca28; }
         .modal-actions {
             display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem;
         }
         .save-btn { background: #2196f3; color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .small-save-btn { padding: 0.4rem 0.8rem; font-size: 0.85rem; }
         .cancel-btn { background: transparent; color: #aaa; border: 1px solid #555; padding: 0.6rem 1.2rem; border-radius: 4px; cursor: pointer; }
         .cancel-btn:hover { color: white; border-color: #888; }
 
@@ -419,6 +440,7 @@ export class AllianceManagementComponent {
 
     // Edit State
     public editingMember_: Partial<AllianceMember> | null = null;
+    public editingPowerMillions: number | null = null;
     public isEditModalOpen = false;
 
     public allianceData = toSignal(
@@ -505,11 +527,13 @@ export class AllianceManagementComponent {
 
     public editMember(member: AllianceMember) {
         this.editingMember_ = { ...member };
+        this.editingPowerMillions = member.power ? member.power / 1000000 : 0;
         this.isEditModalOpen = true;
     }
 
     public cancelEdit() {
         this.editingMember_ = null;
+        this.editingPowerMillions = null;
         this.isEditModalOpen = false;
     }
 
@@ -518,11 +542,14 @@ export class AllianceManagementComponent {
         const em = this.editingMember_;
         if (!ally || !em || !em.characterId || !em.name) return;
 
+        // Convert millions back to raw power
+        const powerRaw = this.editingPowerMillions ? Math.round(this.editingPowerMillions * 1000000) : 0;
+
         // Construct updated member object safely to avoid 'undefined'
         const updatedMember: AllianceMember = {
             characterId: em.characterId, // ID is key, cannot change
             name: em.name,
-            power: Number(em.power),
+            power: powerRaw,
             ...(em.townCenterLevel ? { townCenterLevel: Number(em.townCenterLevel) } : {}),
 
             ...(em.mainCharacterId ? { mainCharacterId: em.mainCharacterId } : {}),
@@ -535,6 +562,7 @@ export class AllianceManagementComponent {
             await this.alliancesService.addAllianceMember(ally.uuid, updatedMember);
             this.isEditModalOpen = false;
             this.editingMember_ = null;
+            this.editingPowerMillions = null;
         } catch (err) {
             console.error(err);
             alert('Failed to update member.');
