@@ -50,7 +50,7 @@ interface ResolvedReinforcement {
                         [{{ evt.allianceTag }}] Server #{{ evt.server }}
                     </a>
                     <span class="status-badge" [class]="evt.status">{{ evt.status | uppercase }}</span>
-                    <button class="status-btn" (click)="cycleStatus()">Change Status</button>
+                    <button class="status-btn" (click)="openStatusModal()">Change Status</button>
                 </div>
                 <!-- Stats Summary -->
                 <div class="stats-summary" *ngIf="stats() as s">
@@ -372,6 +372,26 @@ interface ResolvedReinforcement {
                     <div class="modal-actions">
                         <button (click)="runSimulation()">Run Simulation</button>
                         <button (click)="showSimulationModal = false; selectedAlgorithmName = 'greedy'">Cancel</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Change Modal -->
+            <div class="modal-backdrop" *ngIf="showStatusModal">
+                <div class="modal">
+                    <h3>Change Event Status</h3>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select [(ngModel)]="selectedStatus">
+                            <option value="voting">VOTING</option>
+                            <option value="finalized">FINALIZED</option>
+                            <option value="finished">FINISHED</option>
+                            <option value="past">PAST</option>
+                        </select>
+                    </div>
+                    <div class="modal-actions">
+                        <button (click)="updateStatus()">Save</button>
+                        <button (click)="showStatusModal = false">Cancel</button>
                     </div>
                 </div>
             </div>
@@ -1139,18 +1159,27 @@ export class VikingsEventManagementComponent {
 
 
     public async cycleStatus() {
-        const eventId = this.eventId();
+        // Deprecated - replaced by openStatusModal
+    }
+
+    // Status Modal State
+    public showStatusModal = false;
+    public selectedStatus = '';
+
+    public openStatusModal() {
         const event = this.event();
-        if (!eventId || !event) return;
+        if (!event) return;
+        this.selectedStatus = event.status;
+        this.showStatusModal = true;
+    }
 
-        const statuses: ('voting' | 'finalized' | 'finished')[] = ['voting', 'finalized', 'finished'];
-        const currentIdx = statuses.indexOf(event.status as any);
-        const nextStatus = statuses[(currentIdx + 1) % statuses.length];
-
-        if (!confirm(`Change event status to ${nextStatus.toUpperCase()}?`)) return;
+    public async updateStatus() {
+        const eventId = this.eventId();
+        if (!eventId) return;
 
         try {
-            await this.vikingsService.updateVikingsEvent(eventId, { status: nextStatus });
+            await this.vikingsService.updateVikingsEvent(eventId, { status: this.selectedStatus as any });
+            this.showStatusModal = false;
         } catch (e) {
             console.error(e);
             alert('Failed to update status');
