@@ -10,7 +10,7 @@ function createMockCharacter(id: string, status: VikingsStatus, confidence: numb
         marchesCount: 6,
         status: status,
         mainCharacterId: undefined,
-        extraMarches: 0,
+        maxReinforcementMarches: 0,
         reinforcementCapacity: 1_500_000, // 10 reinforcements ~ 1.5M / 150k
         confidenceLevel: confidence,
         reinforce: []

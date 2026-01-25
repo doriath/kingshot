@@ -139,8 +139,8 @@ interface ResolvedReinforcement {
                                 @if (row.assignment.mainCharacterId) {
                                     <div class="farm-badge">🚜 Farm</div>
                                     <div class="main-char-link">Main: {{ row.mainCharacterName }}</div>
-                                    @if ((row.assignment.extraMarches ?? 0) > 0) {
-                                        <div class="extra-marches-badge">+{{ row.assignment.extraMarches }} Marches</div>
+                                    @if ((row.assignment.maxReinforcementMarches ?? 0) > 0) {
+                                        <div class="extra-marches-badge">Max Reinforcements: {{ row.assignment.maxReinforcementMarches }}</div>
                                     }
                                 } @else {
                                     <div class="main-badge">👑 Main</div>
@@ -309,9 +309,8 @@ interface ResolvedReinforcement {
                         <input type="number" [(ngModel)]="editReinforcementCapacity">
                     </div>
                     <div class="form-group">
-
-                        <label>Extra Marches (for Farm)</label>
-                        <input type="number" [(ngModel)]="editExtraMarches">
+                        <label>Max Reinforcement Marches</label>
+                        <input type="number" [(ngModel)]="editMaxReinforcementMarches">
                     </div>
                     <div class="modal-actions">
                         <button (click)="saveEdit()">Save</button>
@@ -344,8 +343,8 @@ interface ResolvedReinforcement {
                         <input type="number" [(ngModel)]="newReinforcementCapacity">
                     </div>
                     <div class="form-group">
-                        <label>Extra Marches</label>
-                        <input type="number" [(ngModel)]="newExtraMarches">
+                        <label>Max Reinforcement Marches</label>
+                        <input type="number" [(ngModel)]="newMaxReinforcementMarches">
                     </div>
                     <div class="modal-actions">
                         <button (click)="addCharacter()">Add</button>
@@ -858,7 +857,7 @@ export class VikingsEventManagementComponent {
     public editMainCharacterId: string = '';
 
     public editReinforcementCapacity: number | null = null;
-    public editExtraMarches: number | null = null;
+    public editMaxReinforcementMarches: number | null = null;
 
     // Add State
     public showAddModal = false;
@@ -868,7 +867,7 @@ export class VikingsEventManagementComponent {
     public newMainCharacterId = '';
 
     public newReinforcementCapacity = 0;
-    public newExtraMarches = 0;
+    public newMaxReinforcementMarches = 0;
 
     // Simulation State
     public showSimulationModal = false;
@@ -991,7 +990,7 @@ export class VikingsEventManagementComponent {
         this.editMainCharacterId = row.assignment.mainCharacterId || '';
 
         this.editReinforcementCapacity = row.assignment.reinforcementCapacity ?? null;
-        this.editExtraMarches = row.assignment.extraMarches ?? null;
+        this.editMaxReinforcementMarches = row.assignment.maxReinforcementMarches ?? null;
 
         // Initialize search field
         this.mainCharSearch = '';
@@ -1014,12 +1013,12 @@ export class VikingsEventManagementComponent {
 
             mainCharacterId: this.editMainCharacterId || undefined,
             reinforcementCapacity: this.editReinforcementCapacity ?? undefined,
-            extraMarches: this.editExtraMarches ?? undefined
+            maxReinforcementMarches: this.editMaxReinforcementMarches ?? undefined
         };
 
         if (changes.mainCharacterId === undefined || changes.mainCharacterId === '') delete changes.mainCharacterId;
         if (changes.reinforcementCapacity === undefined || changes.reinforcementCapacity === null) delete changes.reinforcementCapacity;
-        if (changes.extraMarches === undefined || changes.extraMarches === null) delete changes.extraMarches;
+        if (changes.maxReinforcementMarches === undefined || changes.maxReinforcementMarches === null) delete changes.maxReinforcementMarches;
 
         await this.updateCharacter(this.editingRow.assignment.characterId, changes);
         this.editingRow = null;
@@ -1060,7 +1059,7 @@ export class VikingsEventManagementComponent {
 
             mainCharacterId: this.newMainCharacterId || undefined,
             reinforcementCapacity: this.newReinforcementCapacity || undefined,
-            extraMarches: this.newExtraMarches || 0,
+            maxReinforcementMarches: this.newMaxReinforcementMarches || 0,
             status: 'unknown',
             marchesCount: 0,
             reinforce: []
@@ -1076,7 +1075,7 @@ export class VikingsEventManagementComponent {
             this.newCharPower = 0;
             this.newMainCharacterId = '';
             this.newReinforcementCapacity = 0;
-            this.newExtraMarches = 0;
+            this.newMaxReinforcementMarches = 0;
         } catch (e) {
             console.error(e);
             alert('Failed to add character');

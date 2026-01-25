@@ -118,22 +118,13 @@ export class GreedyAssignmentAlgorithm implements AssignmentAlgorithm {
         const target = this.workingCharacters.find(c => c.characterId === targetId);
         if (!target) return false;
 
-        if (target.reinforcementCapacity !== undefined) {
+        if (target.maxReinforcementMarches !== undefined) {
+            const currentTotal = this.incomingCountMap.get(targetId) || 0;
+            if (currentTotal >= target.maxReinforcementMarches) return false;
+        } else if (target.reinforcementCapacity !== undefined) {
             const maxCapacity = Math.floor(target.reinforcementCapacity / 150000);
             const currentCount = this.incomingCountMap.get(targetId) || 0;
             if (currentCount >= maxCapacity) return false;
-        }
-
-        // Additional Farm Constraint (Target side)
-        if (target.mainCharacterId && target.extraMarches !== undefined && target.extraMarches >= 0) {
-            const isOwner = target.mainCharacterId === sourceId;
-            const currentTotal = this.incomingCountMap.get(targetId) || 0;
-
-            const ownerAssignments = this.assignmentsMap.get(target.mainCharacterId) || [];
-            const ownerIsAssigned = ownerAssignments.some(a => a.characterId === targetId);
-
-            const othersCount = currentTotal - (ownerIsAssigned ? 1 : 0);
-            if (!isOwner && othersCount >= target.extraMarches) return false;
         }
 
         // Execute Assignment
@@ -259,23 +250,13 @@ export class GreedyAssignmentAlgorithm implements AssignmentAlgorithm {
             const currentAssignments = this.assignmentsMap.get(source.characterId) || [];
             if (currentAssignments.some(a => a.characterId === target.characterId)) continue;
 
-            if (target.reinforcementCapacity !== undefined) {
+            if (target.maxReinforcementMarches !== undefined) {
+                const currentTotal = this.incomingCountMap.get(target.characterId) || 0;
+                if (currentTotal >= target.maxReinforcementMarches) continue;
+            } else if (target.reinforcementCapacity !== undefined) {
                 const maxCapacity = Math.floor(target.reinforcementCapacity / 150000);
                 const currentCount = this.incomingCountMap.get(target.characterId) || 0;
                 if (currentCount >= maxCapacity) continue;
-            }
-
-            // Note: Farm logic handled in assign(). We could check here but assign() returns false if invalid.
-            // But if we pick best and assign() returns false, we waste a turn. 
-            // Better to pick "Best Valid".
-            // Quick check for Farm rule to avoid picking invalid best
-            if (target.mainCharacterId && target.extraMarches !== undefined && target.extraMarches >= 0) {
-                const isOwner = target.mainCharacterId === source.characterId;
-                const currentTotal = this.incomingCountMap.get(target.characterId) || 0;
-                const ownerAssignments = this.assignmentsMap.get(target.mainCharacterId) || [];
-                const ownerIsAssigned = ownerAssignments.some(a => a.characterId === target.characterId);
-                const othersCount = currentTotal - (ownerIsAssigned ? 1 : 0);
-                if (!isOwner && othersCount >= target.extraMarches) continue;
             }
 
             const score = this.calculateScore(target);

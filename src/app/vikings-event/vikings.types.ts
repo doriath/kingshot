@@ -5,7 +5,7 @@ export interface CharacterAssignment {
     characterName: string;
     mainCharacterId?: string;
     reinforcementCapacity?: number;
-    extraMarches?: number;
+    maxReinforcementMarches?: number;
     powerLevel: number;
     marchesCount: number;
     status: VikingsStatus | 'unknown';
