@@ -82,6 +82,11 @@ export const routes: Routes = [
                 title: 'Vikings Availability'
             },
             {
+                path: 'alliances/:allianceId/vikings/:id/verify-availability',
+                loadComponent: () => import('./alliances/vikings-event-management/vikings-verify-availability/vikings-verify-availability.component').then(m => m.VikingsVerifyAvailabilityComponent),
+                title: 'Verify Vikings Availability'
+            },
+            {
                 path: 'alliances/:allianceId/vikings/:id/messages',
                 loadComponent: () => import('./alliances/vikings-event-management/vikings-message-view/vikings-message-view.component').then(m => m.VikingsMessageViewComponent),
                 title: 'Vikings Messaging View'

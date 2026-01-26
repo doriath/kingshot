@@ -56,6 +56,9 @@ interface ResolvedReinforcement {
                          <a [routerLink]="['/admin', 'alliances', evt.allianceId, 'vikings', evt.id, 'availability']" class="nav-btn availability-btn">
                             📅 Availability
                          </a>
+                         <a [routerLink]="['/admin', 'alliances', evt.allianceId, 'vikings', evt.id, 'verify-availability']" class="nav-btn verify-btn">
+                            🔍 Verify
+                         </a>
                          <a [routerLink]="['/admin', 'alliances', evt.allianceId, 'confidence']" class="nav-btn confidence-btn">
                             📈 Confidence
                          </a>
@@ -438,6 +441,7 @@ interface ResolvedReinforcement {
         }
         .nav-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
         .availability-btn { background: linear-gradient(135deg, #e91e63, #c2185b); }
+        .verify-btn { background: linear-gradient(135deg, #009688, #00796b); }
         .confidence-btn { background: linear-gradient(135deg, #673ab7, #512da8); }
         .message-btn { background: linear-gradient(135deg, #ff9800, #f57c00); }
 

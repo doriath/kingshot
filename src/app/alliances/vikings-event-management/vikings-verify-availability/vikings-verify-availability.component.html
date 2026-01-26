@@ -1,0 +1,91 @@
+<div class="verify-container">
+    @if (event(); as evt) {
+    <header>
+        <h1>🔍 Verify Availability</h1>
+        <div class="subtitle">
+            {{ evt.date.toDate() | date:'mediumDate' }}
+        </div>
+        <a [routerLink]="['/admin', 'alliances', evt.allianceId, 'vikings', evt.id, 'manage']" class="back-btn">
+            ⬅ Back to Manage
+        </a>
+    </header>
+
+    <div class="controls">
+        <span class="label">Show Players:</span>
+        <div class="toggle-group">
+            <button class="toggle-btn online" [class.active]="viewFilter() === 'online'" (click)="setFilter('online')">
+                Online
+            </button>
+            <button class="toggle-btn offline" [class.active]="viewFilter() === 'offline_empty'"
+                (click)="setFilter('offline_empty')">
+                Offline (Empty)
+            </button>
+        </div>
+    </div>
+
+    <div class="lists-wrapper">
+        <!-- Unverified List -->
+        <div class="list-section">
+            <h3>⚠️ To Verify ({{ groupedCharacters().unverified.length }})</h3>
+            <div class="char-list unverified">
+                @for (char of groupedCharacters().unverified; track char.characterId) {
+                <div class="char-row" (click)="openVerificationPopup(char)">
+                    <div class="char-name">{{ char.characterName }}</div>
+                    <div class="char-power">{{ (char.powerLevel / 1000000) | number:'1.1-1' }}M</div>
+                </div>
+                } @empty {
+                <div class="empty-msg">All verified! 🎉</div>
+                }
+            </div>
+        </div>
+
+        <!-- Verified List -->
+        <div class="list-section">
+            <h3>✅ Verified ({{ groupedCharacters().verified.length }})</h3>
+            <div class="char-list verified">
+                @for (char of groupedCharacters().verified; track char.characterId) {
+                <div class="char-row" (click)="openVerificationPopup(char)">
+                    <div class="char-name">{{ char.characterName }}</div>
+                    <div class="char-status-badge" [class]="char.actualStatus">
+                        {{ char.actualStatus | uppercase }}
+                    </div>
+                </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Verification Popup -->
+    @if (selectedChar(); as selected) {
+    <div class="popup-backdrop" (click)="closePopup()">
+        <div class="popup" (click)="$event.stopPropagation()">
+            <h2>Verify: {{ selected.characterName }}</h2>
+            <p class="popup-subtitle">Set Actual Availability</p>
+
+            <div class="actions-grid">
+                <button class="action-btn online" [class.selected]="selected.actualStatus === 'online'"
+                    (click)="updateStatus(selected, 'online')">
+                    ✅ ONLINE
+                </button>
+                <button class="action-btn offline-empty" [class.selected]="selected.actualStatus === 'offline_empty'"
+                    (click)="updateStatus(selected, 'offline_empty')">
+                    💤 OFFLINE (Empty)
+                </button>
+                <button class="action-btn offline-not-empty"
+                    [class.selected]="selected.actualStatus === 'offline_not_empty'"
+                    (click)="updateStatus(selected, 'offline_not_empty')">
+                    ⛔ OFFLINE (Not Empty)
+                </button>
+            </div>
+
+            <div class="footer-actions">
+                <button class="cancel-btn" (click)="closePopup()">Cancel</button>
+            </div>
+        </div>
+    </div>
+    }
+
+    } @else {
+    <div class="loading">Loading Event...</div>
+    }
+</div>
