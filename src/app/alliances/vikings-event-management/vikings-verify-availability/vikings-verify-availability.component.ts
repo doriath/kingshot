@@ -125,4 +125,34 @@ export class VikingsVerifyAvailabilityComponent {
             reinforce
         };
     }
+
+    public copyVerifiedEmptyMessage() {
+        const evt = this.event();
+        if (!evt) return;
+
+        // Get characters that were supposed to be offline_empty AND are verified as offline_empty
+        // (Assuming checking 'status' for original assignment and 'actualStatus' for verification)
+        const verifiedEmpty = evt.characters.filter(c =>
+            c.status === 'offline_empty' &&
+            c.actualStatus === 'offline_empty'
+        );
+
+        if (verifiedEmpty.length === 0) {
+            alert('No players verified as empty yet.');
+            return;
+        }
+
+        const names = verifiedEmpty.map(c => {
+            const powerM = ((c.powerLevel || 0) / 1000000).toFixed(1);
+            return `${c.characterName} (${powerM}M)`;
+        }).join(', ');
+        const message = `Following players are empty: ${names}`;
+
+        navigator.clipboard.writeText(message).then(() => {
+            alert('Message copied to clipboard!');
+        }).catch(err => {
+            console.error('Failed to copy: ', err);
+            alert('Failed to copy to clipboard.');
+        });
+    }
 }

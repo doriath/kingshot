@@ -41,7 +41,14 @@
 
         <!-- Verified List -->
         <div class="list-section">
-            <h3>✅ Verified ({{ groupedCharacters().verified.length }})</h3>
+            <div class="section-header">
+                <h3>✅ Verified ({{ groupedCharacters().verified.length }})</h3>
+                @if (viewFilter() === 'offline_empty' && groupedCharacters().verified.length > 0) {
+                <button class="copy-btn" (click)="copyVerifiedEmptyMessage()">
+                    📋 Copy Message
+                </button>
+                }
+            </div>
             <div class="char-list verified">
                 @for (char of groupedCharacters().verified; track char.characterId) {
                 <div class="char-row" (click)="openVerificationPopup(char)">
