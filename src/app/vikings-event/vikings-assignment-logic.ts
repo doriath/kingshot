@@ -4,10 +4,13 @@ import { AssignmentAlgorithm } from './algorithms/assignment-algorithm.interface
 import { GreedyAssignmentAlgorithm } from './algorithms/greedy.algorithm';
 import { EmptyAssignmentAlgorithm } from './algorithms/empty.algorithm';
 
+import { SmartAssignmentAlgorithm } from './algorithms/smart.algorithm';
+
 // Registry
 const ALGORITHMS: { [key: string]: AssignmentAlgorithm } = {
     'greedy': new GreedyAssignmentAlgorithm(),
-    'empty': new EmptyAssignmentAlgorithm()
+    'empty': new EmptyAssignmentAlgorithm(),
+    'smart': new SmartAssignmentAlgorithm()
 };
 
 export function getAvailableAlgorithms(): AssignmentAlgorithm[] {
