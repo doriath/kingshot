@@ -144,7 +144,7 @@ interface ResolvedReinforcement {
                                 } @else {
                                     <div class="main-badge">👑 Main</div>
                                 }
-                                @if ((row.assignment.maxReinforcementMarches ?? 0) > 0) {
+                                @if (row.assignment.maxReinforcementMarches !== undefined) {
                                     <div class="extra-marches-badge">Max Reinforcements: {{ row.assignment.maxReinforcementMarches }}</div>
                                 }
                                 @if (row.isRemovedFromAlliance) {

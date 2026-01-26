@@ -111,6 +111,23 @@ export const routes: Routes = [
     },
     // Note: SvS Admin prep routes moved into admin children above
 
+    // Vikings Routes
+    {
+        path: 'vikings',
+        loadComponent: () => import('./vikings-event/vikings-list/vikings-list').then(m => m.VikingsListComponent),
+        title: 'Vikings Events'
+    },
+    {
+        path: 'vikings/guide',
+        loadComponent: () => import('./vikings-event/vikings-guide/vikings-guide').then(m => m.VikingsGuideComponent),
+        title: 'Vikings Guide'
+    },
+    {
+        path: 'vikings/:id',
+        loadComponent: () => import('./vikings-event/vikings-event').then(m => m.VikingsEventComponent),
+        title: 'Vikings Event'
+    },
+
     ...BEAR_ROUTES,
     ...MISC_ROUTES,
 ];

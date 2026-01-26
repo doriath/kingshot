@@ -279,5 +279,17 @@ describe('SmartAssignmentAlgorithm', () => {
             expect(countT1).toBe(1);
             expect(countT2).toBe(1);
         });
+
+        it('should strictly respect maxReinforcementMarches = 0', () => {
+            // Target with 0. Should get 0.
+            // Default is 2 or 3. So if it gets >0, it fails.
+            const target = createChar('T_Zero', 'online', { maxReinforcementMarches: 0 });
+            const sources = [createChar('S1', 'online'), createChar('S2', 'online')];
+
+            const result = algorithm.solve([target, ...sources]);
+
+            const incoming = result.filter(c => c.reinforce.some(r => r.characterId === 'T_Zero'));
+            expect(incoming.length).toBe(0);
+        });
     });
 });

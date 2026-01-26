@@ -130,7 +130,7 @@ export class SmartAssignmentAlgorithm implements AssignmentAlgorithm {
             const multiplier = c.status === 'online' ? this.SCORE_ONLINE : this.SCORE_OFFLINE_EMPTY;
             const confidence = getMemberConfidence(c);
             const baseScore = multiplier * confidence;
-            const limit = this.reinforcementLimitsMap.get(c.characterId) || 100; // default safe
+            const limit = this.reinforcementLimitsMap.get(c.characterId) ?? 100; // default safe
             // Avoid division by zero, though limit should be >= 1
             const safeLimit = limit <= 0 ? 1 : limit;
             const reinforcementValue = baseScore / safeLimit;
