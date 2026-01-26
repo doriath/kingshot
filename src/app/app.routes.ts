@@ -67,6 +67,11 @@ export const routes: Routes = [
                 loadComponent: () => import('./alliances/alliance-management/alliance-management').then(m => m.AllianceManagementComponent)
             },
             {
+                path: 'alliances/:allianceId/vikings/:id',
+                loadComponent: () => import('./alliances/vikings-event-management/vikings-event-management').then(m => m.VikingsEventManagementComponent),
+                title: 'Manage Vikings Event'
+            },
+            {
                 path: 'alliances/:allianceId/vikings/:id/manage',
                 loadComponent: () => import('./alliances/vikings-event-management/vikings-event-management').then(m => m.VikingsEventManagementComponent),
                 title: 'Manage Vikings Event'
@@ -75,6 +80,11 @@ export const routes: Routes = [
                 path: 'alliances/:allianceId/vikings/:id/availability',
                 loadComponent: () => import('./alliances/vikings-event-management/vikings-availability/vikings-availability.component').then(m => m.VikingsAvailabilityComponent),
                 title: 'Vikings Availability'
+            },
+            {
+                path: 'alliances/:allianceId/vikings/:id/messages',
+                loadComponent: () => import('./alliances/vikings-event-management/vikings-message-view/vikings-message-view.component').then(m => m.VikingsMessageViewComponent),
+                title: 'Vikings Messaging View'
             },
             {
                 path: 'alliances/:allianceId/swordland/:id/manage',

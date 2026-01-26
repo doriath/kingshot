@@ -48,6 +48,23 @@ interface ResolvedReinforcement {
                     <span class="status-badge" [class]="evt.status">{{ evt.status | uppercase }}</span>
                     <button class="status-btn" (click)="openStatusModal()">Change Status</button>
                 </div>
+                
+                <!-- Event Navigation -->
+                <div class="nav-section">
+                    <h3>Related Pages</h3>
+                    <div class="nav-buttons">
+                         <a [routerLink]="['/admin', 'alliances', evt.allianceId, 'vikings', evt.id, 'availability']" class="nav-btn availability-btn">
+                            📅 Availability
+                         </a>
+                         <a [routerLink]="['/admin', 'alliances', evt.allianceId, 'confidence']" class="nav-btn confidence-btn">
+                            📈 Confidence
+                         </a>
+                         <a [routerLink]="['/admin', 'alliances', evt.allianceId, 'vikings', evt.id, 'messages']" class="nav-btn message-btn">
+                            📨 Messaging View
+                         </a>
+                    </div>
+                </div>
+
                 <!-- Stats Summary -->
                 <div class="stats-summary" *ngIf="stats() as s">
                     <div class="stat-pill total">Total: {{ s.total }}</div>
@@ -60,17 +77,12 @@ interface ResolvedReinforcement {
 
             <div class="toolbar">
                 <button class="tool-btn add-btn" (click)="showAddModal = true">➕ Add Character</button>
-                <a *ngIf="data()?.event as evt" [routerLink]="['/admin', 'alliances', evt.allianceId, 'vikings', evt.id, 'availability']" class="tool-btn status-btn-link">📅 Availability</a>
                 <button class="tool-btn sync-btn" (click)="acceptAllRegs()">📥 Accept All Differences</button>
-                <button class="tool-btn meta-btn" (click)="syncAllianceMetadata()">🔄 Sync Alliance Metadata</button>
-                <a *ngIf="data()?.alliance as ally" [routerLink]="['/admin', 'alliances', ally.uuid, 'confidence']" class="tool-btn conf-btn">
-                    📈 Confidence
-                </a>
-                <button class="tool-btn simulate-btn" (click)="simulateAssignments()">🎲 Simulate Assignments</button>
+                <button class="tool-btn meta-btn" (click)="syncAllianceMetadata()">🔄 Sync Metadata</button>
+                <button class="tool-btn simulate-btn" (click)="simulateAssignments()">🎲 Simulate</button>
                 <button class="tool-btn show-hide-btn" (click)="showAssignments = !showAssignments">
                     {{ showAssignments ? '👁️ Hide Assignments' : '👁️ Show Assignments' }}
                 </button>
-                <button class="tool-btn msg-btn" (click)="showMessagingView = true">📨 Messaging View</button>
             </div>
 
             <!-- Quit Members Warning -->
@@ -387,45 +399,6 @@ interface ResolvedReinforcement {
                 </div>
             </div>
 
-            <!-- Messaging View Overlay -->
-            <div class="messaging-view-overlay" *ngIf="showMessagingView">
-                <div class="mv-header">
-                    <h2>📨 Messaging View (Online & Offline Empty)</h2>
-                    @if (notificationMessage) {
-                        <div class="notification-toast">{{ notificationMessage }}</div>
-                    }
-                    <button class="close-btn" (click)="closeMessagingView()">Close</button>
-                </div>
-                <div class="mv-content">
-                    <div class="mv-table-container">
-                        <table class="mv-table">
-                            <thead>
-                                <tr>
-                                    <th class="col-name">Name</th>
-                                    <th class="col-power">Power</th>
-                                    <th class="col-status">Status</th>
-                                    <th class="col-action">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @for (row of messagingList(); track row.assignment.characterId) {
-                                    <tr (click)="copyMessage(row)">
-                                        <td class="col-name">{{ row.assignment.characterName }}</td>
-                                        <td class="col-power">{{ row.assignment.powerLevel | number }}</td>
-                                        <td class="col-status">
-                                            <span class="status-dot" [class]="row.assignment.status" [title]="row.assignment.status"></span>
-                                        </td>
-                                        <td class="col-action">
-                                            <span class="copy-icon">📋</span>
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
             </ng-container>
         </div>
         <div *ngIf="!data()" class="loading">Loading Event Data...</div>
@@ -448,8 +421,20 @@ interface ResolvedReinforcement {
         .stat-pill.online { background: rgba(76, 175, 80, 0.1); color: #81c784; border-color: #81c784; }
         .stat-pill.offline_empty { background: rgba(255, 152, 0, 0.1); color: #ffb74d; border-color: #ffb74d; }
         .stat-pill.offline_not_empty { background: rgba(244, 67, 54, 0.1); color: #e57373; border-color: #e57373; }
+        .stat-pill.offline_not_empty { background: rgba(244, 67, 54, 0.1); color: #e57373; border-color: #e57373; }
         .stat-pill.unknown { background: #444; color: #aaa; border-color: #666; }
         
+        .nav-section { margin-top: 1.5rem; background: #222; padding: 1rem; border-radius: 8px; border: 1px solid #333; }
+        .nav-section h3 { margin: 0 0 0.8rem 0; font-size: 0.9rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+        .nav-buttons { display: flex; gap: 1rem; flex-wrap: wrap; }
+        .nav-btn {
+            text-decoration: none; padding: 0.8rem 1.2rem; border-radius: 6px; font-weight: bold; color: white; display: flex; align-items: center; gap: 0.5rem; transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .nav-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
+        .availability-btn { background: linear-gradient(135deg, #e91e63, #c2185b); }
+        .confidence-btn { background: linear-gradient(135deg, #673ab7, #512da8); }
+        .message-btn { background: linear-gradient(135deg, #ff9800, #f57c00); }
+
         /* Removed surv-config styles */
 
         .toolbar { display: flex; gap: 1rem; margin-bottom: 1.5rem; }
@@ -1115,39 +1100,6 @@ export class VikingsEventManagementComponent {
             console.error(e);
             alert('Failed to add character');
         }
-    }
-
-    // Messaging View State
-    public showMessagingView = false;
-    public notificationMessage: string | null = null; // Reusing or adding new for feedbacks
-
-    public messagingList = computed(() => {
-        const rows = this.rows();
-        // Filter: Online OR Offline Empty
-        // Sort: Power Desc
-        return rows
-            .filter(r => r.assignment.status === 'online' || r.assignment.status === 'offline_empty')
-            .sort((a, b) => b.assignment.powerLevel - a.assignment.powerLevel);
-    });
-
-    public async copyMessage(row: ManagementRow) {
-        const text = this.vikingsService.generateAssignmentClipboardText(row.assignment);
-        try {
-            await navigator.clipboard.writeText(text);
-            this.showNotification(`Message for ${row.assignment.characterName} copied!`);
-        } catch (err) {
-            console.error('Failed to copy', err);
-            this.showNotification('Failed to copy message', true);
-        }
-    }
-
-    private showNotification(msg: string, isError = false) {
-        this.notificationMessage = msg;
-        setTimeout(() => this.notificationMessage = null, 2000);
-    }
-
-    public closeMessagingView() {
-        this.showMessagingView = false;
     }
 
     // Helper to update a single character in the array -> writes whole array
