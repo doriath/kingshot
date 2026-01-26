@@ -81,6 +81,8 @@ interface ResolvedReinforcement {
                 <button class="tool-btn meta-btn" (click)="syncAllianceMetadata()">🔄 Sync Metadata</button>
                 <button class="tool-btn clear-limits-btn" (click)="clearMaxMarches()">🧹 Clear Limits</button>
                 <button class="tool-btn simulate-btn" (click)="simulateAssignments()">🎲 Simulate</button>
+                <button class="tool-btn add-reinf-btn" (click)="assignAdditionalReinforcements()">➕ Add Reinforcements</button>
+                <button class="tool-btn remove-reinf-btn" (click)="removeAdditionalReinforcements()">➖ Remove Additional</button>
                 <button class="tool-btn show-hide-btn" (click)="showAssignments = !showAssignments">
                     {{ showAssignments ? '👁️ Hide Assignments' : '👁️ Show Assignments' }}
                 </button>
@@ -449,6 +451,8 @@ interface ResolvedReinforcement {
         .clear-limits-btn { background: #ff5722; color: white; }
         .conf-btn { background: #673ab7; color: white; text-decoration: none; display: flex; align-items: center; }
         .simulate-btn { background: #00bcd4; color: white; }
+        .add-reinf-btn { background: #ff4081; color: white; }
+        .remove-reinf-btn { background: #f50057; color: white; }
         .show-hide-btn { background: #607d8b; color: white; }
         .show-hide-btn { background: #607d8b; color: white; }
         .msg-btn { background: #ff9800; color: white; }
@@ -1259,6 +1263,169 @@ export class VikingsEventManagementComponent {
         } catch (err) {
             console.error(err);
             alert('Failed to clear limits.');
+        }
+    }
+
+    public async assignAdditionalReinforcements() {
+        // Confirmation
+        if (!confirm('This will assign additional reinforcements from available players (Online/Offline Empty) to Offline Empty players with the least coverage. Existing assignments will NOT be changed. Continue?')) return;
+
+        const eventId = this.eventId();
+        const event = this.event();
+        if (!eventId || !event) return;
+
+        // Clone characters to avoid mutation issues
+        const newCharacters = JSON.parse(JSON.stringify(event.characters)) as CharacterAssignment[];
+
+        // 1. Identify Source Candidates
+        // Online or Offline Empty players who have spare marches
+        const sourceCandidates = newCharacters.filter(c => {
+            if (c.status !== 'online' && c.status !== 'offline_empty') return false;
+
+            // Limit: marchesCount (outgoing). Max Reinforcement Marches is INCOMING limit on target.
+            // Safety: if marchesCount is 0, we can't send unless we default to something? 
+            // Standard greedy algo uses 6 if 0. We will duplicate that logic to be safe/useful.
+            const marches = (c.marchesCount === 0) ? 6 : Math.max(1, Math.min(6, c.marchesCount));
+            const currentAssignments = c.reinforce ? c.reinforce.length : 0;
+
+            return currentAssignments < marches;
+        });
+
+        // 2. Identify Target Candidates
+        // Only Offline Empty players are valid targets for reinforcements
+        const targetCandidates = newCharacters.filter(c => c.status === 'offline_not_empty');
+
+        if (sourceCandidates.length === 0) {
+            alert('No available players found with spare marches.');
+            return;
+        }
+        if (targetCandidates.length === 0) {
+            alert('No targets (Offline Empty players) found.');
+            return;
+        }
+
+        // Helper to count incoming reinforcements for targets
+        // We calculate this dynamically as we assign
+        const incomingCountMap = new Map<string, number>();
+
+        // Initialize map
+        targetCandidates.forEach(t => {
+            // Count how many people are ALREADY reinforcing this target
+            let incoming = 0;
+            newCharacters.forEach(c => {
+                if (c.reinforce && c.reinforce.some(r => r.characterId === t.characterId)) {
+                    incoming++;
+                }
+            });
+            incomingCountMap.set(t.characterId, incoming);
+        });
+
+        let assignedCount = 0;
+
+        // 3. Assignment Loop
+        // Iterate through sources and assign their spare marches
+        for (const source of sourceCandidates) {
+            const marches = (source.marchesCount === 0) ? 6 : Math.max(1, Math.min(6, source.marchesCount));
+            let currentAssignments = source.reinforce ? source.reinforce.length : 0;
+
+            while (currentAssignments < marches) {
+                // specific targets that this source is NOT already reinforcing
+                const validTargets = targetCandidates.filter(t => {
+                    // Can't reinforce self
+                    if (t.characterId === source.characterId) return false;
+                    // Can't reinforce if already reinforcing
+                    if (source.reinforce && source.reinforce.some(r => r.characterId === t.characterId)) return false;
+
+                    // Check Target Capacity / MaxMarches
+                    const currentIncoming = incomingCountMap.get(t.characterId) || 0;
+
+                    if (t.maxReinforcementMarches !== undefined) {
+                        if (currentIncoming >= t.maxReinforcementMarches) return false;
+                    } else if (t.reinforcementCapacity !== undefined) {
+                        const maxCapacity = Math.floor(t.reinforcementCapacity / 150000); // 150k per march approx
+                        if (currentIncoming >= maxCapacity) return false;
+                    }
+
+                    return true;
+                });
+
+                if (validTargets.length === 0) break; // No more valid targets for this source
+
+                // Find target with MINIMUM incoming reinforcements
+                let minIncoming = Infinity;
+                validTargets.forEach(t => {
+                    const count = incomingCountMap.get(t.characterId) || 0;
+                    if (count < minIncoming) minIncoming = count;
+                });
+
+                const bestTargets = validTargets.filter(t => (incomingCountMap.get(t.characterId) || 0) === minIncoming);
+
+                // Tie-breaker: Highest Power (prio strongest players among least reinforced) or just pick first
+                // Picking first for simplicity, or random could work. Let's pick largest power to protect them.
+                const target = bestTargets.sort((a, b) => b.powerLevel - a.powerLevel)[0];
+
+                // Assign
+                if (!source.reinforce) source.reinforce = [];
+                source.reinforce.push({
+                    characterId: target.characterId,
+                    marchType: 'additional' // Marker if needed, or undefined
+                });
+
+                // Update counters
+                incomingCountMap.set(target.characterId, (incomingCountMap.get(target.characterId) || 0) + 1);
+                currentAssignments++;
+                assignedCount++;
+            }
+        }
+
+        if (assignedCount === 0) {
+            alert('No additional assignments could be made (all targets already covered by available sources or no matches).');
+            return;
+        }
+
+        // 4. Save
+        try {
+            await this.vikingsService.updateEventCharacters(eventId, newCharacters);
+            alert(`Successfully added ${assignedCount} new assignments!`);
+        } catch (err) {
+            console.error(err);
+            alert('Failed to save assignments.');
+        }
+    }
+
+    public async removeAdditionalReinforcements() {
+        if (!confirm('Are you sure you want to remove ALL assignments marked as "additional"? This cannot be undone.')) return;
+
+        const eventId = this.eventId();
+        const event = this.event();
+        if (!eventId || !event) return;
+
+        let removedCount = 0;
+        const newCharacters = event.characters.map(c => {
+            if (!c.reinforce || c.reinforce.length === 0) return c;
+
+            const initialLength = c.reinforce.length;
+            // Filter out 'additional' reinforcements
+            const newReinforce = c.reinforce.filter(r => r.marchType !== 'additional');
+
+            if (newReinforce.length !== initialLength) {
+                removedCount += (initialLength - newReinforce.length);
+                return { ...c, reinforce: newReinforce };
+            }
+            return c;
+        });
+
+        if (removedCount === 0) {
+            alert('No "additional" assignments found to remove.');
+            return;
+        }
+
+        try {
+            await this.vikingsService.updateEventCharacters(eventId, newCharacters);
+            alert(`Successfully removed ${removedCount} additional assignments.`);
+        } catch (err) {
+            console.error(err);
+            alert('Failed to remove assignments.');
         }
     }
 }
