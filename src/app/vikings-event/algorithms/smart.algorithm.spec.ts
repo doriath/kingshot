@@ -82,6 +82,46 @@ describe('SmartAssignmentAlgorithm', () => {
             const incoming = result.filter(c => c.reinforce.some(r => r.characterId === 'T1'));
             expect(incoming.length).toBe(2);
         });
+        it('should respect townCenterLevel for default maxReinforcementMarches', () => {
+            // TC >= 33 -> 2 marches
+            const targetHigh = createChar('T_High', 'online', { townCenterLevel: 33, maxReinforcementMarches: undefined });
+            // TC < 33 -> 3 marches
+            const targetLow = createChar('T_Low', 'online', { townCenterLevel: 32, maxReinforcementMarches: undefined });
+            // Undefined -> 3 marches
+            const targetNone = createChar('T_None', 'online', { townCenterLevel: undefined, maxReinforcementMarches: undefined });
+
+            const sources = Array.from({ length: 10 }, (_, i) => createChar(`S${i}`, 'online'));
+
+            const result = algorithm.solve([targetHigh, targetLow, targetNone, ...sources]);
+
+            const incomingHigh = result.filter(c => c.reinforce.some(r => r.characterId === 'T_High'));
+            expect(incomingHigh.length).toBe(2);
+
+            const incomingLow = result.filter(c => c.reinforce.some(r => r.characterId === 'T_Low'));
+            expect(incomingLow.length).toBe(3);
+
+            const incomingNone = result.filter(c => c.reinforce.some(r => r.characterId === 'T_None'));
+            expect(incomingNone.length).toBe(3);
+        });
+
+        it('should NOT modify the input maxReinforcementMarches property', () => {
+            const target = createChar('T_Mutable', 'online', {
+                townCenterLevel: 33,
+                maxReinforcementMarches: undefined
+            });
+            const sources = [createChar('S1', 'online'), createChar('S2', 'online'), createChar('S3', 'online')];
+
+            const result = algorithm.solve([target, ...sources]);
+
+            const targetResult = result.find(c => c.characterId === 'T_Mutable');
+
+            // Logic says it should have used limit of 2 internally.
+            const incoming = result.filter(c => c.reinforce.some(r => r.characterId === 'T_Mutable'));
+            expect(incoming.length).toBe(2);
+
+            // BUT the object property should remain undefined
+            expect(targetResult?.maxReinforcementMarches).toBeUndefined();
+        });
     });
 
     describe('Phase 2: Farms', () => {

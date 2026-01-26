@@ -79,6 +79,7 @@ interface ResolvedReinforcement {
                 <button class="tool-btn add-btn" (click)="showAddModal = true">➕ Add Character</button>
                 <button class="tool-btn sync-btn" (click)="acceptAllRegs()">📥 Accept All Differences</button>
                 <button class="tool-btn meta-btn" (click)="syncAllianceMetadata()">🔄 Sync Metadata</button>
+                <button class="tool-btn clear-limits-btn" (click)="clearMaxMarches()">🧹 Clear Limits</button>
                 <button class="tool-btn simulate-btn" (click)="simulateAssignments()">🎲 Simulate</button>
                 <button class="tool-btn show-hide-btn" (click)="showAssignments = !showAssignments">
                     {{ showAssignments ? '👁️ Hide Assignments' : '👁️ Show Assignments' }}
@@ -134,14 +135,17 @@ interface ResolvedReinforcement {
                                 <div class="char-name">{{ row.assignment.characterName }}</div>
                                 <div class="char-id">{{ row.assignment.characterId }}</div>
                                 <div class="char-power">⚡ {{ formatPower(row.assignment.powerLevel) }}</div>
+                                @if (row.assignment.townCenterLevel) {
+                                  <div class="char-tc">🏰 TC: {{ row.assignment.townCenterLevel }}</div>
+                                }
                                 @if (row.assignment.mainCharacterId) {
                                     <div class="farm-badge">🚜 Farm</div>
                                     <div class="main-char-link">Main: {{ row.mainCharacterName }}</div>
-                                    @if ((row.assignment.maxReinforcementMarches ?? 0) > 0) {
-                                        <div class="extra-marches-badge">Max Reinforcements: {{ row.assignment.maxReinforcementMarches }}</div>
-                                    }
                                 } @else {
                                     <div class="main-badge">👑 Main</div>
+                                }
+                                @if ((row.assignment.maxReinforcementMarches ?? 0) > 0) {
+                                    <div class="extra-marches-badge">Max Reinforcements: {{ row.assignment.maxReinforcementMarches }}</div>
                                 }
                                 @if (row.isRemovedFromAlliance) {
                                     <div class="removed-badge">🚫 Left Alliance</div>
@@ -442,6 +446,7 @@ interface ResolvedReinforcement {
         .add-btn { background: #4caf50; color: white; }
         .sync-btn { background: #2196f3; color: white; }
         .meta-btn { background: #9c27b0; color: white; }
+        .clear-limits-btn { background: #ff5722; color: white; }
         .conf-btn { background: #673ab7; color: white; text-decoration: none; display: flex; align-items: center; }
         .simulate-btn { background: #00bcd4; color: white; }
         .show-hide-btn { background: #607d8b; color: white; }
@@ -498,6 +503,7 @@ interface ResolvedReinforcement {
         .char-name { font-weight: bold; color: white; }
         .char-id { color: #888; font-size: 0.8rem; font-family: monospace; }
         .char-power { color: #ffd54f; font-size: 0.8rem; font-weight: bold; margin-top: 0.2rem; }
+        .char-tc { color: #90caf9; font-size: 0.8rem; margin-top: 0.1rem; }
         
         .status-pill {
             display: inline-block; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.75rem; font-weight: bold; margin-bottom: 0.3rem;
@@ -1191,14 +1197,16 @@ export class VikingsEventManagementComponent {
                 const mainDiff = member.mainCharacterId !== char.mainCharacterId;
                 const capDiff = member.reinforcementCapacity !== char.reinforcementCapacity;
                 const confDiff = member.confidenceLevel !== char.confidenceLevel;
+                const tcDiff = member.townCenterLevel !== char.townCenterLevel;
 
-                if (marchDiff || mainDiff || capDiff || confDiff) {
+                if (marchDiff || mainDiff || capDiff || confDiff || tcDiff) {
                     updateCount++;
                     const updated: CharacterAssignment = {
                         ...char,
                         mainCharacterId: member.mainCharacterId,
                         reinforcementCapacity: member.reinforcementCapacity,
-                        confidenceLevel: member.confidenceLevel
+                        confidenceLevel: member.confidenceLevel,
+                        townCenterLevel: member.townCenterLevel,
                     };
                     if (member.marchesCount !== undefined) {
                         updated.marchesCount = member.marchesCount;
@@ -1220,6 +1228,37 @@ export class VikingsEventManagementComponent {
         } catch (err) {
             console.error(err);
             alert('Failed to sync metadata.');
+        }
+    }
+
+    public async clearMaxMarches() {
+        if (!confirm('Are you sure you want to clear ALL custom reinforcement limits? This cannot be undone.')) return;
+
+        const eventId = this.eventId();
+        const event = this.event();
+        if (!eventId || !event) return;
+
+        let updateCount = 0;
+        const newCharacters = event.characters.map(c => {
+            if (c.maxReinforcementMarches !== undefined) {
+                updateCount++;
+                const { maxReinforcementMarches, ...rest } = c;
+                return rest as CharacterAssignment;
+            }
+            return c;
+        });
+
+        if (updateCount === 0) {
+            alert('No custom limits found to clear.');
+            return;
+        }
+
+        try {
+            await this.vikingsService.updateEventCharacters(eventId, newCharacters);
+            alert(`Cleared limits for ${updateCount} characters.`);
+        } catch (err) {
+            console.error(err);
+            alert('Failed to clear limits.');
         }
     }
 }

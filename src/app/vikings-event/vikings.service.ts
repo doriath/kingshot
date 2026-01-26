@@ -96,6 +96,7 @@ export class VikingsService {
 
                 // Optional fields that we want to save ONLY if they exist (but not undefined)
                 if (m.mainCharacterId !== undefined) char.mainCharacterId = m.mainCharacterId;
+                if (m.townCenterLevel !== undefined) char.townCenterLevel = m.townCenterLevel;
 
                 // Ensure no undefined values slip through (general safety)
                 Object.keys(char).forEach(key => char[key] === undefined && delete char[key]);
@@ -200,6 +201,7 @@ export class VikingsService {
             // Preserve new fields
             if (safeC.mainCharacterId !== undefined) safeC.mainCharacterId = safeC.mainCharacterId;
             if (safeC.reinforcementCapacity !== undefined) safeC.reinforcementCapacity = safeC.reinforcementCapacity;
+            if (safeC.townCenterLevel !== undefined) safeC.townCenterLevel = safeC.townCenterLevel;
             if (safeC.extraMarches !== undefined) safeC.extraMarches = safeC.extraMarches;
             if (safeC.actualStatus !== undefined) safeC.actualStatus = safeC.actualStatus;
 

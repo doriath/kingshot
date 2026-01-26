@@ -12,6 +12,7 @@ export class SmartAssignmentAlgorithm implements AssignmentAlgorithm {
     private assignmentsMap = new Map<string, { characterId: string; marchType?: string }[]>();
     private marchesRemainingMap = new Map<string, number>();
     private incomingCountMap = new Map<string, number>();
+    private reinforcementLimitsMap = new Map<string, number>();
 
     private readonly SCORE_ONLINE = 1.3;
     private readonly SCORE_OFFLINE_EMPTY = 1.0;
@@ -36,6 +37,7 @@ export class SmartAssignmentAlgorithm implements AssignmentAlgorithm {
         this.assignmentsMap.clear();
         this.marchesRemainingMap.clear();
         this.incomingCountMap.clear();
+        this.reinforcementLimitsMap.clear();
         this.farmsMap.clear();
 
         this.workingCharacters.forEach(c => {
@@ -68,6 +70,7 @@ export class SmartAssignmentAlgorithm implements AssignmentAlgorithm {
     // --- Phase 1: Compute Reinforcement Limits ---
     private phase1_ComputeLimits() {
         this.workingCharacters.forEach(c => {
+            let limit = c.maxReinforcementMarches;
             // Custom logic based on TC logic potentially needed, but for now using the request:
             // "If the player already has assigned max reinforcments value, it should be used."
             // "If not, we will use value 2 if player is town center 33 or above, and 3 if town center is lower than 33."
@@ -94,17 +97,24 @@ export class SmartAssignmentAlgorithm implements AssignmentAlgorithm {
             // If not set, I will default to 3 (safer to allow more?).
             // AND "we also need to take into account reinforcement capacity".
 
-            if (c.maxReinforcementMarches === undefined || c.maxReinforcementMarches === null) {
-                c.maxReinforcementMarches = 3;
+            if (limit === undefined || limit === null) {
+                // TC Level Logic: 2 if >= 33, else 3
+                if (c.townCenterLevel && c.townCenterLevel >= 33) {
+                    limit = 2;
+                } else {
+                    limit = 3;
+                }
             }
 
             // Cap check
             if (c.reinforcementCapacity) {
                 const capBasedLimit = Math.floor(c.reinforcementCapacity / 150000);
-                if (c.maxReinforcementMarches !== undefined && c.maxReinforcementMarches > capBasedLimit) {
-                    c.maxReinforcementMarches = capBasedLimit;
+                if (limit !== undefined && limit > capBasedLimit) {
+                    limit = capBasedLimit;
                 }
             }
+
+            this.reinforcementLimitsMap.set(c.characterId, limit ?? 100);
         });
     }
 
@@ -204,11 +214,11 @@ export class SmartAssignmentAlgorithm implements AssignmentAlgorithm {
 
     private isFull(c: CharacterAssignment): boolean {
         // Limit is determined in Phase 1
-        const max = c.maxReinforcementMarches || 100; // Default high if somehow missing
+        const max = this.reinforcementLimitsMap.get(c.characterId) ?? 100; // Use map
         const current = this.incomingCountMap.get(c.characterId) || 0;
         // console.log(`Debug: isFull(${c.characterId})? Current: ${current}, Max: ${max}, Result: ${current >= max}`);
         if (c.characterId === 'T1') { // Restrict spam if possible, or T1 specific failure
-            console.log(`Debug: isFull(${c.characterId})? Current: ${current}, c.max: ${c.maxReinforcementMarches}, Max: ${max}, Result: ${current >= max}`);
+            console.log(`Debug: isFull(${c.characterId})? Current: ${current}, Max: ${max}, Result: ${current >= max}`);
         }
         return current >= max;
     }

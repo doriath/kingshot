@@ -7,6 +7,7 @@ export interface CharacterAssignment {
     reinforcementCapacity?: number;
     maxReinforcementMarches?: number;
     powerLevel: number;
+    townCenterLevel?: number;
     marchesCount: number;
     status: VikingsStatus | 'unknown';
     actualStatus?: VikingsStatus | 'unknown';
