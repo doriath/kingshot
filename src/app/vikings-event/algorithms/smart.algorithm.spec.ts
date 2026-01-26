@@ -217,5 +217,33 @@ describe('SmartAssignmentAlgorithm', () => {
             expect(farmResult?.reinforce.length).toBeGreaterThan(0);
             expect(farmResult?.reinforce[0].characterId).toBe('T_ONE');
         });
+
+        it('should spread reinforcements evenly among targets', () => {
+            // Two targets, two sources with 1 march each.
+            // Old behavior: Target A gets filled first (might get 2), Target B gets 0 (if A cap is high).
+            // New behavior: Target A gets 1, Target B gets 1.
+
+            const t1 = createChar('T1', 'offline_not_empty', { maxReinforcementMarches: 10 });
+            const t2 = createChar('T2', 'offline_not_empty', { maxReinforcementMarches: 10 });
+
+            // Sources must be 'online' to be valid sources in Phase 4.
+            // But 'online' makes them targets in Phase 3. 
+            // set maxReinforcementMarches=0 to prevent them from consuming marches in Phase 3
+            const s1 = createChar('S1', 'online', { marchesCount: 1, maxReinforcementMarches: 0 });
+            const s2 = createChar('S2', 'online', { marchesCount: 1, maxReinforcementMarches: 0 });
+
+            const result = algorithm.solve([s1, s2, t1, t2]);
+
+            // Verify S1 assigned to someone
+            // Verify S2 assigned to someone
+            // Verify T1 received 1
+            // Verify T2 received 1
+
+            const countT1 = result.filter(r => r.reinforce.some(x => x.characterId === 'T1')).length;
+            const countT2 = result.filter(r => r.reinforce.some(x => x.characterId === 'T2')).length;
+
+            expect(countT1).toBe(1);
+            expect(countT2).toBe(1);
+        });
     });
 });

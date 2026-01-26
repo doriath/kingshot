@@ -75,28 +75,6 @@ export class SmartAssignmentAlgorithm implements AssignmentAlgorithm {
             // "If the player already has assigned max reinforcments value, it should be used."
             // "If not, we will use value 2 if player is town center 33 or above, and 3 if town center is lower than 33."
 
-            // We don't have town center level directly in CharacterAssignment, 
-            // but we have `powerLevel`. Often powerLevel correlates or is used. 
-            // OR maybe `maxReinforcementMarches` is ALREADY populated if set?
-            // The prompt implies we need to set it if not present.
-            // However, the interface doesn't show TC level. I will use a placeholder or assume powerLevel proxy?
-            // Request says: "if player is town center 33 or above". 
-            // I don't see TC level in the interface.
-            // I will assume for now, if maxReinforcementMarches is undefined, I default to 2.
-            // WAIT, logic: "2 if TC >= 33, 3 if TC < 33".
-            // Without TC level, I can't implement this strictly.
-            // I will make a best effort guess using Power Level? No that's risky.
-            // I'll check if possibly 'maxReinforcementMarches' is ALREADY populated from DB.
-            // If not, I will default to 2 as a safe bet for high level, 3 for lower?
-            // Actually, usually higher TC can take MORE reinforcements? No, maybe less because they are strong?
-            // "2 if TC >= 33, 3 if TC < 33" -> Higher TC needs FEWER reinforcements? Or has simpler limit?
-
-            // HACK: Since I don't have TC property, checking if I need to fetch it or if I can ignore.
-            // The prompt is specific. I will comment this limitation.
-            // For now, I will use `maxReinforcementMarches` if set.
-            // If not set, I will default to 3 (safer to allow more?).
-            // AND "we also need to take into account reinforcement capacity".
-
             if (limit === undefined || limit === null) {
                 // TC Level Logic: 2 if >= 33, else 3
                 if (c.townCenterLevel && c.townCenterLevel >= 33) {
@@ -174,35 +152,60 @@ export class SmartAssignmentAlgorithm implements AssignmentAlgorithm {
 
     // --- Phase 4: Remaining Assignment ---
     private phase4_RemainingAssignment() {
-        // Targets: Offline_Not_Empty
         const targets = this.workingCharacters.filter(c => c.status === 'offline_not_empty');
-
-        // Sources: All accounts EXCEPT Offline_Not_Empty (Include Farms)
-        // Wait, "exclude offline_not_empty from assignment algorithm" in Phase 3 prompt, 
-        // Phase 4 says "assign remaining marches everyone has, to offline_not_empty".
-        // "everyone has" implies including Offline_Not_Empty sources?
-        // Prompt says: "(offline_not_empty are excluded completely from the assignment algorithm)" in Phase 3 context.
-        // Phase 4 says "assign the remaining marches EVERYONE has".
-        // I will interpret "everyone" as all valid sources (Online, Offline_Empty, Farms).
-        // BUT, if an Offline_Not_Empty player has marches, should they send?
-        // Usually ONE (Offline Not Empty) is barely active or ignored.
-        // I will assume Offline_Not_Empty do NOT send marches.
-
         const sources = this.workingCharacters.filter(c =>
             this.getRemainingMarches(c.characterId) > 0 &&
             c.status !== 'offline_not_empty'
         );
 
-        // Simple round robin or greedy fill? 
-        // "assign the remaining marches... to offline_not_empty players"
-        // No specific order mentioned. I'll stick to a simple fill.
+        const filledOrSkippedTargets = new Set<string>();
 
-        for (const target of targets) {
-            for (const source of sources) {
-                if (this.getRemainingMarches(source.characterId) <= 0) continue;
-                if (this.isFull(target)) break;
+        while (sources.length > 0 && targets.length > 0) {
+            // Find target with minimum assigned reinforcements that is not full and not skipped
+            let minAssigned = Infinity;
+            let bestTarget: CharacterAssignment | null = null;
 
-                this.assign(source.characterId, target.characterId);
+            // We need to re-check valid targets every iteration because they might become full
+            let availableTargets = false;
+
+            for (const target of targets) {
+                if (filledOrSkippedTargets.has(target.characterId)) continue;
+                if (this.isFull(target)) {
+                    filledOrSkippedTargets.add(target.characterId);
+                    continue;
+                }
+
+                availableTargets = true;
+
+                const current = this.incomingCountMap.get(target.characterId) || 0;
+                if (current < minAssigned) {
+                    minAssigned = current;
+                    bestTarget = target;
+                }
+            }
+
+            if (!bestTarget || !availableTargets) break;
+
+            // Find a source that can assign to this target
+            let assigned = false;
+            // Iterate sources to find one that hasn't assigned to this target yet
+            // We iterate all sources because the first one might already be assigned
+            for (let i = 0; i < sources.length; i++) {
+                const source = sources[i];
+                if (this.assign(source.characterId, bestTarget.characterId)) {
+                    assigned = true;
+                    // If source empty, remove from list
+                    if (this.getRemainingMarches(source.characterId) <= 0) {
+                        sources.splice(i, 1);
+                    }
+                    break;
+                }
+            }
+
+            if (!assigned) {
+                // No source could assign to this target (e.g. all available sources already assigned to it)
+                // Skip this target for future iterations
+                filledOrSkippedTargets.add(bestTarget.characterId);
             }
         }
     }
