@@ -139,15 +139,28 @@ export class VikingsMessageViewComponent {
         const d = this.data();
         if (!d || !d.event || !d.event.characters) return [];
 
+        const charMap = new Map(d.event.characters.map(c => [c.characterId, c]));
+
         return d.event.characters
             .filter(c => c.status === 'online' || c.status === 'offline_empty')
-            .map(c => ({
-                characterId: c.characterId,
-                name: c.characterName,
-                power: c.powerLevel,
-                status: c.status
-            }))
-            .sort((a, b) => b.status.localeCompare(a.status));
+            .map(c => {
+                const resolvedReinforcements = (c.reinforce || []).map(r => {
+                    const target = charMap.get(r.characterId);
+                    return {
+                        name: target ? target.characterName : 'Unknown',
+                        power: target ? target.powerLevel : 0
+                    };
+                });
+
+                return {
+                    characterId: c.characterId,
+                    name: c.characterName,
+                    power: c.powerLevel,
+                    status: c.status,
+                    reinforce: resolvedReinforcements
+                };
+            })
+            .sort((a, b) => (b.power || 0) - (a.power || 0));
     });
 
     goBack() {
@@ -155,10 +168,35 @@ export class VikingsMessageViewComponent {
     }
 
     copyMessage(row: any) {
-        const textToCopy = `@${row.name}`;
-        navigator.clipboard.writeText(textToCopy).then(() => {
-            this.showNotification(`Copied: ${textToCopy}`);
+        const d = this.data();
+        let dateStr = '';
+        if (d && d.event && d.event.date) {
+            const date = d.event.date.toDate();
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const dayName = days[date.getUTCDay()];
+            const hour = date.getUTCHours().toString().padStart(2, '0');
+            const minute = date.getUTCMinutes().toString().padStart(2, '0');
+            dateStr = ` (${dayName} ${hour}${minute} UTC)`;
+        }
+
+        let msg = `${row.name} please reinforce${dateStr}:\n`;
+        if (row.reinforce && row.reinforce.length > 0) {
+            msg += row.reinforce.map((r: any) => `- ${r.name} (${this.formatPower(r.power)})`).join('\n');
+        } else {
+            msg += '(No assignments)';
+        }
+
+        navigator.clipboard.writeText(msg).then(() => {
+            this.showNotification(`Copied message for ${row.name}`);
         });
+    }
+
+    private formatPower(power: number | undefined): string {
+        if (power === undefined || power === null) return '-';
+        if (power >= 1_000_000_000) return (power / 1_000_000_000).toFixed(1) + 'B';
+        if (power >= 1_000_000) return (power / 1_000_000).toFixed(1) + 'M';
+        if (power >= 1_000) return (power / 1_000).toFixed(1) + 'k';
+        return power.toString();
     }
 
     private showNotification(msg: string) {
