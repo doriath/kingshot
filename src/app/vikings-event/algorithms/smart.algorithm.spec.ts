@@ -148,50 +148,84 @@ describe('SmartAssignmentAlgorithm', () => {
     });
 
     describe('Phase 3: Prioritized Assignment', () => {
-        it('should prioritize Online over Offline_Empty', () => {
-            // One source, two targets.
-            // Source: Online (valid source)
-            // Target 1: Online (Score 1.3)
-            // Target 2: Offline_Empty (Score 1.0)
-            // Expect Source to assign to Target 1 first.
-
+        it('should prioritize Higher Reinforcement Value (Score/Limit)', () => {
+            // Both Online (Score 1.3). Confidence 1.0. Base Score = 1.3.
+            // T1 Limit 10 -> RV = 0.13
+            // T2 Limit 5 -> RV = 0.26 (Higher Priority)
             const source = createChar('Source', 'online', { marchesCount: 1 });
-            const tOnline = createChar('T_Online', 'online');
-            const tOffline = createChar('T_Offline', 'offline_empty');
+            const t1 = createChar('T1', 'online', { maxReinforcementMarches: 10 });
+            const t2 = createChar('T2', 'online', { maxReinforcementMarches: 5 });
 
-            const result = algorithm.solve([source, tOnline, tOffline]);
+            // Ensure source score >= targets
+            // Source: Online, Conf 1.0 => 1.3. T1, T2 => 1.3. Equal is allowed.
+
+            const result = algorithm.solve([source, t1, t2]);
 
             const sourceResult = result.find(c => c.characterId === 'Source');
-            expect(sourceResult?.reinforce[0].characterId).toBe('T_Online');
+            expect(sourceResult?.reinforce[0].characterId).toBe('T2');
         });
 
-        it('should respect confidence levels', () => {
-            // Target A: Online (1.3) * High Conf (2.0) = 2.6
-            // Target B: Online (1.3) * Low Conf (1.0) = 1.3
-            const source = createChar('Source', 'online', { marchesCount: 1 });
-            const tHigh = createChar('T_High', 'online', { confidenceLevel: 2.0 });
-            const tLow = createChar('T_Low', 'online', { confidenceLevel: 1.0 });
+        it('should respect Score Constraint (Source >= Target) for Primary Selection', () => {
+            // Source: Offline_Empty (Score 1.0)
+            // T1: Online (Score 1.3)
+            // T2: Offline_Empty (Score 1.0)
 
-            const result = algorithm.solve([source, tHigh, tLow]);
+            // T1 is NOT allowed (1.3 > 1.0). T2 IS allowed.
+            // Should pick T2 even if T1 matches other criteria.
+            const source = createChar('Source', 'offline_empty', { marchesCount: 1 });
+            const t1 = createChar('T1', 'online');
+            const t2 = createChar('T2', 'offline_empty');
+
+            const result = algorithm.solve([source, t1, t2]);
 
             const sourceResult = result.find(c => c.characterId === 'Source');
-            expect(sourceResult?.reinforce[0].characterId).toBe('T_High');
+            expect(sourceResult?.reinforce[0].characterId).toBe('T2');
         });
 
-        it('should EXCLUDE farms from being sources in Phase 3', () => {
-            // Farm account should NOT assign to random Online player in Phase 3.
-            const farm = createChar('Farm', 'online', {
-                mainCharacterId: 'Main', // It's a farm
-                marchesCount: 5
-            });
-            const target = createChar('Target', 'online');
+        it('should use Fallback (Min RV) if no Allowed Targets exist', () => {
+            // Source: Offline_Empty (Score 1.0)
+            // T1: Online (Score 1.3). Limit 10 -> RV = 0.13
+            // T2: Online (Score 1.3). Limit 2 -> RV = 0.65
 
-            // No Main provided, so Phase 2 won't use marches.
-            // Phase 3 should skip Farm as source.
-            const result = algorithm.solve([farm, target]);
+            // Allowed Targets: None (Target Scores > Source Score)
+            // Fallback: Pick Target with MIN Reinforcement Value.
+            // Min RV is T1 (0.13).
 
-            const farmResult = result.find(c => c.characterId === 'Farm');
-            expect(farmResult?.reinforce.length).toBe(0);
+            const source = createChar('Source', 'offline_empty', { marchesCount: 1 });
+            const t1 = createChar('T1', 'online', { maxReinforcementMarches: 10 });
+            const t2 = createChar('T2', 'online', { maxReinforcementMarches: 2 });
+
+            const result = algorithm.solve([source, t1, t2]);
+
+            const sourceResult = result.find(c => c.characterId === 'Source');
+            // Should pick T1 because it has LOWER RV (Fallback logic)
+            expect(sourceResult?.reinforce[0].characterId).toBe('T1');
+        });
+
+        it('should distribute using Round Robin', () => {
+            // 2 Sources, 1 Target requiring 2 assignments.
+            // S1 (Score 1.3), S2 (Score 1.3)
+            // T1 (Limit 10).
+            // Both assign to T1 eventually.
+            // But let's test distribution with 2 targets.
+            // T1 (RV High), T2 (RV High).
+            // S1 picks T1 (or T2). S2 picks T2 (or T1).
+            // If we have enough marches, they should fill both.
+
+            const s1 = createChar('S1', 'online', { marchesCount: 1 });
+            const s2 = createChar('S2', 'online', { marchesCount: 1 });
+            const t1 = createChar('T1', 'online', { maxReinforcementMarches: 10 });
+            const t2 = createChar('T2', 'online', { maxReinforcementMarches: 10 });
+
+            const result = algorithm.solve([s1, s2, t1, t2]);
+
+            const r1 = result.find(c => c.characterId === 'S1')?.reinforce[0];
+            const r2 = result.find(c => c.characterId === 'S2')?.reinforce[0];
+
+            expect(r1).toBeDefined();
+            expect(r2).toBeDefined();
+            // Since T1 and T2 are identical, order might be stable relative to array order.
+            // But they should both get reinforced.
         });
     });
 

@@ -112,39 +112,97 @@ export class SmartAssignmentAlgorithm implements AssignmentAlgorithm {
 
     // --- Phase 3: Prioritized Assignment ---
     private phase3_PrioritizedAssignment() {
+        // 1. Identification of valid participants
         // Targets: Online and Offline_Empty
-        // Farms are INCLUDED in targets if they match status (though usually farms are offline_not_empty?)
-        // If farm is Online/Offline_Empty, it is a target.
-        const potentialTargets = this.workingCharacters.filter(c =>
+        // Sources: Online and Offline_Empty (excluding farms)
+
+        const allParticipants = this.workingCharacters.filter(c =>
             c.status === 'online' || c.status === 'offline_empty'
         );
 
-        // Score: (Online ? 1.3 : 1.0) * Confidence
-        const scoredTargets = potentialTargets.map(c => {
+        // 2. Compute Scores
+        // Base Score = (StatusMultiplier * Confidence)
+        // Reinforcement Value = Base Score / Limit
+
+        const scoresMap = new Map<string, { baseScore: number; reinforcementValue: number }>();
+
+        allParticipants.forEach(c => {
             const multiplier = c.status === 'online' ? this.SCORE_ONLINE : this.SCORE_OFFLINE_EMPTY;
             const confidence = getMemberConfidence(c);
-            const score = multiplier * confidence;
-            return { c, score };
+            const baseScore = multiplier * confidence;
+            const limit = this.reinforcementLimitsMap.get(c.characterId) || 100; // default safe
+            // Avoid division by zero, though limit should be >= 1
+            const safeLimit = limit <= 0 ? 1 : limit;
+            const reinforcementValue = baseScore / safeLimit;
+
+            scoresMap.set(c.characterId, { baseScore, reinforcementValue });
         });
 
-        // Sort Targets: Score Descending
-        scoredTargets.sort((a, b) => b.score - a.score);
+        // 3. Define Sources and Sort them
+        const sources = allParticipants.filter(c => !c.mainCharacterId); // Exclude farms
+        // Sort sources by Base Score (Desc)
+        sources.sort((a, b) => {
+            const sA = scoresMap.get(a.characterId)?.baseScore || 0;
+            const sB = scoresMap.get(b.characterId)?.baseScore || 0;
+            return sB - sA;
+        });
 
-        // Sources: Online and Offline_Empty ONLY. Exclude Farms.
-        const sources = this.workingCharacters.filter(c =>
-            (c.status === 'online' || c.status === 'offline_empty') &&
-            !c.mainCharacterId // Not a farm
-        );
+        const targets = allParticipants; // Both sources and others can be targets
 
-        // Iterate Targets
-        for (const { c: target } of scoredTargets) {
-            // Loop Sources -> Assign until Target full
-            if (this.isFull(target)) continue;
+        // 4. Round Robin Assignment Loop
+        let assignmentsMade = true;
+
+        while (assignmentsMade) {
+            assignmentsMade = false;
 
             for (const source of sources) {
-                if (this.isFull(target)) break;
-                if (this.getRemainingMarches(source.characterId) > 0) {
-                    this.assign(source.characterId, target.characterId);
+                if (this.getRemainingMarches(source.characterId) <= 0) continue;
+
+                const sourceScore = scoresMap.get(source.characterId)?.baseScore || 0;
+
+                // Find valid candidates
+                // - Status valid (already filtered in targets)
+                // - Not full
+                // - Not already assigned by this source
+                // - Not self
+                const validCandidates = targets.filter(t => {
+                    if (t.characterId === source.characterId) return false;
+                    if (this.isFull(t)) return false;
+                    if (this.isAssigned(source.characterId, t.characterId)) return false;
+                    return true;
+                });
+
+                if (validCandidates.length === 0) continue;
+
+                // Split into Allowed (Score <= Source) and Others
+                const allowedTargets = validCandidates.filter(t => {
+                    const tScore = scoresMap.get(t.characterId)?.baseScore || 0;
+                    return tScore <= sourceScore;
+                });
+
+                let bestTarget: CharacterAssignment | null = null;
+
+                if (allowedTargets.length > 0) {
+                    // Primary Selection: Max Reinforcement Value
+                    bestTarget = allowedTargets.reduce((prev, curr) => {
+                        const prevVal = scoresMap.get(prev.characterId)?.reinforcementValue || 0;
+                        const currVal = scoresMap.get(curr.characterId)?.reinforcementValue || 0;
+                        return (currVal > prevVal) ? curr : prev;
+                    });
+                } else {
+                    // Fallback Selection: Min Reinforcement Value from ALL valid candidates
+                    // "If allowedTargets is empty ... choose player with lowest reinforcementValue from all targets" (meaning validCandidates)
+                    bestTarget = validCandidates.reduce((prev, curr) => {
+                        const prevVal = scoresMap.get(prev.characterId)?.reinforcementValue || 0;
+                        const currVal = scoresMap.get(curr.characterId)?.reinforcementValue || 0;
+                        return (currVal < prevVal) ? curr : prev;
+                    });
+                }
+
+                if (bestTarget) {
+                    if (this.assign(source.characterId, bestTarget.characterId)) {
+                        assignmentsMade = true;
+                    }
                 }
             }
         }
@@ -230,8 +288,7 @@ export class SmartAssignmentAlgorithm implements AssignmentAlgorithm {
         if (sourceId === targetId) return false;
 
         // Check already assigned
-        const current = this.assignmentsMap.get(sourceId) || [];
-        if (current.find(a => a.characterId === targetId)) return false;
+        if (this.isAssigned(sourceId, targetId)) return false;
 
         const target = this.workingCharacters.find(t => t.characterId === targetId);
         if (!target) return false;
@@ -239,12 +296,18 @@ export class SmartAssignmentAlgorithm implements AssignmentAlgorithm {
         if (this.isFull(target)) return false;
 
         // Execute Assignment
+        const current = this.assignmentsMap.get(sourceId) || [];
         current.push({ characterId: targetId });
         this.assignmentsMap.set(sourceId, current);
         this.marchesRemainingMap.set(sourceId, this.getRemainingMarches(sourceId) - 1);
         this.incomingCountMap.set(targetId, (this.incomingCountMap.get(targetId) || 0) + 1);
 
         return true;
+    }
+
+    private isAssigned(sourceId: string, targetId: string): boolean {
+        const current = this.assignmentsMap.get(sourceId) || [];
+        return !!current.find(a => a.characterId === targetId);
     }
 
     private finalize(): CharacterAssignment[] {
