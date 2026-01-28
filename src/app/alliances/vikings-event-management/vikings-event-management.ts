@@ -297,6 +297,7 @@ interface ResolvedReinforcement {
                     </div>
                     <div class="form-group relative">
                         <label>Main Character (Optional - for Farm)</label>
+                        <input [ngModel]="mainCharSearch()" (ngModelChange)="mainCharSearch.set($event)"
                                (focus)="showMainCharDropdown = true" 
                                (input)="showMainCharDropdown = true"
                                placeholder="Search for main character...">
@@ -323,6 +324,38 @@ interface ResolvedReinforcement {
                     <div class="form-group">
                         <label>Max Reinforcement Marches</label>
                         <input type="number" [(ngModel)]="editMaxReinforcementMarches">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Manual Reinforcements</label>
+                        <div class="manual-reinforce-list">
+                            @for (r of editReinforce; track r.characterId; let i = $index) {
+                                <div class="manual-reinforce-item">
+                                    <span>➡️ {{ getReinforceTargetName(r.characterId) }}</span>
+                                    <button class="remove-btn" (click)="removeReinforcement(i)">❌</button>
+                                </div>
+                            }
+                        </div>
+                        
+                        <div class="add-reinforce-box relative">
+                            <input [ngModel]="reinforceTargetSearch()" (ngModelChange)="reinforceTargetSearch.set($event)"
+                                   (focus)="showReinforceTargetDropdown = true"
+                                   (input)="showReinforceTargetDropdown = true"
+                                   placeholder="Search target to reinforce..."
+                                   class="search-input">
+                                   
+                             @if (showReinforceTargetDropdown && filteredReinforceCandidates().length > 0) {
+                                <ul class="dropdown-list">
+                                    @for (candidate of filteredReinforceCandidates(); track candidate.characterId) {
+                                        <li (click)="selectReinforceTarget(candidate)">
+                                            <div class="dd-name">{{ candidate.characterName }}</div>
+                                            <div class="dd-id">Power: {{ candidate.powerLevel | number }}</div>
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                            <button class="add-reinf-action-btn" (click)="addReinforcement()" [disabled]="!selectedReinforceTargetId">Add</button>
+                        </div>
                     </div>
                     <div class="modal-actions">
                         <button (click)="saveEdit()">Save</button>
@@ -619,6 +652,16 @@ interface ResolvedReinforcement {
         .selected-helper { font-size: 0.8rem; color: #81c784; margin-top: 0.3rem; display: flex; align-items: center; gap: 0.5rem;}
         .clear-btn { background: none; border: none; color: #e57373; font-weight: bold; cursor: pointer; font-size: 1rem; padding: 0 0.3rem; }
 
+        .manual-reinforce-list { margin-bottom: 0.5rem; border: 1px solid #444; border-radius: 4px; padding: 0.5rem; background: #222; max-height: 150px; overflow-y: auto; }
+        .manual-reinforce-item { display: flex; justify-content: space-between; align-items: center; padding: 0.3rem; border-bottom: 1px solid #333; font-size: 0.9rem; }
+        .manual-reinforce-item:last-child { border-bottom: none; }
+        .manual-reinforce-item .remove-btn { background: none; border: none; cursor: pointer; font-size: 0.8rem; color: #e57373; }
+        
+        .add-reinforce-box { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+        .search-input { flex-grow: 1; padding: 0.4rem; background: #111; border: 1px solid #444; color: white; border-radius: 4px; }
+        .add-reinf-action-btn { background: #4caf50; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .add-reinf-action-btn:disabled { background: #333; color: #666; cursor: not-allowed; }
+
         /* Messaging View */
         .messaging-view-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -903,6 +946,12 @@ export class VikingsEventManagementComponent {
     public newReinforcementCapacity = 0;
     public newMaxReinforcementMarches = 0;
 
+    // Reinforce Edit State
+    public editReinforce: { characterId: string; marchType?: string }[] = [];
+    public reinforceTargetSearch = signal('');
+    public showReinforceTargetDropdown = false;
+    public selectedReinforceTargetId = '';
+
     // Simulation State
     public showSimulationModal = false;
     public availableAlgorithms: AssignmentAlgorithm[] = [];
@@ -916,11 +965,11 @@ export class VikingsEventManagementComponent {
     public showAssignments = true;
 
     // Autocomplete State
-    public mainCharSearch = '';
+    public mainCharSearch = signal('');
     public showMainCharDropdown = false;
 
     public filteredMainCharCandidates = computed(() => {
-        const search = this.mainCharSearch.toLowerCase();
+        const search = this.mainCharSearch().toLowerCase();
         const data = this.data();
         if (!data || !data.alliance || !data.alliance.members) return [];
 
@@ -931,15 +980,29 @@ export class VikingsEventManagementComponent {
         ).slice(0, 10);
     });
 
+    public filteredReinforceCandidates = computed(() => {
+        const search = this.reinforceTargetSearch().toLowerCase();
+        const data = this.data();
+        if (!data || !data.event) return [];
+
+        const candidates = data.event.characters;
+
+        if (!search) return candidates.slice(0, 5);
+
+        return candidates.filter(c =>
+            c.characterName.toLowerCase().includes(search) || c.characterId.includes(search)
+        ).slice(0, 10);
+    });
+
     public selectMainChar(candidate: AllianceMember) {
         this.editMainCharacterId = candidate.characterId;
-        this.mainCharSearch = candidate.name;
+        this.mainCharSearch.set(candidate.name);
         this.showMainCharDropdown = false;
     }
 
     public clearMainChar() {
         this.editMainCharacterId = '';
-        this.mainCharSearch = '';
+        this.mainCharSearch.set('');
     }
 
     public async acceptRegistration(row: ManagementRow) {
@@ -1026,13 +1089,23 @@ export class VikingsEventManagementComponent {
         this.editReinforcementCapacity = row.assignment.reinforcementCapacity ?? null;
         this.editMaxReinforcementMarches = row.assignment.maxReinforcementMarches ?? null;
 
+        // Clone reinforcements
+        // Clone reinforcements and strip extra view fields
+        this.editReinforce = (row.assignment.reinforce || []).map(r => ({
+            characterId: r.characterId,
+            marchType: r.marchType
+        }));
+        this.reinforceTargetSearch.set('');
+        this.selectedReinforceTargetId = '';
+        this.showReinforceTargetDropdown = false;
+
         // Initialize search field
-        this.mainCharSearch = '';
+        this.mainCharSearch.set('');
         if (this.editMainCharacterId) {
             // Try to find name in alliance members
             const member = this.data()?.alliance?.members?.find((m: AllianceMember) => m.characterId === this.editMainCharacterId);
-            if (member) this.mainCharSearch = member.name;
-            else this.mainCharSearch = this.editMainCharacterId; // Fallback to ID
+            if (member) this.mainCharSearch.set(member.name);
+            else this.mainCharSearch.set(this.editMainCharacterId); // Fallback to ID
         }
     }
 
@@ -1047,12 +1120,11 @@ export class VikingsEventManagementComponent {
 
             mainCharacterId: this.editMainCharacterId || undefined,
             reinforcementCapacity: this.editReinforcementCapacity ?? undefined,
-            maxReinforcementMarches: this.editMaxReinforcementMarches ?? undefined
+            maxReinforcementMarches: this.editMaxReinforcementMarches ?? undefined,
+            reinforce: this.editReinforce
         };
 
-        if (changes.mainCharacterId === undefined || changes.mainCharacterId === '') delete changes.mainCharacterId;
-        if (changes.reinforcementCapacity === undefined || changes.reinforcementCapacity === null) delete changes.reinforcementCapacity;
-        if (changes.maxReinforcementMarches === undefined || changes.maxReinforcementMarches === null) delete changes.maxReinforcementMarches;
+
 
         await this.updateCharacter(this.editingRow.assignment.characterId, changes);
         this.editingRow = null;
@@ -1060,6 +1132,39 @@ export class VikingsEventManagementComponent {
 
     public async deleteRow(row: ManagementRow) {
         await this.removeCharacterById(row.assignment.characterId, row.assignment.characterName);
+    }
+
+    public removeReinforcement(index: number) {
+        this.editReinforce.splice(index, 1);
+    }
+
+    public selectReinforceTarget(candidate: CharacterAssignment) {
+        this.selectedReinforceTargetId = candidate.characterId;
+        this.reinforceTargetSearch.set(candidate.characterName);
+        this.showReinforceTargetDropdown = false;
+    }
+
+    public getReinforceTargetName(id: string): string {
+        const data = this.data();
+        if (!data || !data.event) return id;
+        const target = data.event.characters.find(c => c.characterId === id);
+        return target ? target.characterName : id;
+    }
+
+    public addReinforcement() {
+        if (!this.selectedReinforceTargetId) return;
+        // Check if already added
+        if (this.editReinforce.some(r => r.characterId === this.selectedReinforceTargetId)) {
+            alert('Already reinforcing this target.');
+            return;
+        }
+
+        this.editReinforce.push({
+            characterId: this.selectedReinforceTargetId
+        });
+
+        this.selectedReinforceTargetId = '';
+        this.reinforceTargetSearch.set('');
     }
 
     public async removeCharacterById(charId: string, name: string) {
@@ -1206,8 +1311,9 @@ export class VikingsEventManagementComponent {
                 const capDiff = member.reinforcementCapacity !== char.reinforcementCapacity;
                 const confDiff = member.confidenceLevel !== char.confidenceLevel;
                 const tcDiff = member.townCenterLevel !== char.townCenterLevel;
+                const powerDiff = member.power !== char.powerLevel;
 
-                if (marchDiff || mainDiff || capDiff || confDiff || tcDiff) {
+                if (marchDiff || mainDiff || capDiff || confDiff || tcDiff || powerDiff) {
                     updateCount++;
                     const updated: CharacterAssignment = {
                         ...char,
@@ -1215,6 +1321,7 @@ export class VikingsEventManagementComponent {
                         reinforcementCapacity: member.reinforcementCapacity,
                         confidenceLevel: member.confidenceLevel,
                         townCenterLevel: member.townCenterLevel,
+                        powerLevel: member.power,
                     };
                     if (member.marchesCount !== undefined) {
                         updated.marchesCount = member.marchesCount;

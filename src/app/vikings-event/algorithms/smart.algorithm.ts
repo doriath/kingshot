@@ -18,10 +18,10 @@ export class SmartAssignmentAlgorithm implements AssignmentAlgorithm {
     private readonly SCORE_OFFLINE_EMPTY = 1.0;
 
     public solve(inputCharacters: CharacterAssignment[]): CharacterAssignment[] {
-        // Deep copy
+        // Deep copy - Preserve existing assignments
         this.workingCharacters = inputCharacters.map(c => ({
             ...c,
-            reinforce: []
+            reinforce: c.reinforce ? [...c.reinforce] : []
         }));
 
         this.initialize();
@@ -40,21 +40,12 @@ export class SmartAssignmentAlgorithm implements AssignmentAlgorithm {
         this.reinforcementLimitsMap.clear();
         this.farmsMap.clear();
 
+        // 1. Setup base maps & farms
         this.workingCharacters.forEach(c => {
             // Normalize status
             c.status = getCharacterStatus(c);
-            this.assignmentsMap.set(c.characterId, []);
 
-            // Marches
-            // Assuming marchesCount is available, logic might need to ensure defaults
-            // Logic says "compute amount of marches... If player already has assigned max reinforcements value..."
-            // Wait, "amount of marches the player should be reinforced WITH" is Phase 1.
-            // "Marches Count" is what they HAVE to send.
-            let count = c.marchesCount;
-            if (count === 0) count = 6;
-            count = Math.max(1, Math.min(10, count)); // Allow more than 6? Default is usually 6.
-
-            this.marchesRemainingMap.set(c.characterId, count);
+            // Ensure incoming count is initialized
             this.incomingCountMap.set(c.characterId, 0);
 
             // Farms
@@ -64,6 +55,30 @@ export class SmartAssignmentAlgorithm implements AssignmentAlgorithm {
                 farms.push(c);
                 this.farmsMap.set(ownerId, farms);
             }
+        });
+
+        // 2. Process existing assignments
+        this.workingCharacters.forEach(c => {
+            const existing = c.reinforce || [];
+
+            // Populate assignments map
+            // We strip extraneous props like scoreValue/name if they exist, keeping core logic props
+            const cleanAssignments = existing.map(r => ({ characterId: r.characterId, marchType: r.marchType }));
+            this.assignmentsMap.set(c.characterId, cleanAssignments);
+
+            // Calculate Marches Remaining
+            let totalMarches = c.marchesCount;
+            if (totalMarches === 0) totalMarches = 6;
+            totalMarches = Math.max(1, Math.min(10, totalMarches));
+
+            const remaining = totalMarches - cleanAssignments.length;
+            this.marchesRemainingMap.set(c.characterId, remaining);
+
+            // Update Incoming Counts
+            cleanAssignments.forEach(r => {
+                const current = this.incomingCountMap.get(r.characterId) || 0;
+                this.incomingCountMap.set(r.characterId, current + 1);
+            });
         });
     }
 
@@ -77,7 +92,7 @@ export class SmartAssignmentAlgorithm implements AssignmentAlgorithm {
 
             if (limit === undefined || limit === null) {
                 // TC Level Logic: 2 if >= 33, else 3
-                if (c.townCenterLevel && c.townCenterLevel >= 33) {
+                if (c.townCenterLevel && c.townCenterLevel >= 34) {
                     limit = 2;
                 } else {
                     limit = 3;

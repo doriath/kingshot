@@ -164,9 +164,11 @@ export class VikingsService {
 
         const updatedCharacters = this.calculateAssignments(allCharacters, algorithmName);
 
+        const safeCharacters = this.sanitizeCharacters(updatedCharacters);
+
         await firestore.updateDoc(docRef, {
             // status remains unchanged (e.g., 'voting')
-            characters: updatedCharacters
+            characters: safeCharacters
         });
     }
 
@@ -179,10 +181,15 @@ export class VikingsService {
     }
 
     async updateEventCharacters(eventId: string, characters: CharacterAssignment[]): Promise<void> {
+        const safeCharacters = this.sanitizeCharacters(characters);
+        const docRef = doc(this.firestore, `vikingsEvents/${eventId}`);
+        await import('@angular/fire/firestore').then(mod => mod.updateDoc(docRef, { characters: safeCharacters }));
+    }
+
+    private sanitizeCharacters(characters: CharacterAssignment[]): CharacterAssignment[] {
         // Sanitize data before saving to avoid "undefined" errors and remove View-only fields
-        const safeCharacters = characters.map(c => {
+        return characters.map(c => {
             const safeC: any = { ...c };
-            // Ensure status/counts are preserved? Yes, they are part of c.
 
             // Sanitize reinforce array
             if (safeC.reinforce) {
@@ -191,28 +198,15 @@ export class VikingsService {
                     if (r.marchType) {
                         safeR.marchType = r.marchType;
                     }
-                    // Remove scoreValue if present (it shouldn't be in DB model anymore)
-                    if (r.scoreValue !== undefined) {
-                        delete safeR.scoreValue;
-                    }
                     return safeR;
                 });
             }
-            // Preserve new fields
-            if (safeC.mainCharacterId !== undefined) safeC.mainCharacterId = safeC.mainCharacterId;
-            if (safeC.reinforcementCapacity !== undefined) safeC.reinforcementCapacity = safeC.reinforcementCapacity;
-            if (safeC.townCenterLevel !== undefined) safeC.townCenterLevel = safeC.townCenterLevel;
-            if (safeC.extraMarches !== undefined) safeC.extraMarches = safeC.extraMarches;
-            if (safeC.actualStatus !== undefined) safeC.actualStatus = safeC.actualStatus;
 
             // Remove any undefined keys to satisfy Firestore
             Object.keys(safeC).forEach(key => (safeC as any)[key] === undefined && delete (safeC as any)[key]);
 
             return safeC as CharacterAssignment;
         });
-
-        const docRef = doc(this.firestore, `vikingsEvents/${eventId}`);
-        await import('@angular/fire/firestore').then(mod => mod.updateDoc(docRef, { characters: safeCharacters }));
     }
 
     getEventRegistrations(eventId: string): Observable<VikingsRegistration[]> {
