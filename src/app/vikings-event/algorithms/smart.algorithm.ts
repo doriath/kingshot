@@ -237,8 +237,6 @@ export class SmartAssignmentAlgorithm implements AssignmentAlgorithm {
             // Find target with minimum assigned reinforcements that is not full and not skipped
             let minAssigned = Infinity;
             let bestTarget: CharacterAssignment | null = null;
-
-            // We need to re-check valid targets every iteration because they might become full
             let availableTargets = false;
 
             for (const target of targets) {
@@ -265,7 +263,8 @@ export class SmartAssignmentAlgorithm implements AssignmentAlgorithm {
             // We iterate all sources because the first one might already be assigned
             for (let i = 0; i < sources.length; i++) {
                 const source = sources[i];
-                if (this.assign(source.characterId, bestTarget.characterId)) {
+                // In Phase 4, we allow multiple marches from same source to fill targets uniformly
+                if (this.assign(source.characterId, bestTarget.characterId, true)) {
                     assigned = true;
                     // If source empty, remove from list
                     if (this.getRemainingMarches(source.characterId) <= 0) {
@@ -292,18 +291,14 @@ export class SmartAssignmentAlgorithm implements AssignmentAlgorithm {
         // Limit is determined in Phase 1
         const max = this.reinforcementLimitsMap.get(c.characterId) ?? 100; // Use map
         const current = this.incomingCountMap.get(c.characterId) || 0;
-        // console.log(`Debug: isFull(${c.characterId})? Current: ${current}, Max: ${max}, Result: ${current >= max}`);
-        if (c.characterId === 'T1') { // Restrict spam if possible, or T1 specific failure
-            console.log(`Debug: isFull(${c.characterId})? Current: ${current}, Max: ${max}, Result: ${current >= max}`);
-        }
         return current >= max;
     }
 
-    private assign(sourceId: string, targetId: string): boolean {
+    private assign(sourceId: string, targetId: string, allowMultiple = false): boolean {
         if (sourceId === targetId) return false;
 
-        // Check already assigned
-        if (this.isAssigned(sourceId, targetId)) return false;
+        // Check already assigned if not allowing multiple
+        if (!allowMultiple && this.isAssigned(sourceId, targetId)) return false;
 
         const target = this.workingCharacters.find(t => t.characterId === targetId);
         if (!target) return false;

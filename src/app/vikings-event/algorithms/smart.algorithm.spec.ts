@@ -280,6 +280,31 @@ describe('SmartAssignmentAlgorithm', () => {
             expect(countT2).toBe(1);
         });
 
+        it('should evenly distribute multiple assignments (water filling) among offline_not_empty targets', () => {
+            // 1 Source with 10 marches. 
+            // 3 Targets. Limit 10.
+            // Should distribute 3, 3, 4 (sum 10).
+            const source = createChar('Source', 'online', { marchesCount: 10, maxReinforcementMarches: 0 });
+
+            const t1 = createChar('T1', 'offline_not_empty', { maxReinforcementMarches: 10 });
+            const t2 = createChar('T2', 'offline_not_empty', { maxReinforcementMarches: 10 });
+            const t3 = createChar('T3', 'offline_not_empty', { maxReinforcementMarches: 10 });
+
+            const result = algorithm.solve([source, t1, t2, t3]);
+
+            const countT1 = result.filter(r => r.reinforce.some(x => x.characterId === 'T1')).length;
+            const countT2 = result.filter(r => r.reinforce.some(x => x.characterId === 'T2')).length;
+            const countT3 = result.filter(r => r.reinforce.some(x => x.characterId === 'T3')).length;
+
+            console.log(`Distribution: ${countT1}, ${countT2}, ${countT3}`);
+
+            expect(countT1 + countT2 + countT3).toBe(10);
+            const counts = [countT1, countT2, countT3];
+            const min = Math.min(...counts);
+            const max = Math.max(...counts);
+            expect(max - min).toBeLessThanOrEqual(1);
+        });
+
         it('should strictly respect maxReinforcementMarches = 0', () => {
             // Target with 0. Should get 0.
             // Default is 2 or 3. So if it gets >0, it fails.
