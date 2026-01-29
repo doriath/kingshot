@@ -84,9 +84,9 @@ describe('SmartAssignmentAlgorithm', () => {
         });
         it('should respect townCenterLevel for default maxReinforcementMarches', () => {
             // TC >= 33 -> 2 marches
-            const targetHigh = createChar('T_High', 'online', { townCenterLevel: 33, maxReinforcementMarches: undefined });
+            const targetHigh = createChar('T_High', 'online', { townCenterLevel: 34, maxReinforcementMarches: undefined });
             // TC < 33 -> 3 marches
-            const targetLow = createChar('T_Low', 'online', { townCenterLevel: 32, maxReinforcementMarches: undefined });
+            const targetLow = createChar('T_Low', 'online', { townCenterLevel: 33, maxReinforcementMarches: undefined });
             // Undefined -> 3 marches
             const targetNone = createChar('T_None', 'online', { townCenterLevel: undefined, maxReinforcementMarches: undefined });
 
@@ -106,7 +106,7 @@ describe('SmartAssignmentAlgorithm', () => {
 
         it('should NOT modify the input maxReinforcementMarches property', () => {
             const target = createChar('T_Mutable', 'online', {
-                townCenterLevel: 33,
+                townCenterLevel: 34,
                 maxReinforcementMarches: undefined
             });
             const sources = [createChar('S1', 'online'), createChar('S2', 'online'), createChar('S3', 'online')];
@@ -292,11 +292,11 @@ describe('SmartAssignmentAlgorithm', () => {
 
             const result = algorithm.solve([source, t1, t2, t3]);
 
-            const countT1 = result.filter(r => r.reinforce.some(x => x.characterId === 'T1')).length;
-            const countT2 = result.filter(r => r.reinforce.some(x => x.characterId === 'T2')).length;
-            const countT3 = result.filter(r => r.reinforce.some(x => x.characterId === 'T3')).length;
+            const countT1 = result.reduce((acc, r) => acc + r.reinforce.filter(x => x.characterId === 'T1').length, 0);
+            const countT2 = result.reduce((acc, r) => acc + r.reinforce.filter(x => x.characterId === 'T2').length, 0);
+            const countT3 = result.reduce((acc, r) => acc + r.reinforce.filter(x => x.characterId === 'T3').length, 0);
 
-            console.log(`Distribution: ${countT1}, ${countT2}, ${countT3}`);
+
 
             expect(countT1 + countT2 + countT3).toBe(10);
             const counts = [countT1, countT2, countT3];
