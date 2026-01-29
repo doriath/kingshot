@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Firestore, collection, collectionData, query, where, doc, docData } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { CharacterAssignment, CharacterAssignmentView, VikingsEvent, VikingsEventView, VikingsRegistration, VikingsStatus } from './vikings.types';
+import { CharacterAssignment, CharacterAssignmentView, VikingsEvent, VikingsEventView, VikingsRegistration, VikingsStatus, ConfidenceEventDetail, ConfidenceResult } from './vikings.types';
 import { calculateAssignments, getAvailableAlgorithms, AssignmentAlgorithm } from './vikings-assignment-logic';
 import { getCharacterStatus, getMemberConfidence } from './vikings.helpers';
 
@@ -330,6 +330,10 @@ export class VikingsService {
     }
 
     calculateMemberConfidence(memberId: string, pastEvents: VikingsEvent[]): number {
+        return this.getConfidenceDetails(memberId, pastEvents).score;
+    }
+
+    getConfidenceDetails(memberId: string, pastEvents: VikingsEvent[]): ConfidenceResult {
         // Consider last 5 events
         // Sort: Most recent first (index 0 is newest)
         const recentEvents = pastEvents
@@ -339,7 +343,7 @@ export class VikingsService {
 
         if (recentEvents.length === 0) {
             // Bayesian prior (1, 1) means 1 success, 1 failure => 0.5
-            return 0.5;
+            return { score: 0.5, details: [] };
         }
 
         let totalWeight = 0;
@@ -351,6 +355,8 @@ export class VikingsService {
         // Bayesian Prior (Uniform)
         const alpha = 1.0; // Pseudo-count for Success
         const beta = 1.0;  // Pseudo-count for Failure
+
+        const details: ConfidenceEventDetail[] = [];
 
         recentEvents.forEach((event, index) => {
             const char = event.characters?.find(c => c.characterId === memberId);
@@ -364,20 +370,32 @@ export class VikingsService {
             const actual = (char.actualStatus && char.actualStatus !== 'unknown') ? char.actualStatus : declared;
 
             // SCORING: 1.0 (Match) vs 0.0 (Mismatch)
-            const eventScore = (declared === actual) ? 1.0 : 0.0;
+            // Exception: If declared 'offline_empty' but actually 'online', consider it a match (better than expected)
+            const isMatch = (declared === actual) || (declared === 'offline_empty' && actual === 'online');
+            const eventScore = isMatch ? 1.0 : 0.0;
 
             // Weight decreases for older events: 1, 0.9, 0.81...
             const weight = Math.pow(lambda, index);
 
             weightedScore += (eventScore * weight);
             totalWeight += weight;
+
+            details.push({
+                date: event.date,
+                eventId: event.id || '',
+                expectedStatus: declared,
+                actualStatus: actual,
+                isMatch: isMatch,
+                weight: weight
+            });
         });
 
-        // If no relevant participation found (despite events existing), treat as new.
-        if (totalWeight === 0) return 0.5;
+        // if no relevant participation found (despite events existing), treat as new.
+        if (totalWeight === 0) return { score: 0.5, details: [] };
 
         // Formula: (WeightedScore + Alpha) / (TotalWeight + Alpha + Beta)
-        return (weightedScore + alpha) / (totalWeight + alpha + beta);
+        const score = (weightedScore + alpha) / (totalWeight + alpha + beta);
+        return { score, details };
     }
 
     async updateAllianceMemberConfidence(allianceId: string, updates: { characterId: string; confidenceLevel: number }[]): Promise<void> {

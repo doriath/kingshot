@@ -55,3 +55,17 @@ export interface VikingsRegistration {
     verified?: boolean; // Snapshot of verification status at time of registration
     updatedAt?: any; // Timestamp
 }
+
+export interface ConfidenceEventDetail {
+    date: any; // Firestore Timestamp
+    eventId: string;
+    expectedStatus: string;
+    actualStatus: string;
+    isMatch: boolean;
+    weight: number;
+}
+
+export interface ConfidenceResult {
+    score: number;
+    details: ConfidenceEventDetail[];
+}

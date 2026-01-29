@@ -50,12 +50,20 @@ import { CommonModule } from '@angular/common';
                          <tr class="data-row">
                              <td class="col-member font-semibold">{{ member.name }}</td>
                              <td class="col-center text-muted">{{ member.eventCount }}</td>
-                             <td class="col-center">
+                             <td class="col-center clickable-cell" (click)="openDetails(member)" title="Click to view details">
                                 <span class="badge"
                                       [class.badge-high]="member.calculatedScore >= 0.7"
                                       [class.badge-low]="member.calculatedScore < 0.5">
                                     {{ member.calculatedScore | number:'1.1-2' }}
                                 </span>
+                                <div class="confidence-details">
+                                    @for (detail of member.details; track detail.eventId) {
+                                        <div class="event-dot"
+                                             [class.match]="detail.isMatch"
+                                             [class.mismatch]="!detail.isMatch">
+                                        </div>
+                                    }
+                                </div>
                              </td>
                              <td class="col-center text-muted">
                                 {{ member.storedScore | number:'1.1-2' }}
@@ -76,6 +84,53 @@ import { CommonModule } from '@angular/common';
              </table>
          </div>
       </div>
+
+      @if (selectedMember(); as selected) {
+        <div class="modal-backdrop" (click)="closeDetails()">
+            <div class="modal-content" (click)="$event.stopPropagation()">
+                <div class="modal-header">
+                    <h3>History: {{ selected.name }}</h3>
+                    <button class="close-btn" (click)="closeDetails()">×</button>
+                </div>
+                <div class="modal-body">
+                    <table class="details-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Expected</th>
+                                <th>Actual</th>
+                                <th>Match</th>
+                                <th>Weight</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (detail of selected.details; track detail.eventId) {
+                                <tr>
+                                    <td>{{ getSafeDate(detail.date) | date:'dd/MM/yyyy' }}</td>
+                                    <td>
+                                        <span class="status-dot-large" [class]="detail.expectedStatus" [title]="detail.expectedStatus"></span>
+                                    </td>
+                                    <td>
+                                        <span class="status-dot-large" [class]="detail.actualStatus" [title]="detail.actualStatus"></span>
+                                    </td>
+                                    <td>
+                                        @if (detail.isMatch) {
+                                            <span class="match-icon">✅</span>
+                                        } @else {
+                                            <span class="mismatch-icon">❌</span>
+                                        }
+                                    </td>
+                                    <td class="text-muted">{{ detail.weight | number:'1.2-2' }}</td>
+                                </tr>
+                            } @empty {
+                                <tr><td colspan="4">No relevant history found.</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+      }
     </div>
   `,
     styles: [`
@@ -86,77 +141,25 @@ import { CommonModule } from '@angular/common';
         color: #eee;
         font-family: sans-serif;
     }
-
-    .header-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 1.5rem;
+    @media (max-width: 600px) {
+        .page-container {
+            padding: 1rem;
+        }
     }
 
-    h1 {
-        font-size: 1.8rem;
-        font-weight: bold;
-        color: #ffca28; /* Yellow accent */
-        margin: 0;
-    }
-
-    .actions {
-        display: flex;
-        gap: 1rem;
-    }
-
-    .btn {
-        padding: 0.5rem 1rem;
-        border-radius: 4px;
-        border: none;
-        cursor: pointer;
-        font-size: 0.9rem;
-        font-weight: 500;
-        transition: background-color 0.2s;
-    }
-
-    .back-btn {
-        background-color: #424242;
-        color: white;
-    }
-    .back-btn:hover { background-color: #616161; }
-
-    .save-btn {
-        background-color: #43a047; /* Green */
-        color: white;
-        font-weight: bold;
-    }
-    .save-btn:hover { background-color: #2e7d32; }
-
-    .content-grid {
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
-    }
-
-    .summary-card {
-        background-color: #1e1e1e;
-        padding: 1rem;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.5);
-        color: #ddd;
-    }
-    .summary-card p { margin: 0; line-height: 1.5; }
-
-    .high-conf-text { color: #66bb6a; font-weight: bold; }
-    .low-conf-text { color: #ef5350; font-weight: bold; }
+    /* ... skipping intermediate styles ... */
 
     .table-container {
         background-color: #1e1e1e;
         border-radius: 8px;
-        overflow: hidden;
+        overflow-x: auto; /* Enable horizontal scroll */
         box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         border: 1px solid #333;
     }
 
     .data-table {
         width: 100%;
+        min-width: 600px; /* Ensure table keeps structure and triggers scroll */
         border-collapse: collapse;
         text-align: left;
     }
@@ -186,6 +189,14 @@ import { CommonModule } from '@angular/common';
 
     .col-member { font-weight: 600; }
     .col-center { text-align: center; }
+    
+    .clickable-cell {
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    .clickable-cell:hover {
+        background-color: #333;
+    }
 
     .text-muted { color: #aaa; }
 
@@ -222,6 +233,91 @@ import { CommonModule } from '@angular/common';
         color: #66bb6a;
         font-size: 0.75rem;
     }
+
+    .confidence-details {
+       display: flex;
+       gap: 4px;
+       justify-content: center;
+       margin-top: 6px;
+    }
+
+    .event-dot {
+       width: 8px;
+       height: 8px;
+       border-radius: 50%;
+       cursor: pointer;
+    }
+
+    .match {
+       background-color: #66bb6a; /* Green */
+    }
+
+    .mismatch {
+       background-color: #ef5350; /* Red */
+    }
+
+    /* Modal Styles */
+    .modal-backdrop {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        backdrop-filter: blur(2px);
+    }
+
+    .modal-content {
+        background: #1e1e1e;
+        border-radius: 8px;
+        width: 100%;
+        max-width: 500px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        border: 1px solid #333;
+        overflow: hidden;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        border-bottom: 1px solid #333;
+        background: #252525;
+    }
+    .modal-header h3 { margin: 0; font-size: 1.1rem; color: #fff; }
+
+    .close-btn {
+        background: none;
+        border: none;
+        color: #aaa;
+        font-size: 1.5rem;
+        cursor: pointer;
+    }
+
+    .modal-body {
+        padding: 1rem;
+    }
+
+    .details-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+    }
+    .details-table th { text-align: left; padding: 0.5rem; border-bottom: 1px solid #444; color: #aaa; }
+    .details-table td { padding: 0.5rem; border-bottom: 1px solid #333; color: #ddd; }
+    .details-table tr:last-child td { border-bottom: none; }
+
+    .status-dot-large {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+    }
+    .status-dot-large.online { background-color: #66bb6a; box-shadow: 0 0 4px #66bb6a; }
+    .status-dot-large.offline_empty { background-color: #ffa726; /* Orange */ }
+    .status-dot-large.offline_not_empty { background-color: #ef5350; /* Red */ }
   `],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -237,6 +333,9 @@ export class VikingsConfidenceComponent {
     private events = toSignal(this.vikingsService.getAllVikingsEvents(), { initialValue: [] as VikingsEvent[] });
     private members = signal<AllianceMember[]>([]);
 
+    // UI State
+    public selectedMember = signal<{ name: string; details: any[] } | null>(null);
+
     // Computed
     public membersWithScore = computed(() => {
         const evs = this.events();
@@ -247,10 +346,11 @@ export class VikingsConfidenceComponent {
         const relevantEvents = evs.filter((e: VikingsEvent) => e.allianceId === aId);
 
         return mems.map((m: AllianceMember) => {
-            const calculated = this.vikingsService.calculateMemberConfidence(m.characterId, relevantEvents);
+            const result = this.vikingsService.getConfidenceDetails(m.characterId, relevantEvents);
             return {
                 ...m,
-                calculatedScore: calculated,
+                calculatedScore: result.score,
+                details: result.details,
                 storedScore: getMemberConfidence(m),
                 eventCount: relevantEvents.filter((e: VikingsEvent) => e.status === 'finished' && e.characters.some(c => c.characterId === m.characterId)).length
             };
@@ -285,8 +385,39 @@ export class VikingsConfidenceComponent {
         alert('Confidence levels saved!');
     }
 
+    openDetails(member: any) {
+        this.selectedMember.set({
+            name: member.name,
+            details: member.details
+        });
+    }
+
+    closeDetails() {
+        this.selectedMember.set(null);
+    }
+
     async updateMember(characterId: string, score: number) {
         await this.vikingsService.updateAllianceMemberConfidence(this.allianceId(), [{ characterId, confidenceLevel: score }]);
         this.loadMembers(this.allianceId());
+    }
+
+    getDetailTooltip(detail: any): string {
+        const dateStr = detail.date && detail.date.toDate ? detail.date.toDate().toLocaleDateString() : 'Unknown Date';
+        return `Date: ${dateStr}\nExpected: ${detail.expectedStatus}\nActual: ${detail.actualStatus}\nMatch: ${detail.isMatch ? 'Yes' : 'No'}`;
+    }
+
+    getSafeDate(timestamp: any): Date | null {
+        if (!timestamp) return null;
+        if (timestamp.toDate && typeof timestamp.toDate === 'function') {
+            return timestamp.toDate();
+        }
+        if (timestamp instanceof Date) {
+            return timestamp;
+        }
+        // Fallback for seconds/nanoseconds object if not a full Timestamp class instance
+        if (timestamp.seconds) {
+            return new Date(timestamp.seconds * 1000);
+        }
+        return null;
     }
 }
